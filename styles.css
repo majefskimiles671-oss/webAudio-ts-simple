@@ -16,18 +16,6 @@ body {
 
 /*  */
 
-/* Make the background */
-html {
-  background-color: white;
-}
-
-body {
-  background-image: url("./media/images/white_favicon/favicon_512.png");
-  background-position: center;
-  background-repeat: no-repeat;
-  /* background-size: contain; */
-}
-
 
 /* Main Style */
 body {
@@ -39,87 +27,55 @@ body {
   font-family: system-ui, sans-serif;
   display: flex;
   flex-direction: column;
-}
-
-/* Top transport bar */
-.transport {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: #1a1a1a;
-  border-bottom: 1px solid #333;
-}
-
-.transport button {
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  background: #ff7a00;
-  border: none;
-  border-radius: 6px;
-  color: black;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.transport button:active {
-  transform: scale(0.97);
-}
-
-.transport .stop-btn {
-  background: #ff3b30;
-}
-
-.timer {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #0f0;
-  margin-left: auto;
-}
-
-/* Play Button */
-.play-btn {
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  font-weight: bold;
-  background: #4cd964;
-  /* green play color */
-  color: black;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.play-btn:active {
-  transform: scale(0.97);
-}
-
-.play-btn:hover {
-  background: #5ff57a;
+  position: relative;
 }
 
 
-.record-btn.active {
-  background: #ff3b30; /* bright red */
-  color: white;
-}
-
-.play-btn.active {
-  background: #4cd964; /* green */
-  color: black;
-}
 
 
-/*  */
 
 /* Tracks container */
-.tracks {
+
+#track-area {
+  position: relative;
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
+  overflow-x: auto;
+}
+
+.tracks {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  padding-left: 0;
+  padding-right: 0;
+  height: auto;
+  width: fit-content;
+}
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;     /* True zero of timeline */
+  width: 2px;
+  background: #ff9500;
+}
+
+.waveform {
+  height: 80px;
+  /* width: 100%; */
+  background: #333;
+  border-radius: 6px;
+  /* overflow-x: visible;  */
+  /* overflow-y: hidden; */
+  display: flex;
+  align-items: center;
+}
+
+.waveform-canvas {
+  height: 100%;
+  display: block;
+  /* DO NOT set width here */
 }
 
 /* Individual track */
@@ -127,8 +83,13 @@ body {
   background: #222;
   border: 1px solid #333;
   border-radius: 8px;
-  padding: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  padding-left: 0;
+  padding-right: 0;
   margin-bottom: 1rem;
+  width:fit-content;
+  overflow-y: visible;
 }
 
 .track-header {
@@ -154,12 +115,14 @@ body {
   opacity: 0;
   transition: opacity 0.25s ease-out;
 }
+
 /* Track Play */
 .track-play {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #4cd964; /* green play */
+  background: #4cd964;
+  /* green play */
   border: none;
   cursor: pointer;
   color: black;
@@ -172,28 +135,16 @@ body {
 }
 
 .track-play.playing {
-  background: #ff3b30; /* red stop */
+  background: #ff3b30;
+  /* red stop */
   color: white;
 }
 
 .track-play:active {
   transform: scale(0.90);
 }
-/*  */
 
-/* Waveform placeholder */
-.waveform {
-  height: 80px;
-  background: #333;
-  border-radius: 6px;
-  margin: 1rem 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #777;
-  font-size: 0.9rem;
-  font-style: italic;
-}
+/*  */
 
 /* Gain control */
 .gain-control {
@@ -235,3 +186,80 @@ body {
   color: #ff7a00;
   background: #2a1a00;
 }
+
+/* Tarck stuff end */
+
+
+
+/* Top transport bar */
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+}
+
+.transport button {
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  background: #ff7a00;
+  border: none;
+  border-radius: 6px;
+  color: black;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.transport button:active {
+  transform: scale(0.97);
+}
+
+.transport .stop-btn {
+  background: #ff3b30;
+}
+
+/* Play Button */
+.play-btn {
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  font-weight: bold;
+  background: #4cd964;
+  /* green play color */
+  color: black;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.play-btn:active {
+  transform: scale(0.97);
+}
+
+.play-btn:hover {
+  background: #5ff57a;
+}
+
+
+.record-btn.active {
+  background: #ff3b30;
+  /* bright red */
+  color: white;
+}
+
+.play-btn.active {
+  background: #4cd964;
+  /* green */
+  color: black;
+}
+
+
+/*  */
+
+#track-area { border: 2px solid red; }
+.tracks { border: 2px solid blue; }
+.track { border: 1px solid green; }

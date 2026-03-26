@@ -4,11 +4,28 @@ import { LocalStorageProvider } from "./storage/LocalStorageProvider.js";
 import type { StorageProvider, Recording, StoredAudio } from "./storage/StorageProvider.js";
 // import { CloudStorageProvider } from "./storage/CloudStorageProvider.js";
 
+document.addEventListener("DOMContentLoaded", () => main());
+
+async function main() {
+  await getTracksFromStorage(); // from IndexedDB
+  await loadAllTracksIntoUI();
+  // bindTransportButtons();
+  // initPlayhead();
+  console.log("DAW Ready");
+}
+
+
+function getTimelineWidth() {
+  const tracksContainer = document.getElementById("g_tracks")!;
+  return tracksContainer.clientWidth;
+}
+
+
 const recorder = new AudioRecorder();
 const storage = new LocalStorageProvider();  // ← Swap providers here
 let activePlayers: HTMLAudioElement[] = [];
 let tracksStorage: StoredAudio[];
-await getTracksFromStorage(); // from IndexedDB
+
 
 async function getTracksFromStorage() {
   tracksStorage = await storage.list(); // from IndexedDB
@@ -21,12 +38,10 @@ async function loadAllTracksIntoUI() {
   tracksStorage.forEach((rec, idx) => addTrack(rec, idx));
 }
 
-
-
 const g_recBtn = document.getElementById("g-record-btn")!;
 const g_stopBtn = document.getElementById("g-stop-btn")!;
 const g_playBtn = document.getElementById("g-play-btn")!;
-const g_tracks = document.getElementById("tracks")!;
+const g_tracks = document.getElementById("g_tracks")!;
 
 g_recBtn.onclick = async () => {
   if (transportState === "recording") {
@@ -39,6 +54,7 @@ g_recBtn.onclick = async () => {
 g_stopBtn.onclick = async () => {
   stopAllPlayback();
   await stopRecording();
+  stopPlayhead();
   onRecordingEnded();
   await getTracksFromStorage();
   loadAllTracksIntoUI();
@@ -46,18 +62,21 @@ g_stopBtn.onclick = async () => {
 g_playBtn.onclick = async () => {
   if (transportState === "playing") {
     stopAllPlayback();
+    stopPlayhead();
     onPlaybackEnded();
     return;
   } else if (transportState === "recording") {
     stopAllPlayback();
     await stopRecording();
+    stopPlayhead();
     onRecordingEnded();
     await getTracksFromStorage();
     loadAllTracksIntoUI();
     // return;
   }
-  setTransportState("playing");
   await playAllTracks(tracksStorage, storage);
+  startPlayhead();
+  setTransportState("playing");
   console.log("right after calling playAllTracks");
 };
 
@@ -130,11 +149,54 @@ function stopAllPlayback() {
     }
   }
 
-  // Clear all players
-  activePlayers = [];
+  // // Clear all players
+  // activePlayers = [];
 
-  // Reset transport UI
-  setTransportState("idle");
+  // // Reset transport UI
+  // setTransportState("idle");
+}
+
+// 
+// Playhead
+//
+let playheadAnimationFrame = 0;
+let playheadStartTime = 0;
+function startPlayhead() {
+  const playhead = document.getElementById("playhead")!;
+  playheadStartTime = performance.now();
+  animatePlayhead();
+}
+
+
+const PIXELS_PER_SECOND = 100;
+const playhead = document.getElementById("playhead")!;
+
+function animatePlayhead() {
+  const elapsed = (performance.now() - playheadStartTime) / 1000;
+  const x = elapsed * PIXELS_PER_SECOND;
+
+  playhead.style.transform = `translateX(${x}px)`;
+  playheadAnimationFrame = requestAnimationFrame(animatePlayhead);
+}
+
+
+// function animatePlayhead() {
+//   const playhead = document.getElementById("playhead")!;
+//   const elapsed = (performance.now() - playheadStartTime) / 1000; // seconds
+
+//   const px = elapsed * 100; // 100px per second (or whatever your timeline scale is)
+//   playhead.style.transform = `translateX(${px}px)`;
+//   const timelineWidth = getTimelineWidth();
+//   const x = Math.min(px, timelineWidth);
+//   playhead.style.transform = `translateX(${x}px)`;
+//   playheadAnimationFrame = requestAnimationFrame(animatePlayhead);
+// }
+
+function stopPlayhead() {
+  console.log("stopPlayhead");
+  cancelAnimationFrame(playheadAnimationFrame);
+  const playhead = document.getElementById("playhead")!;
+  playhead.style.transform = "translateX(0px)";
 }
 
 
@@ -146,13 +208,16 @@ async function playAllTracks(recordings: Recording[], storage: StorageProvider) 
     let audio: HTMLAudioElement | null = new Audio(url);
     audio.onended = () => {
       activePlayers = activePlayers.filter(p => p !== audio);
+      console.log(`activePlayers count onended: ${activePlayers.length}`);
       // If no more players, reset transport state
       if (activePlayers.length === 0) {
+        stopPlayhead();
         setTransportState("idle");
       }
       audio = null;
     };
     activePlayers.push(audio);
+    console.log(`activePlayers count: ${activePlayers.length}`);
     audio.play();
   }
 }
@@ -171,9 +236,67 @@ function addTrack(recording: any, index: any) {
   const playBtn = trackEl.querySelector(".track-play") as HTMLButtonElement;
   bindTrackPlayButton(trackEl, recording, storage);
 
+  const waveformElem = trackEl.querySelector(".waveform");
+  buildWaveform(waveformElem, recording, index);
+
   // Append to track list
   g_tracks?.appendChild(clone);
 }
+
+
+async function buildWaveform(
+  waveformElem: Element | null,
+  recording: Recording,
+  index: number
+) {
+  if (!waveformElem) return;
+
+  const blob = await storage.get(recording.id);
+  const arrayBuffer = await blob.arrayBuffer();
+
+  const audioCtx = new AudioContext();
+  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+  const duration = audioBuffer.duration;
+
+  // Choose your DAW scale (100px/sec is a good start)
+  const PIXELS_PER_SECOND = 100;
+  const width = Math.max(50, duration * PIXELS_PER_SECOND);
+  const height = 80;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  canvas.classList.add("waveform-canvas");
+
+  waveformElem.innerHTML = "";
+  waveformElem.appendChild(canvas);
+
+  const ctx = canvas.getContext("2d")!;
+  const data = audioBuffer.getChannelData(0);
+
+  // Draw
+  const step = Math.ceil(data.length / width);
+  const amp = height / 2;
+
+  ctx.fillStyle = "#9acd32";
+  ctx.clearRect(0, 0, width, height);
+
+  for (let i = 0; i < width; i++) {
+    let min = 1.0;
+    let max = -1.0;
+    for (let j = i * step; j < (i + 1) * step; j++) {
+      const v = data[j] ?? 0;
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+
+    ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp * 2));
+  }
+
+  audioCtx.close();
+}
+
 
 async function deleteTrack(id: string, trackEl: HTMLElement, storage: StorageProvider) {
   await storage.delete(id);
@@ -230,4 +353,12 @@ function bindTrackPlayButton(
   };
 }
 
-loadAllTracksIntoUI();
+
+// document.addEventListener("DOMContentLoaded", () => main());
+
+// async function main() {
+//   await loadAllTracksIntoUI();
+//   bindTransportButtons();
+//   initPlayhead();
+//   console.log("DAW Ready");
+// }
