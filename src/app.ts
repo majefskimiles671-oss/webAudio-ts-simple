@@ -29,30 +29,36 @@ const g_playBtn = document.getElementById("g-play-btn")!;
 const g_tracks = document.getElementById("tracks")!;
 
 g_recBtn.onclick = async () => {
-  console.log(1);
   if (transportState === "recording") {
-    // already recording, ignore or stop
     return;
   }
-  console.log(2);
-  setTransportState("recording");
-  console.log(3);
   await recorder.start();
-  console.log("Should be recording");
+  setTransportState("recording");
 };
 
 g_stopBtn.onclick = async () => {
-  stopAllPlayback();   // optional if you have this
-  stopRecording();     // optional
-  setTransportState("idle");
+  stopAllPlayback();
+  await stopRecording();
+  onRecordingEnded();
+  await getTracksFromStorage();
+  loadAllTracksIntoUI();
 };
 g_playBtn.onclick = async () => {
   if (transportState === "playing") {
     stopAllPlayback();
+    onPlaybackEnded();
     return;
+  } else if (transportState === "recording") {
+    stopAllPlayback();
+    await stopRecording();
+    onRecordingEnded();
+    await getTracksFromStorage();
+    loadAllTracksIntoUI();
+    // return;
   }
   setTransportState("playing");
   await playAllTracks(tracksStorage, storage);
+  console.log("right after calling playAllTracks");
 };
 
 // Transport State Machine
@@ -61,6 +67,7 @@ type TransportState = "idle" | "recording" | "playing";
 let transportState: TransportState = "idle";
 
 function setTransportState(state: TransportState) {
+  console.log(`Transport State: ${transportState} => ${state}`);
   transportState = state;
 
   const recordBtn = document.getElementById("g-record-btn") as HTMLButtonElement;
@@ -106,11 +113,12 @@ function onPlaybackEnded() {
   setTransportState("idle");
 }
 
-function stopRecording() {
-  recorder.stop();
-  onRecordingEnded();
+async function stopRecording() {
+  const blob = await recorder.stop();
+  await storage.save(blob);
 }
 
+// not sure this is right
 function stopAllPlayback() {
   console.log("stopping all playback");
   for (const player of activePlayers) {
@@ -135,7 +143,15 @@ async function playAllTracks(recordings: Recording[], storage: StorageProvider) 
     const blob = await storage.get(rec.id);
     const url = URL.createObjectURL(blob);
 
-    const audio = new Audio(url);
+    let audio: HTMLAudioElement | null = new Audio(url);
+    audio.onended = () => {
+      activePlayers = activePlayers.filter(p => p !== audio);
+      // If no more players, reset transport state
+      if (activePlayers.length === 0) {
+        setTransportState("idle");
+      }
+      audio = null;
+    };
     activePlayers.push(audio);
     audio.play();
   }
