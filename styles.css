@@ -101,6 +101,18 @@ body {
   background: #5ff57a;
 }
 
+
+.record-btn.active {
+  background: #ff3b30; /* bright red */
+  color: white;
+}
+
+.play-btn.active {
+  background: #4cd964; /* green */
+  color: black;
+}
+
+
 /*  */
 
 /* Tracks container */
