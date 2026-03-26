@@ -1,0 +1,30 @@
+{
+  "name": "webaudio-ts-simple",
+  "version": "1.0.0",
+  "description": "Simple web audio example that records and plays back audio in the browser",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "serve": "npx http-server . -c-1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/majefskimiles671-oss/webAudio-ts-simple.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/majefskimiles671-oss/webAudio-ts-simple/issues"
+  },
+  "homepage": "https://github.com/majefskimiles671-oss/webAudio-ts-simple#readme",
+  "dependencies": {
+    "idb": "^8.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  }
+}
