@@ -36,15 +36,40 @@
     <div class="transport">
         <button id="g-record-btn" class="record-btn">● Record</button>
         <button id="g-play-btn" class="play-btn">▶ Play</button>
+
         <div class="timer">00:00.00</div>
+
+
+        
+        
+        <div class="zoom-container">
+        <input id="zoom-slider" type="range" min="0" max="4" step="1" value="2" />
+
+        <div class="zoom-labels">
+            <span data-pos="0">0.25x</span>
+            <span data-pos="1">0.5x</span>
+            <span data-pos="2">1x</span>
+            <span data-pos="3">2x</span>
+            <span data-pos="4">4x</span>
+        </div>
+        </div>
+
+
+
+
+        <div id="meter" class="meter">
+            <div id="meter-bar" class="meter-bar"></div>
+            <div id="meter-value" class="meter-value">-∞ dB</div>
+        </div>
+
     </div>
 
     <!-- <div id="track-background"> -->
-        <div id="track-area">
-            <div id="g_tracks" class="tracks">
-                <div id="playhead" class="playhead"></div>
-            </div>
+    <div id="track-area">
+        <div id="g_tracks" class="tracks">
+            <div id="playhead" class="playhead"></div>
         </div>
+    </div>
     <!-- </div> -->
 
 

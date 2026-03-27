@@ -22,6 +22,7 @@ const PIXELS_PER_SECOND = 100;
 
 // playhead element (updated after UI refresh)
 let playhead: HTMLElement;
+let zoom = 1.0; // 1.0 = normal zoom
 
 
 // ------------------------------------------------------------
@@ -91,7 +92,7 @@ function startPlayhead() {
 
 function animatePlayhead() {
   const elapsed = (performance.now() - playheadStartTime) / 1000;
-  playhead.style.transform = `translateX(${elapsed * PIXELS_PER_SECOND}px)`;
+  playhead.style.transform = `translateX(${elapsed * PIXELS_PER_SECOND * zoom}px)`;
   playheadRAF = requestAnimationFrame(animatePlayhead);
 }
 
@@ -132,6 +133,17 @@ g_playBtn.onclick = async () => {
   }
 };
 
+// -------------- Zoom ----------------
+
+const zoomSlider = document.getElementById("zoom-slider") as HTMLInputElement;
+const zoomLevels = [0.25, 0.5, 1, 2, 4];
+
+zoomSlider.oninput = async () => {
+  zoom = zoomLevels[parseInt(zoomSlider.value)]!;
+  await reloadTracksIntoUI(); // redraws the waveforms using new zoom
+};
+
+
 
 // ------------------------------------------------------------
 // 3. TRACK SYSTEM
@@ -146,15 +158,23 @@ async function getTracksFromStorage() {
   tracksStorage = await storage.list();
   console.log(`Got ${tracksStorage.length} tracks`);
 }
+let isRedrawing = false;
 
 async function reloadTracksIntoUI() {
+
+  if (isRedrawing) return;
+  isRedrawing = true;
+
   g_tracks.innerHTML = `<div id="playhead" class="playhead"></div>`;
   findPlayhead();
 
   await getTracksFromStorage();
+  // want to await this!!!!
   tracksStorage.forEach((rec, idx) => addTrack(rec, idx));
-}
 
+  isRedrawing = false;
+}
+// make async!!!!!!
 function addTrack(recording: Recording, index: number) {
   const template = document.getElementById("track-template")! as HTMLTemplateElement;
   const clone = template.content.cloneNode(true) as DocumentFragment;
@@ -271,7 +291,7 @@ async function buildWaveform(
   const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
   const duration = audioBuffer.duration;
-  const width = Math.max(50, duration * PIXELS_PER_SECOND);
+  const width = Math.max(50, duration * PIXELS_PER_SECOND * zoom);
   const height = 80;
 
   const canvas = document.createElement("canvas");
@@ -313,12 +333,114 @@ async function buildWaveform(
 // ------------------------------------------------------------
 async function startRecording() {
   await recorder.start();
+  showMeter();
 }
 
 async function stopRecording() {
   const blob = await recorder.stop();
   await storage.save(blob);
+  stopMeter();
+  hideMeter();
 }
+
+let meterAnalyser: AnalyserNode | null = null;
+let meterDataArray: Uint8Array<ArrayBuffer> | null = null;
+let meterAudioCtx: AudioContext | null = null;
+let meterRAF = 0;
+
+function connectMeterToStream(stream: MediaStream) {
+  meterAudioCtx = new AudioContext();
+  const source = meterAudioCtx.createMediaStreamSource(stream);
+
+  meterAnalyser = meterAudioCtx.createAnalyser();
+  meterAnalyser.fftSize = 2048;
+
+  source.connect(meterAnalyser);
+
+  meterDataArray = new Uint8Array(meterAnalyser.fftSize);
+  updateMeter();
+}
+
+function updateMeter() {
+  if (!meterAnalyser || !meterDataArray) return;
+
+  meterAnalyser.getByteTimeDomainData(meterDataArray);
+
+  // Compute RMS (Root Mean Square) for loudness
+  let sum = 0;
+  for (let i = 0; i < meterDataArray.length; i++) {
+    const v = (meterDataArray[i]! - 128) / 128;
+    sum += v * v;
+  }
+  const rms = Math.sqrt(sum / meterDataArray.length);
+
+  // Convert RMS to decibels
+  const db = 20 * Math.log10(rms || 0.00001); // clamp noise floor
+
+  // Convert to 0–100%
+  let percent = ((db + 60) / 60) * 100;
+  percent = Math.min(Math.max(percent, 0), 100);
+
+  const bar = document.getElementById("meter-bar")!;
+  const value = document.getElementById("meter-value")!;
+  bar.style.width = percent + "%";
+
+  // Display human-friendly text
+  value.textContent = db === -Infinity ? "-∞ dB" : db.toFixed(1) + " dB";
+
+  meterRAF = requestAnimationFrame(updateMeter);
+}
+
+recorder.onstream = (stream) => {
+  connectMeterToStream(stream);
+};
+
+
+// recorder.onstop = (blob) => {
+//   hideMeter();           // <<< NEW
+//   stopTimer();
+//   setTransportState("idle");
+//   saveRecording(blob);
+// };
+
+
+// recorder.onerror = () => {
+//   hideMeter();
+//   stopTimer();
+//   setTransportState("idle");
+// };
+
+
+function showMeter() {
+  const meter = document.getElementById("meter");
+  meter?.classList.add("visible");
+}
+
+function hideMeter() {
+  const meter = document.getElementById("meter");
+  meter?.classList.remove("visible");
+}
+
+/*
+call:
+stopMeter();
+hideMeter();
+*/
+
+function stopMeter() {
+  cancelAnimationFrame(meterRAF);
+  meterAudioCtx?.close();
+  meterAudioCtx = null;
+  meterAnalyser = null;
+  meterDataArray = null;
+
+  const bar = document.getElementById("meter-bar")!;
+  bar.style.width = "0%";
+  const value = document.getElementById("meter-value")!;
+  value.textContent = "-∞ dB";
+}
+
+
 
 
 // ------------------------------------------------------------

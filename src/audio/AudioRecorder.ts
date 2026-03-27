@@ -5,10 +5,12 @@ export class AudioRecorder {
 
   constructor(private mimeType = "audio/webm") { }
 
+  onstream: ((stream: MediaStream) => void) | null = null;
   onstop: (() => void) | null = null;
 
   async start() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (this.onstream) this.onstream(stream);
     this.chunks = [];
 
     this.mediaRecorder = new MediaRecorder(stream, { mimeType: this.mimeType });

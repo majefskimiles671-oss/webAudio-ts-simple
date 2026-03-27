@@ -97,6 +97,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding : 0px 15px 15px 15px;
 }
 
 .track-title {
@@ -188,19 +189,19 @@ body {
   background: #2a1a00;
 }
 
-/* Tarck stuff end */
+/* Track stuff end */
 
 
 
 /* Top transport bar */
-.transport {
+/* .transport {
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 1rem;
   background: #1a1a1a;
   border-bottom: 1px solid #333;
-}
+} */
 
 .transport button {
   padding: 0.6rem 1.2rem;
@@ -259,8 +260,159 @@ body {
 }
 
 
+/* meter stuff */
+
+.meter {
+  width: 120px;
+  height: 20px;
+  background: #333;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #555;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.meter.visible {
+  opacity: 1;
+}
+
+.meter-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4cd964, #ffcc00, #ff3b30);
+}
+
+.meter-value {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  font-size: 0.7rem;
+  pointer-events: none;
+  color: white;
+}
+
+
+.transport {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+  gap: 1rem;
+}
+
+
+
+.transport .timer {
+  margin-left: 1rem;        /* space after Play button */
+  margin-right: auto;       /* push everything else (meter) to the right */
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #0f0;
+}
+
+
+/* #zoom-slider {
+  width: 150px;
+  margin-left: 1rem;
+} */
+
+
+/* zoom slider */
+
+.zoom-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: 1rem;
+  width: 160px; 
+}
+
+/* --- Slider Track --- */
+#zoom-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #333;
+  outline: none;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+/* --- Slider Thumb --- */
+#zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #ff9500;
+  border: 2px solid #222;
+  cursor: pointer;
+  transition: 0.1s ease;
+}
+
+#zoom-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: #ffb347;
+}
+
+/* --- Firefox Thumb --- */
+#zoom-slider::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #ff9500;
+  border: 2px solid #222;
+}
+
+/* --- Labels --- */
+.zoom-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.7rem;
+  color: #aaa;
+  pointer-events: none;
+}
+
+.zoom-labels span {
+  width: 20%;
+  text-align: center;
+}
+/* more of same zoom stuff!
+ */
+.zoom-container {
+  position: relative;
+  width: 160px;
+  margin-left: 1rem;
+}
+
+.zoom-labels {
+  position: relative;
+  width: 100%;
+  height: 12px; 
+  margin-top: 4px;
+}
+
+.zoom-labels span {
+  position: absolute;
+  font-size: 0.7rem;
+  color: #aaa;
+  transform: translateX(-50%); /* center on stop */
+  white-space: nowrap;
+}
+
+.zoom-labels span[data-pos="0"] { left: 0%; }
+.zoom-labels span[data-pos="1"] { left: 25%; }
+.zoom-labels span[data-pos="2"] { left: 50%; }
+.zoom-labels span[data-pos="3"] { left: 75%; }
+.zoom-labels span[data-pos="4"] { left: 100%; }
 /*  */
 
-#track-area { border: 2px solid red; }
+
+/* #track-area { border: 2px solid red; }
 .tracks { border: 2px solid blue; }
-.track { border: 1px solid green; }
+.track { border: 1px solid green; } */
