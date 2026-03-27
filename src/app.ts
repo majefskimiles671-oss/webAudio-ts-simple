@@ -3,7 +3,7 @@
 // ------------------------------------------------------------
 import { AudioRecorder } from "./audio/AudioRecorder.js";
 import { LocalStorageProvider } from "./storage/LocalStorageProvider.js";
-import type { StorageProvider, Recording, StoredAudio } from "./storage/StorageProvider.js";
+import type { StorageProvider, Recording } from "./storage/StorageProvider.js";
 
 // ------------------------------------------------------------
 // 1. GLOBALS + DOM REFERENCES
@@ -11,7 +11,7 @@ import type { StorageProvider, Recording, StoredAudio } from "./storage/StorageP
 const recorder = new AudioRecorder();
 const storage = new LocalStorageProvider();
 
-let tracksStorage: StoredAudio[] = [];
+let tracksStorage: Recording[] = [];
 let activePlayers: HTMLAudioElement[] = [];
 
 const g_recBtn = document.getElementById("g-record-btn") as HTMLButtonElement;
@@ -92,8 +92,14 @@ function startPlayhead() {
 
 function animatePlayhead() {
   const elapsed = (performance.now() - playheadStartTime) / 1000;
-  playhead.style.transform = `translateX(${elapsed * PIXELS_PER_SECOND * zoom}px)`;
+  // playhead.style.transform = `translateX(${elapsed * PIXELS_PER_SECOND * zoom}px)`;
+  
+  
+  const x = elapsed * PIXELS_PER_SECOND * zoom;
+  const clamped = Math.min(x, timelineWidthPx);
+  playhead.style.transform = `translateX(${clamped}px)`;
   playheadRAF = requestAnimationFrame(animatePlayhead);
+
 }
 
 function stopPlayhead() {
@@ -160,27 +166,62 @@ async function getTracksFromStorage() {
 }
 let isRedrawing = false;
 
-async function reloadTracksIntoUI() {
+// async function reloadTracksIntoUI() {
 
-  if (isRedrawing) return;
-  isRedrawing = true;
+//   if (isRedrawing) return;
+//   isRedrawing = true;
+
+//   g_tracks.innerHTML = `<div id="playhead" class="playhead"></div>`;
+//   findPlayhead();
+
+//   await getTracksFromStorage();
+//   // want to await this!!!!
+//   tracksStorage.forEach((rec, idx) => addTrack(rec, idx));
+
+//   isRedrawing = false;
+// }
+
+
+let timelineWidthPx = 0; // global
+
+async function reloadTracksIntoUI() {
+  timelineWidthPx = 0;
 
   g_tracks.innerHTML = `<div id="playhead" class="playhead"></div>`;
   findPlayhead();
 
   await getTracksFromStorage();
-  // want to await this!!!!
-  tracksStorage.forEach((rec, idx) => addTrack(rec, idx));
 
-  isRedrawing = false;
+  // for (const rec of tracksStorage) {
+  //   const duration = rec.duration ?? 0; // store duration in DB after decoding
+  //   const width = Math.max(50, duration * PIXELS_PER_SECOND * zoom);
+  //   timelineWidthPx = Math.max(timelineWidthPx, width);
+  // }
+
+  // tracksStorage.forEach((rec, idx) => addTrack(rec, idx));
+
+
+for (let i = 0; i < tracksStorage.length; i++) {
+    await addTrack(tracksStorage[i]!, i);
+  }
+
 }
-// make async!!!!!!
-function addTrack(recording: Recording, index: number) {
+
+
+// make async!!!!!!?????
+async function addTrack(recording: Recording, index: number) {
+  // const recording: Recording = await storage.get(storedAudio.id);
   const template = document.getElementById("track-template")! as HTMLTemplateElement;
   const clone = template.content.cloneNode(true) as DocumentFragment;
 
   const trackEl = clone.querySelector(".track") as HTMLElement;
-  trackEl.querySelector(".track-title")!.textContent = recording.name ?? null;
+  // trackEl.querySelector(".track-title")!.textContent = recording.name ?? null;
+
+  console.log(`recording: ${recording.name}`);
+  trackEl.querySelector(".track-title")!.textContent =
+    recording.name ?? `Track ${index + 1}`;
+
+  makeTrackTitleEditable(trackEl, recording);
 
   const deleteBtn = trackEl.querySelector(".track-delete") as HTMLButtonElement;
   deleteBtn.onclick = () => deleteTrack(recording.id, trackEl);
@@ -188,9 +229,59 @@ function addTrack(recording: Recording, index: number) {
   bindTrackPlayButton(trackEl, recording, storage);
 
   const waveformElem = trackEl.querySelector(".waveform");
-  buildWaveform(waveformElem, recording);
+  
+const width = await buildWaveform(waveformElem, recording);
+
+  // update timeline width
+  timelineWidthPx = Math.max(timelineWidthPx, width!);
+
 
   g_tracks.appendChild(clone);
+}
+
+function makeTrackTitleEditable(trackEl: HTMLElement, recording: Recording) {
+  const titleEl = trackEl.querySelector(".track-title") as HTMLElement;
+
+  titleEl.onclick = () => {
+    // already editing?
+    if (titleEl.classList.contains("editing")) return;
+
+    const currentText = titleEl.textContent || "";
+    titleEl.classList.add("editing");
+
+    // Create input element
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = currentText;
+    input.className = "track-title-input";
+    input.style.width = "80%";
+    input.style.fontSize = "1rem";
+
+    // Replace text with input
+    titleEl.innerHTML = "";
+    titleEl.appendChild(input);
+    input.focus();
+    input.select();
+
+    // When user finishes editing:
+    const commit = async () => {
+      const newName = input.value.trim() || currentText;
+      titleEl.classList.remove("editing");
+      titleEl.textContent = newName;
+
+      // Persist to storage
+      await storage.updateTrackName(recording.id, newName);
+    };
+
+    // Blur or Enter commits
+    input.onblur = commit;
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        commit();
+        input.blur();
+      }
+    };
+  };
 }
 
 async function deleteTrack(id: string, trackEl: HTMLElement) {
@@ -200,7 +291,7 @@ async function deleteTrack(id: string, trackEl: HTMLElement) {
   setTimeout(() => trackEl.remove(), 250);
 }
 
-async function playAllTracks(recordings: StoredAudio[], storage: StorageProvider) {
+async function playAllTracks(recordings: Recording[], storage: StorageProvider) {
   for (const rec of recordings) {
     const blob = await storage.get(rec.id);
     const url = URL.createObjectURL(blob);
@@ -280,7 +371,7 @@ function bindTrackPlayButton(
 // ------------------------------------------------------------
 async function buildWaveform(
   waveformElem: Element | null,
-  recording: StoredAudio
+  recording: Recording
 ) {
   if (!waveformElem) return;
 
@@ -290,8 +381,9 @@ async function buildWaveform(
   const audioCtx = new AudioContext();
   const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
-  const duration = audioBuffer.duration;
+const duration = audioBuffer.length / audioBuffer.sampleRate;
   const width = Math.max(50, duration * PIXELS_PER_SECOND * zoom);
+
   const height = 80;
 
   const canvas = document.createElement("canvas");
@@ -325,6 +417,7 @@ async function buildWaveform(
   }
 
   audioCtx.close();
+  return width;
 }
 
 
@@ -338,7 +431,15 @@ async function startRecording() {
 
 async function stopRecording() {
   const blob = await recorder.stop();
-  await storage.save(blob);
+
+
+const arrayBuffer = await blob.arrayBuffer();
+const tempCtx = new AudioContext();
+const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
+const duration = audioBuffer.length / audioBuffer.sampleRate;
+tempCtx.close();
+
+  await storage.save(blob, duration);
   stopMeter();
   hideMeter();
 }

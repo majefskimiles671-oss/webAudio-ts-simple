@@ -97,7 +97,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding : 0px 15px 15px 15px;
+  /* padding : 0px 15px 15px 15px; */
 }
 
 .track-title {
@@ -413,6 +413,13 @@ body {
 /*  */
 
 
-/* #track-area { border: 2px solid red; }
+.track-title.editing {
+  outline: 1px solid #ff9500;
+  background: #222;
+  border-radius: 4px;
+}
+
+
+#track-area { border: 2px solid red; }
 .tracks { border: 2px solid blue; }
-.track { border: 1px solid green; } */
+.track { border: 1px solid green; }
