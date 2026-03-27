@@ -43,7 +43,7 @@ body {
   overflow-x: auto;
 }
 
-.tracks {
+/* .tracks {
   padding-top: 1rem;
   padding-bottom: 1rem;
   padding-left: 0;
@@ -57,32 +57,52 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 0;     /* True zero of timeline */
+  left: 0;     /* True zero of timeline 
   width: 2px;
   background: #ff9500;
+  z-index: 10;
+} */
+
+.tracks {
+  position: relative;
+  z-index: 10;
 }
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: #ff9500;
+  z-index: 999; /* ensures it is above track content */
+}
+
+.track {
+  position: relative;
+  z-index: 1; /* behind the playhead */
+}
+
 
 .waveform {
+  display: block;     /* prevent flexbox alignment */
+  position: relative; /* cleaner canvas placement */
   height: 80px;
-  /* width: 100%; */
   background: #333;
   border-radius: 6px;
-  /* overflow-x: visible;  */
-  /* overflow-y: hidden; */
-  display: flex;
-  align-items: center;
 }
 
+
 .waveform-canvas {
-  height: 100%;
+  /* height: 100%; */
   display: block;
   /* DO NOT set width here */
 }
 
 /* Individual track */
-.track {
+/* border: 1px solid #333; */
+/* .track {
   background: #222;
-  border: 1px solid #333;
   border-radius: 8px;
   padding-top: 1rem;
   padding-bottom: 1rem;
@@ -91,7 +111,7 @@ body {
   margin-bottom: 1rem;
   width:fit-content;
   overflow-y: visible;
-}
+} */
 
 .track-header {
   display: flex;
@@ -420,6 +440,13 @@ body {
 }
 
 
-#track-area { border: 2px solid red; }
+/* #track-area { border: 2px solid red; }
 .tracks { border: 2px solid blue; }
-.track { border: 1px solid green; }
+.track { border: 1px solid green; } */
+
+
+
+.waveform-canvas {
+  border-left: 2px solid red !important;
+}
+

@@ -92,12 +92,12 @@ function startPlayhead() {
 
 function animatePlayhead() {
   const elapsed = (performance.now() - playheadStartTime) / 1000;
-  // playhead.style.transform = `translateX(${elapsed * PIXELS_PER_SECOND * zoom}px)`;
-  
-  
-  const x = elapsed * PIXELS_PER_SECOND * zoom;
-  const clamped = Math.min(x, timelineWidthPx);
-  playhead.style.transform = `translateX(${clamped}px)`;
+  playhead.style.transform = `translateX(${elapsed * PIXELS_PER_SECOND * zoom}px)`;
+
+
+  // const x = elapsed * PIXELS_PER_SECOND * zoom;
+  // const clamped = Math.min(x, timelineWidthPx);
+  // playhead.style.transform = `translateX(${clamped}px)`;
   playheadRAF = requestAnimationFrame(animatePlayhead);
 
 }
@@ -192,16 +192,25 @@ async function reloadTracksIntoUI() {
 
   await getTracksFromStorage();
 
-  // for (const rec of tracksStorage) {
-  //   const duration = rec.duration ?? 0; // store duration in DB after decoding
-  //   const width = Math.max(50, duration * PIXELS_PER_SECOND * zoom);
-  //   timelineWidthPx = Math.max(timelineWidthPx, width);
-  // }
+  for (const rec of tracksStorage) {
+    const duration = rec.duration ?? 0; // store duration in DB after decoding
+    const width = Math.max(50, duration * PIXELS_PER_SECOND * zoom);
+    timelineWidthPx = Math.max(timelineWidthPx, width);
+  }
 
   // tracksStorage.forEach((rec, idx) => addTrack(rec, idx));
 
 
-for (let i = 0; i < tracksStorage.length; i++) {
+  // Sort by name (A → Z), null names last
+  tracksStorage.sort((a, b) => {
+    const nameA = a.name ?? "";
+    const nameB = b.name ?? "";
+    return nameA.localeCompare(nameB);
+  });
+
+
+
+  for (let i = 0; i < tracksStorage.length; i++) {
     await addTrack(tracksStorage[i]!, i);
   }
 
@@ -229,8 +238,8 @@ async function addTrack(recording: Recording, index: number) {
   bindTrackPlayButton(trackEl, recording, storage);
 
   const waveformElem = trackEl.querySelector(".waveform");
-  
-const width = await buildWaveform(waveformElem, recording);
+
+  const width = await buildWaveform(waveformElem, recording);
 
   // update timeline width
   timelineWidthPx = Math.max(timelineWidthPx, width!);
@@ -381,7 +390,7 @@ async function buildWaveform(
   const audioCtx = new AudioContext();
   const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
-const duration = audioBuffer.length / audioBuffer.sampleRate;
+  const duration = audioBuffer.length / audioBuffer.sampleRate;
   const width = Math.max(50, duration * PIXELS_PER_SECOND * zoom);
 
   const height = 80;
@@ -433,13 +442,17 @@ async function stopRecording() {
   const blob = await recorder.stop();
 
 
-const arrayBuffer = await blob.arrayBuffer();
-const tempCtx = new AudioContext();
-const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
-const duration = audioBuffer.length / audioBuffer.sampleRate;
-tempCtx.close();
+  const arrayBuffer = await blob.arrayBuffer();
+  const tempCtx = new AudioContext();
+  const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
+  const duration = audioBuffer.length / audioBuffer.sampleRate;
+  tempCtx.close();
 
-  await storage.save(blob, duration);
+  const timestamp = Date.now();
+
+  const name: string = "Track " + (timestamp % 10000);
+
+  await storage.save(blob, name, duration);
   stopMeter();
   hideMeter();
 }

@@ -5,7 +5,7 @@
 // }
 
 export interface StorageProvider {
-  save(blob: Blob,  duration: number): Promise<string>;
+  save(blob: Blob, name: string ,duration: number): Promise<string>;
   get(id: string): Promise<Blob>;
   list(): Promise<Recording[]>;
   delete(id: string): Promise<void>;

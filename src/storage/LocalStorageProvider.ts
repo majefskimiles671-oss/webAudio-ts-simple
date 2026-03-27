@@ -22,7 +22,7 @@ export class LocalStorageProvider implements StorageProvider {
   // }
 
 
-  async save(blob: Blob, duration: number): Promise<string> {
+  async save(blob: Blob, name: string, duration: number): Promise<string> {
     const id = crypto.randomUUID();
     const timestamp = Date.now();
 
@@ -32,7 +32,7 @@ export class LocalStorageProvider implements StorageProvider {
       timestamp,
       blob,
       duration,   // <<< ADD THIS
-      name: null,
+      name: name,
       gain: 1,
     });
     return id;
