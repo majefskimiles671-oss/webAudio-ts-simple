@@ -8,15 +8,18 @@ import type { StorageProvider, Recording } from "./storage/StorageProvider.js";
 // ------------------------------------------------------------
 // 1. GLOBALS + DOM REFERENCES
 // ------------------------------------------------------------
+export const audioCtx = new AudioContext();
 const recorder = new AudioRecorder();
 const storage = new LocalStorageProvider();
 
 let tracksStorage: Recording[] = [];
-let activePlayers: HTMLAudioElement[] = [];
+let activePlayers_AudioElems: HTMLAudioElement[] = [];
+let activePlayers: AudioBufferSourceNode[] = [];
 
 const g_recBtn = document.getElementById("g-record-btn") as HTMLButtonElement;
 const g_playBtn = document.getElementById("g-play-btn") as HTMLButtonElement;
 const g_tracks = document.getElementById("g_tracks") as HTMLElement;
+const trackArea = document.getElementById("track-area") as HTMLElement;
 
 const PIXELS_PER_SECOND = 100;
 
@@ -92,23 +95,83 @@ function startPlayhead() {
 
 function animatePlayhead() {
   const elapsed = (performance.now() - playheadStartTime) / 1000;
+  const x = elapsed * PIXELS_PER_SECOND * zoom;
 
   const shouldClamp = true;
   if (shouldClamp) {
-    const x = elapsed * PIXELS_PER_SECOND * zoom;
     const clamped = Math.min(x, timelineWidthPx);
     playhead.style.transform = `translateX(${clamped}px)`;
+
+    // Auto-scroll when playhead gets near the right edge
+    autoScrollTrackArea(clamped)
+
   } else {
-    playhead.style.transform = `translateX(${elapsed * PIXELS_PER_SECOND * zoom}px)`;
+    playhead.style.transform = `translateX(${x}px)`;
+
+    // Auto-scroll when playhead gets near the right edge
+    autoScrollTrackArea(x)
+
   }
 
   playheadRAF = requestAnimationFrame(animatePlayhead);
 }
 
+function autoScrollTrackArea(playheadX: number) {
+  if (transportState !== "playing") return; // not necessary right now
+
+  const trackArea = document.getElementById("track-area") as HTMLElement;
+
+  const viewportWidth = trackArea.clientWidth;
+  const scrollLeft = trackArea.scrollLeft;
+
+  const leftBias = true;
+  if (leftBias) {
+
+    const leftBias = 200; // keep playhead 200px from left
+
+    if (playheadX > scrollLeft + leftBias) {
+      trackArea.scrollLeft = playheadX - leftBias;
+    }
+  } else {
+    // How close to the right edge before scrolling begins
+    const threshold = 80; // px from right edge
+
+    // If playhead is within 80px of the right edge, scroll
+    if (playheadX > scrollLeft + viewportWidth - threshold) {
+      const smooth = true;
+      if (smooth) {
+        trackArea.scrollTo({
+          left: playheadX - viewportWidth + threshold,
+          behavior: "smooth"
+        });
+      } else {
+        trackArea.scrollLeft = playheadX - viewportWidth + threshold;
+
+      }
+    }
+  }
+}
+
+
+function resetScroll() {
+  const trackArea = document.getElementById("track-area") as HTMLElement;
+  trackArea.scrollLeft = 0;
+}
+
+
 function stopPlayhead() {
   cancelAnimationFrame(playheadRAF);
   playhead.style.transform = "translateX(0px)";
 }
+
+
+function onGlobalPlaybackEnded() {
+  stopPlayhead();
+  stopTimer();
+  resetScroll();
+  setTransportState("idle");
+}
+
 
 
 // -------- Transport Button Handlers --------
@@ -128,17 +191,16 @@ g_recBtn.onclick = async () => {
 };
 
 g_playBtn.onclick = async () => {
+  warmAudio(); // inside main after any user click
   if (transportState === "idle") {
     startTimer();
     await playAllTracks(tracksStorage, storage);
-    startPlayhead();
+    startPlayhead(); //?//Ensure timelineWidthPx and playhead are computed BEFORE playback
     setTransportState("playing");
   }
   else if (transportState === "playing") {
-    stopPlayhead();
-    stopTimer();
     stopAllPlayback();
-    setTransportState("idle");
+    onGlobalPlaybackEnded();
   }
 };
 
@@ -306,37 +368,65 @@ async function deleteTrack(id: string, trackEl: HTMLElement) {
 async function playAllTracks(recordings: Recording[], storage: StorageProvider) {
   for (const rec of recordings) {
     const blob = await storage.get(rec.id);
-    const url = URL.createObjectURL(blob);
 
-    let audio: HTMLAudioElement | null = new Audio(url);
 
-    audio.onended = () => {
-      activePlayers = activePlayers.filter(p => p !== audio);
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    const src = audioCtx.createBufferSource();
+    src.buffer = audioBuffer;
+    src.connect(audioCtx.destination);
+
+
+    src.onended = () => {
+      activePlayers = activePlayers.filter(p => p !== src);
+
       if (activePlayers.length === 0) {
-        stopPlayhead();
-        stopTimer();
-        setTransportState("idle");
+        onGlobalPlaybackEnded();
       }
-      audio = null;
     };
 
-    activePlayers.push(audio);
-    audio.play();
+    activePlayers.push(src);
+
+    // sample-accurate start
+    src.start(audioCtx.currentTime);
+
+    // const url = URL.createObjectURL(blob);
+
+    // let audio: HTMLAudioElement | null = new Audio(url);
+
+    // audio.onended = () => {
+    //   activePlayers = activePlayers.filter(p => p !== audio);
+    //   if (activePlayers.length === 0) {
+    //     stopPlayhead();
+    //     resetScroll(); 
+    //     stopTimer();
+    //     setTransportState("idle");
+    //   }
+    //   audio = null;
+    // };
+
+    // activePlayers.push(audio);
+    // audio.play();
   }
 }
 
+
 function stopAllPlayback() {
-  console.log("Stopping all playback");
-  for (const p of activePlayers) {
+  for (const player of activePlayers) {
     try {
-      p.pause();
-      p.currentTime = 0;
-    } catch (err) {
-      console.warn("Error stopping player:", err);
-    }
+      player.stop;
+    } catch {}
   }
   activePlayers = [];
+
+  for (const player of activePlayers_AudioElems) {
+    try {
+      player.pause();
+    } catch {}
+  }
+  activePlayers_AudioElems = [];
 }
+
 
 
 // -------- Per-track Play Button --------
@@ -365,6 +455,14 @@ function bindTrackPlayButton(
 
     audioEl = new Audio(url);
     audioEl.onended = () => {
+      console.log("onended: Audio Element");
+      activePlayers_AudioElems = activePlayers_AudioElems.filter(p => p !== audioEl);
+
+      if (activePlayers_AudioElems.length === 0) {
+        console.log("activePlayers empty: Audio Element");
+        // onGlobalPlaybackEnded(); //not sure what to do about this in per-track play
+      }
+
       audioEl = null;
       playBtn.textContent = "▶";
       playBtn.classList.remove("playing");
@@ -373,6 +471,8 @@ function bindTrackPlayButton(
     playBtn.textContent = "⏹";
     playBtn.classList.add("playing");
 
+    activePlayers_AudioElems.push(audioEl);
+    console.log("Starting Audio Element");
     await audioEl.play();
   };
 }
@@ -437,6 +537,16 @@ async function buildWaveform(
 // ------------------------------------------------------------
 // 5. STORAGE + RECORDER SYSTEM
 // ------------------------------------------------------------
+
+function warmAudio() {
+  const buffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buffer;
+  src.connect(audioCtx.destination);
+  src.start();
+}
+
+
 async function startRecording() {
   await recorder.start();
   showMeter();
