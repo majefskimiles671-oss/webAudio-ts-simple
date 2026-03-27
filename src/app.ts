@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const transport = new TransportController(audio, tracks, recorder);
 
   await tracks.loadTracks();
-  await tracks.renderTracks(document.getElementById("g_tracks")!, 1);
+  await tracks.renderTracks();
 
   transport.bindUI();
 });

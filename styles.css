@@ -1,481 +1,174 @@
-/* DAW UI should be exactly the viewport with no scrolling. */
-html,
-body {
+/* =============================
+   GLOBAL
+============================= */
+
+html, body {
   margin: 0;
   padding: 0;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  /* prevents scrollbars for fixed UIs */
-}
-
-body {
-  display: flex;
-  flex-direction: column;
-}
-
-/*  */
-
-
-/* Main Style */
-body {
-  margin: 0;
-  padding: 0;
-  height: 100vh;
   background: #111;
   color: #eee;
   font-family: system-ui, sans-serif;
+}
+
+body {
   display: flex;
   flex-direction: column;
-  position: relative;
 }
 
 
+/* =============================
+   TRANSPORT BAR
+============================= */
+
+.transport {
+  background: #1a1a1a;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #333;
+}
 
 
+/* =============================
+   TWO-COLUMN TRACK GRID
+============================= */
 
-/* Tracks container */
-
-#track-area {
-  position: relative;
+.tracks-root {
   flex: 1;
+  display: grid;
+  grid-template-columns: 220px 1fr; /* ← Left fixed controls, right timeline */
+  overflow: hidden;
+  position: relative;
+}
+
+
+/* LEFT COLUMN — FIXED CONTROLS */
+.tracks-controls-column {
+  overflow: hidden;          /* never scroll horizontally */
+  position: relative;
+  z-index: 50;
+  background: #111;
+}
+
+
+/* RIGHT COLUMN — SCROLLABLE TIMELINE */
+#timeline-area {
+  overflow-x: auto;          /* ← horizontal scroll lives HERE */
   overflow-y: auto;
-  overflow-x: auto;
-}
-
-/* .tracks {
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-  padding-left: 0;
-  padding-right: 0;
-  height: auto;
-  width: fit-content;
   position: relative;
+  scroll-behavior: smooth;
+  background: #111;
 }
 
-.playhead {
+
+/* =================================
+   PLAYHEAD OVERLAY
+================================= */
+
+#timeline-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;       /* timeline-pane already excludes controls */
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 900;
+}
+
+#playhead {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 0;     /* True zero of timeline 
-  width: 2px;
-  background: #ff9500;
-  z-index: 10;
-} */
-
-.tracks {
-  position: relative;
-  z-index: 10;
-}
-
-.playhead {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
   width: 3px;
   background: #ff9500;
-  z-index: 999; /* ensures it is above track content */
 }
+
+
+/* =================================
+   TRACK ROWS
+================================= */
 
 .track {
-  position: relative;
-  z-index: 1; /* behind the playhead */
-}
-
-
-.waveform {
-  display: block;     /* prevent flexbox alignment */
-  position: relative; /* cleaner canvas placement */
-  height: 80px;
-  background: #333;
-  border-radius: 6px;
-}
-
-
-.waveform-canvas {
-  /* height: 100%; */
-  display: block;
-  /* DO NOT set width here */
-}
-
-/* Individual track */
-/* border: 1px solid #333; */
-.track {
-  background: #222;
-  border-radius: 8px;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-  padding-left: 0;
-  padding-right: 0;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  width: 100%;
   margin-bottom: 1rem;
-  width:fit-content;
-  overflow-y: visible;
 }
 
-.track-header {
+/* LEFT TRACK CONTROLS */
+.track-controls {
+  position: sticky;
+  left: 0;
+  top: 0;
+  padding: 0.6rem;
+  background: #222;
+  z-index: 20;
+  border-radius: 8px 0 0 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.track-header,
+.track-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  /* padding : 0px 15px 15px 15px; */
+  padding-bottom: 0.4rem;
 }
 
-.track-title {
-  font-weight: bold;
+.track-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* RIGHT WAVEFORM COLUMN */
+.track-timeline {
+  position: relative;
+  padding: 0.6rem 0;
+  background: transparent;
+}
+
+.waveform {
+  display: inline-block;
+  height: 80px;
+  background: #333;
+  border-radius: 0 8px 8px 0;
+}
+
+.waveform-canvas {
+  height: 100%;
+  display: block;
+}
+
+
+/* BUTTONS */
+.track-play {
+  width: 32px;
+  height: 32px;
+  background: #4cd964;
+  border: none;
+  border-radius: 50%;
 }
 
 .track-delete {
   background: #ff3b30;
   border: none;
-  border-radius: 4px;
-  color: white;
   padding: 0.3rem 0.6rem;
-  cursor: pointer;
-}
-
-.track.fade-out {
-  opacity: 0;
-  transition: opacity 0.25s ease-out;
-}
-
-/* Track Play */
-.track-play {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #4cd964;
-  /* green play */
-  border: none;
-  cursor: pointer;
-  color: black;
-  font-size: 1rem;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 0.5rem;
-}
-
-.track-play.playing {
-  background: #ff3b30;
-  /* red stop */
-  color: white;
-}
-
-.track-play:active {
-  transform: scale(0.90);
-}
-
-/*  */
-
-/* Gain control */
-.gain-control {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.gain-control input[type="range"] {
-  width: 200px;
-}
-
-/* Add new track button */
-.add-track {
-  width: 100%;
-  padding: 1rem 0;
-  border: 2px dashed #555;
-  border-radius: 8px;
-  color: #aaa;
-  text-align: center;
-  font-size: 1.1rem;
-  cursor: pointer;
-  margin-top: 1rem;
-}
-
-.add-track:hover {
-  background: #222;
-  border-color: #777;
-  color: #ddd;
-}
-
-/* Track arming state */
-.track.record-armed {
-  border-color: #ff7a00;
-  box-shadow: 0 0 8px #ff7a00aa;
-}
-
-.track.record-armed .waveform {
-  color: #ff7a00;
-  background: #2a1a00;
-}
-
-/* Track stuff end */
-
-
-
-/* Top transport bar */
-/* .transport {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: #1a1a1a;
-  border-bottom: 1px solid #333;
-} */
-
-.transport button {
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  background: #ff7a00;
-  border: none;
-  border-radius: 6px;
-  color: black;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.transport button:active {
-  transform: scale(0.97);
-}
-
-.transport .stop-btn {
-  background: #ff3b30;
-}
-
-/* Play Button */
-.play-btn {
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  font-weight: bold;
-  background: #4cd964;
-  /* green play color */
-  color: black;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.play-btn:active {
-  transform: scale(0.97);
-}
-
-.play-btn:hover {
-  background: #5ff57a;
-}
-
-
-.record-btn.active {
-  background: #ff3b30;
-  /* bright red */
-  color: white;
-}
-
-.play-btn.active {
-  background: #4cd964;
-  /* green */
-  color: black;
-}
-
-
-/* meter stuff */
-
-.meter {
-  width: 120px;
-  height: 20px;
-  background: #333;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-  border: 1px solid #555;
-  opacity: 0;
-  transition: opacity 150ms ease;
-}
-
-.meter.visible {
-  opacity: 1;
-}
-
-.meter-bar {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #4cd964, #ffcc00, #ff3b30);
-}
-
-.meter-value {
-  position: absolute;
-  top: 0;
-  right: 4px;
-  font-size: 0.7rem;
-  pointer-events: none;
-  color: white;
-}
-
-
-.transport {
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  background: #1a1a1a;
-  border-bottom: 1px solid #333;
-  gap: 1rem;
-}
-
-
-
-.transport .timer {
-  margin-left: 1rem;        /* space after Play button */
-  margin-right: auto;       /* push everything else (meter) to the right */
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #0f0;
-}
-
-
-/* #zoom-slider {
-  width: 150px;
-  margin-left: 1rem;
-} */
-
-
-/* zoom slider */
-
-.zoom-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-left: 1rem;
-  width: 160px; 
-}
-
-/* --- Slider Track --- */
-#zoom-slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: #333;
-  outline: none;
-  cursor: pointer;
-  margin-bottom: 6px;
-}
-
-/* --- Slider Thumb --- */
-#zoom-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  height: 14px;
-  width: 14px;
-  border-radius: 50%;
-  background: #ff9500;
-  border: 2px solid #222;
-  cursor: pointer;
-  transition: 0.1s ease;
-}
-
-#zoom-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-  background: #ffb347;
-}
-
-/* --- Firefox Thumb --- */
-#zoom-slider::-moz-range-thumb {
-  height: 14px;
-  width: 14px;
-  border-radius: 50%;
-  background: #ff9500;
-  border: 2px solid #222;
-}
-
-/* --- Labels --- */
-.zoom-labels {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  font-size: 0.7rem;
-  color: #aaa;
-  pointer-events: none;
-}
-
-.zoom-labels span {
-  width: 20%;
-  text-align: center;
-}
-/* more of same zoom stuff!
- */
-.zoom-container {
-  position: relative;
-  width: 160px;
-  margin-left: 1rem;
-}
-
-.zoom-labels {
-  position: relative;
-  width: 100%;
-  height: 12px; 
-  margin-top: 4px;
-}
-
-.zoom-labels span {
-  position: absolute;
-  font-size: 0.7rem;
-  color: #aaa;
-  transform: translateX(-50%); /* center on stop */
-  white-space: nowrap;
-}
-
-.zoom-labels span[data-pos="0"] { left: 0%; }
-.zoom-labels span[data-pos="1"] { left: 25%; }
-.zoom-labels span[data-pos="2"] { left: 50%; }
-.zoom-labels span[data-pos="3"] { left: 75%; }
-.zoom-labels span[data-pos="4"] { left: 100%; }
-/*  */
-
-
-.track-title.editing {
-  outline: 1px solid #ff9500;
-  background: #222;
   border-radius: 4px;
 }
 
-/* inspector button */
 .track-inspect {
   background: #222;
   border: 1px solid #555;
   border-radius: 4px;
   padding: 4px 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease, transform 0.12s ease;
-}
-
-.track-inspect:hover {
-  background: #333;
-  transform: scale(1.1);
 }
 
 .inspect-icon {
   width: 18px;
   height: 18px;
-  fill: #ffbf3f; /* your DAW's yellow/gold accent */
-  transition: fill 0.15s ease;
+  fill: #ffbf3f;
 }
-
-.track-inspect:hover .inspect-icon {
-  fill: #ffdf7a; /* lighter hover color */
-}
-/* end */
-
-/* #track-area { border: 2px solid red; }
-.tracks { border: 2px solid blue; }
-.track { border: 1px solid green; } */
-
-
-
-.waveform-canvas {
-  border-left: 2px solid red !important;
-}
-

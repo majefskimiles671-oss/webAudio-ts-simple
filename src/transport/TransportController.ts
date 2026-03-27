@@ -159,10 +159,7 @@ export class TransportController {
             this.stopMeter();
             this.hideMeter();
             await this.tracks.loadTracks();
-            await this.tracks.renderTracks(
-                document.getElementById("g_tracks")!,
-                this.tracks.zoom
-            );
+            await this.tracks.renderTracks();
             this.setState("idle");
         };
 
@@ -261,12 +258,19 @@ export class TransportController {
         this.updatePlayhead();
     }
 
+    stopPlayhead() {
+        cancelAnimationFrame(this.playheadRAF);
+        const playhead = document.getElementById("playhead")!;
+        playhead.style.transform = "translateX(0px)";
+    }
+
+
     updatePlayhead() {
         const elapsed = (performance.now() - this.playheadStart) / 1000;
         const x = elapsed * PIXELS_PER_SECOND * this.tracks.zoom;
+        const clamped = Math.min(x, this.tracks.timelineWidthPx);
 
         const playhead = document.getElementById("playhead")!;
-        const clamped = Math.min(x, this.tracks.timelineWidthPx);
         playhead.style.transform = `translateX(${clamped}px)`;
 
         this.autoScroll(clamped);
@@ -274,26 +278,27 @@ export class TransportController {
         this.playheadRAF = requestAnimationFrame(() => this.updatePlayhead());
     }
 
-    stopPlayhead() {
-        cancelAnimationFrame(this.playheadRAF);
-        const playhead = document.getElementById("playhead")!;
-        playhead.style.transform = "translateX(0px)";
-    }
+    autoScroll(playheadTimelineX: number) {
+        const area = document.getElementById("timeline-area")!;
+        const rect = area.getBoundingClientRect();
 
-    autoScroll(x: number) {
-        const area = document.getElementById("track-area")!;
-        const rightEdge = area.scrollLeft + area.clientWidth;
+        const playheadScreenX = rect.left + playheadTimelineX;
+        const rightEdge = rect.right;
         const threshold = 80;
 
-        if (x > rightEdge - threshold) {
-            area.scrollLeft = x - area.clientWidth + threshold;
+        if (playheadScreenX > rightEdge - threshold) {
+            area.scrollLeft += (playheadScreenX - (rightEdge - threshold));
         }
     }
 
+
+
     resetScroll() {
-        const area = document.getElementById("track-area")!;
+        const area = document.getElementById("timeline-area");
+        if (!area) return;
         area.scrollLeft = 0;
     }
+
 
 
     onGlobalPlaybackEnded() {

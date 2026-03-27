@@ -32,15 +32,12 @@
 
 <body>
 
-    <!-- Transport bar -->
     <div class="transport">
+        <!-- transport bar -->
         <button id="g-record-btn" class="record-btn">● Record</button>
         <button id="g-play-btn" class="play-btn">▶ Play</button>
 
         <div class="timer">00:00.00</div>
-
-
-
 
         <div class="zoom-container">
             <input id="zoom-slider" type="range" min="0" max="4" step="1" value="2" />
@@ -54,27 +51,72 @@
             </div>
         </div>
 
-
-
-
         <div id="meter" class="meter">
             <div id="meter-bar" class="meter-bar"></div>
             <div id="meter-value" class="meter-value">-∞ dB</div>
         </div>
-
     </div>
 
-    <!-- <div id="track-background"> -->
-    <div id="track-area">
-        <div id="g_tracks" class="tracks">
-            <div id="playhead" class="playhead"></div>
+
+
+    <div class="tracks-root">
+
+        <!-- LEFT FIXED TRACK CONTROLS COLUMN -->
+        <div id="tracks-controls" class="tracks-controls-column"></div>
+
+        <!-- RIGHT SCROLLING TIMELINE COLUMN -->
+        <div id="timeline-area">
+
+            <!-- PLAYHEAD OVERLAY -->
+            <div id="timeline-overlay">
+                <div id="playhead"></div>
+            </div>
+
+            <!-- ACTUAL WAVEFORM ROWS -->
+            <div id="tracks-timeline" class="tracks-timeline-column"></div>
+
         </div>
+
     </div>
-    <!-- </div> -->
 
 
-    <!-- Templates -->
+    <!-- TRACK TEMPLATE -->
     <template id="track-template">
+        <div class="track">
+
+            <!-- Left Controls Column (Fixed) -->
+            <div class="track-controls">
+                <div class="track-header">
+                    <span class="track-title"></span>
+
+                    <div class="track-buttons">
+                        <button class="track-play">▶</button>
+
+                        <button class="track-inspect">
+                            <svg class="inspect-icon" viewBox="0 0 20 20">
+                                <rect x="2" y="10" width="3" height="8" rx="1" />
+                                <rect x="8" y="6" width="3" height="12" rx="1" />
+                                <rect x="14" y="2" width="3" height="16" rx="1" />
+                            </svg>
+                        </button>
+
+                        <button class="track-delete">Delete</button>
+                    </div>
+                </div>
+
+                <div class="track-footer">
+                    Gain: <input type="range" class="gain-slider">
+                </div>
+            </div>
+
+            <!-- Right Timeline Column (Scrollable) -->
+            <div class="track-timeline">
+                <div class="waveform"></div>
+            </div>
+
+        </div>
+    </template>
+    <!-- <template id="track-template">
         <div class="track">
             <div class="track-header">
 
@@ -101,7 +143,7 @@
                 <input type="range" min="0" max="2" step="0.01" value="1" />
             </div>
         </div>
-    </template>
+    </template> -->
     <template>
         <!-- Tracks list -->
         <div id="tracks" class="tracks">

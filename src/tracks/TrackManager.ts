@@ -22,7 +22,7 @@ export class TrackManager {
 
   public async setZoom(z: number, container: HTMLElement) {
     this.zoom = z;
-    await this.renderTracks(container, this.zoom);
+    await this.renderTracks();
   }
 
 
@@ -33,75 +33,61 @@ export class TrackManager {
     );
   }
 
-  async renderTracks(container: HTMLElement, zoom: number) {
-    container.innerHTML = `<div id="playhead" class="playhead"></div>`;
+  async renderTracks() {
+    const controlsCol = document.getElementById("tracks-controls")!;
+    const timelineCol = document.getElementById("tracks-timeline")!;
+
+    controlsCol.innerHTML = "";
+    timelineCol.innerHTML = "";
 
     this.timelineWidthPx = 0;
 
-    for (const rec of this.tracks) {
-      const width = Math.max(50, rec.duration * PIXELS_PER_SECOND * zoom);
-      this.timelineWidthPx = Math.max(this.timelineWidthPx, width);
-    }
-
     for (let i = 0; i < this.tracks.length; i++) {
-      await this.renderTrack(container, this.tracks[i]!, i, zoom);
+      const rec = this.tracks[i]!;
+
+      const template = document.getElementById("track-template") as HTMLTemplateElement;
+      const clone = template.content.cloneNode(true) as DocumentFragment;
+
+      const trackEl = clone.querySelector(".track") as HTMLElement;
+
+      const controlsEl = trackEl.children[0] as HTMLElement;
+      const timelineEl = trackEl.children[1] as HTMLElement;
+
+      // Title
+      const title = controlsEl.querySelector(".track-title")! as HTMLElement;
+      title.textContent = rec.name ?? `Track ${i + 1}`;
+
+      // Play button
+      controlsEl.querySelector<HTMLElement>(".track-play")!.onclick = () => this.singleTrackPlay(rec);
+
+      // Inspect button
+      controlsEl.querySelector<HTMLElement>(".track-inspect")!.onclick = async () => {
+        const blob = await this.storage.get(rec.id);
+        console.log(await this.inspector.inspectBlob(blob));
+      };
+
+      // Delete button
+      controlsEl.querySelector<HTMLElement>(".track-delete")!.onclick = async () => {
+        await this.storage.delete(rec.id);
+        await this.loadTracks();
+        await this.renderTracks();
+      };
+
+      // Waveform
+      const waveformElem = timelineEl.querySelector(".waveform") as HTMLElement;
+      const width = rec.duration * PIXELS_PER_SECOND * this.zoom;
+      this.timelineWidthPx = Math.max(this.timelineWidthPx, width);
+
+      const blob = await this.storage.get(rec.id);
+      await this.waveform.draw(waveformElem, blob, width);
+
+      // Append
+      controlsCol.appendChild(controlsEl);
+      timelineCol.appendChild(timelineEl);
     }
   }
 
-  async renderTrack(
-    container: HTMLElement,
-    rec: Recording,
-    index: number,
-    zoom: number
-  ) {
-    const template = document.getElementById("track-template") as HTMLTemplateElement;
-    const clone = template.content.cloneNode(true) as DocumentFragment;
 
-    const el = clone.querySelector(".track") as HTMLElement;
-
-    const inspectBtn = el.querySelector(".track-inspect") as HTMLButtonElement;
-
-    inspectBtn.onclick = async () => {
-      const blob = await this.storage.get(rec.id);
-      const info = await this.inspector.inspectBlob(blob);
-
-      console.log("Audio Info for", rec.name, info);
-      const stat = info.channelStats[0]!;
-      // OPTIONAL: pretty-print as an alert or panel
-      alert(
-        `Track: ${rec.name ?? "(unnamed)"}\n` +
-        `Sample rate: ${info.sampleRate}\n` +
-        `Duration: ${info.duration.toFixed(2)} sec\n` +
-        `Channels: ${info.channels}\n` +
-        `Peak: ${stat.peakDb.toFixed(1)} dBFS\n` +
-        `RMS: ${stat.rmsDb.toFixed(1)} dBFS\n` +
-        `Clipped: ${stat.clipped ? 'YES' : 'no'}`
-      );
-    };
-
-
-    const title = el.querySelector(".track-title")! as HTMLElement;
-    title.textContent = rec.name ?? `Track ${index + 1}`;
-    this.makeTitleEditable(title, rec);
-
-    const deleteBtn = el.querySelector(".track-delete") as HTMLElement;
-    deleteBtn.onclick = async () => {
-      await this.storage.delete(rec.id);
-      await this.loadTracks();
-      await this.renderTracks(container, zoom);
-    };
-
-    const playBtn = el.querySelector(".track-play") as HTMLElement;
-    playBtn.onclick = () => this.singleTrackPlay(rec);
-
-    const waveformElem = el.querySelector(".waveform")!;
-    const width = Math.max(50, rec.duration * PIXELS_PER_SECOND * zoom);
-    const blob = await this.storage.get(rec.id);
-
-    await this.waveform.draw(waveformElem, blob, width);
-
-    container.appendChild(clone);
-  }
 
   async singleTrackPlay(rec: Recording) {
     const blob = await this.storage.get(rec.id);
