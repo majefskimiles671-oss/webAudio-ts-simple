@@ -71,7 +71,7 @@ body {
 #timeline-overlay {
   position: absolute;
   top: 0;
-  left: 0;       /* timeline-pane already excludes controls */
+  left: 220px;       /* timeline-pane already excludes controls */
   right: 0;
   bottom: 0;
   pointer-events: none;
@@ -171,4 +171,30 @@ body {
   width: 18px;
   height: 18px;
   fill: #ffbf3f;
+}
+
+
+
+
+.track-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  align-items: stretch; /* CRITICAL */
+  margin-bottom: 1rem;
+}
+
+.track-controls {
+  background: #222;
+  padding: 0.6rem;
+  border-radius: 8px 0 0 8px;
+}
+
+.track-timeline {
+  padding: 0.6rem 0;
+}
+
+.waveform {
+  height: 80px; /* authoritative height */
+  background: #333;
+  border-radius: 0 8px 8px 0;
 }

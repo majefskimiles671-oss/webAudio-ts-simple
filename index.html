@@ -59,32 +59,24 @@
 
 
 
-    <div class="tracks-root">
+    <div id="timeline-area">
 
-        <!-- LEFT FIXED TRACK CONTROLS COLUMN -->
-        <div id="tracks-controls" class="tracks-controls-column"></div>
-
-        <!-- RIGHT SCROLLING TIMELINE COLUMN -->
-        <div id="timeline-area">
-
-            <!-- PLAYHEAD OVERLAY -->
-            <div id="timeline-overlay">
-                <div id="playhead"></div>
-            </div>
-
-            <!-- ACTUAL WAVEFORM ROWS -->
-            <div id="tracks-timeline" class="tracks-timeline-column"></div>
-
+        <!-- Global playhead overlay -->
+        <div id="timeline-overlay">
+            <div id="playhead"></div>
         </div>
+
+        <!-- Single unified track list -->
+        <div id="tracks" class="tracks"></div>
 
     </div>
 
 
+
     <!-- TRACK TEMPLATE -->
     <template id="track-template">
-        <div class="track">
+        <div class="track-row">
 
-            <!-- Left Controls Column (Fixed) -->
             <div class="track-controls">
                 <div class="track-header">
                     <span class="track-title"></span>
@@ -105,11 +97,10 @@
                 </div>
 
                 <div class="track-footer">
-                    Gain: <input type="range" class="gain-slider">
+                    Gain <input type="range" class="gain-slider">
                 </div>
             </div>
 
-            <!-- Right Timeline Column (Scrollable) -->
             <div class="track-timeline">
                 <div class="waveform"></div>
             </div>

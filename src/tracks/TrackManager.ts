@@ -34,58 +34,76 @@ export class TrackManager {
   }
 
   async renderTracks() {
-    const controlsCol = document.getElementById("tracks-controls")!;
-    const timelineCol = document.getElementById("tracks-timeline")!;
-
-    controlsCol.innerHTML = "";
-    timelineCol.innerHTML = "";
-
+    const container = document.getElementById("tracks")!;
+    container.innerHTML = "";
     this.timelineWidthPx = 0;
 
     for (let i = 0; i < this.tracks.length; i++) {
       const rec = this.tracks[i]!;
 
-      const template = document.getElementById("track-template") as HTMLTemplateElement;
+      const template = document.getElementById(
+        "track-template"
+      ) as HTMLTemplateElement;
+
       const clone = template.content.cloneNode(true) as DocumentFragment;
+      const rowEl = clone.querySelector(".track-row") as HTMLElement;
 
-      const trackEl = clone.querySelector(".track") as HTMLElement;
+      /* =========================
+         LEFT: TRACK CONTROLS
+      ========================= */
 
-      const controlsEl = trackEl.children[0] as HTMLElement;
-      const timelineEl = trackEl.children[1] as HTMLElement;
+      const titleEl = rowEl.querySelector(".track-title") as HTMLElement;
+      titleEl.textContent = rec.name ?? `Track ${i + 1}`;
+      this.makeTitleEditable(titleEl, rec);
 
-      // Title
-      const title = controlsEl.querySelector(".track-title")! as HTMLElement;
-      title.textContent = rec.name ?? `Track ${i + 1}`;
+      const playBtn = rowEl.querySelector(".track-play") as HTMLButtonElement;
+      playBtn.onclick = () => this.singleTrackPlay(rec);
 
-      // Play button
-      controlsEl.querySelector<HTMLElement>(".track-play")!.onclick = () => this.singleTrackPlay(rec);
-
-      // Inspect button
-      controlsEl.querySelector<HTMLElement>(".track-inspect")!.onclick = async () => {
+      const inspectBtn = rowEl.querySelector(".track-inspect") as HTMLButtonElement;
+      inspectBtn.onclick = async () => {
         const blob = await this.storage.get(rec.id);
-        console.log(await this.inspector.inspectBlob(blob));
+        const info = await this.inspector.inspectBlob(blob);
+        console.log("Track stats:", info);
       };
 
-      // Delete button
-      controlsEl.querySelector<HTMLElement>(".track-delete")!.onclick = async () => {
+      const deleteBtn = rowEl.querySelector(".track-delete") as HTMLButtonElement;
+      deleteBtn.onclick = async () => {
         await this.storage.delete(rec.id);
         await this.loadTracks();
         await this.renderTracks();
       };
 
-      // Waveform
-      const waveformElem = timelineEl.querySelector(".waveform") as HTMLElement;
-      const width = rec.duration * PIXELS_PER_SECOND * this.zoom;
+      /* =========================
+         RIGHT: TIMELINE / WAVEFORM
+      ========================= */
+
+      const timelineEl = rowEl.querySelector(
+        ".track-timeline .waveform"
+      ) as HTMLElement;
+
+      if (!timelineEl) {
+        console.error("Waveform element not found in template");
+        continue;
+      }
+
+      const width = Math.max(
+        50,
+        rec.duration * PIXELS_PER_SECOND * this.zoom
+      );
+
       this.timelineWidthPx = Math.max(this.timelineWidthPx, width);
 
       const blob = await this.storage.get(rec.id);
-      await this.waveform.draw(waveformElem, blob, width);
+      await this.waveform.draw(timelineEl, blob, width);
 
-      // Append
-      controlsCol.appendChild(controlsEl);
-      timelineCol.appendChild(timelineEl);
+      /* =========================
+         APPEND ROW
+      ========================= */
+
+      container.appendChild(rowEl);
     }
   }
+
 
 
 
