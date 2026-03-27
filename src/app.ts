@@ -39,45 +39,64 @@ async function loadAllTracksIntoUI() {
 }
 
 const g_recBtn = document.getElementById("g-record-btn")!;
-const g_stopBtn = document.getElementById("g-stop-btn")!;
+// const g_stopBtn = document.getElementById("g-stop-btn")!;
 const g_playBtn = document.getElementById("g-play-btn")!;
 const g_tracks = document.getElementById("g_tracks")!;
-
-g_recBtn.onclick = async () => {
-  if (transportState === "recording") {
-    return;
-  }
+async function startRecording() {
   await recorder.start();
-  setTransportState("recording");
-};
+}
+g_recBtn.onclick = async () => {
 
-g_stopBtn.onclick = async () => {
-  stopAllPlayback();
-  await stopRecording();
-  stopPlayhead();
-  onRecordingEnded();
-  await getTracksFromStorage();
-  loadAllTracksIntoUI();
-};
-g_playBtn.onclick = async () => {
-  if (transportState === "playing") {
-    stopAllPlayback();
-    stopPlayhead();
-    onPlaybackEnded();
-    return;
-  } else if (transportState === "recording") {
-    stopAllPlayback();
+  if (transportState === "idle") {
+    // start recording
+    await startRecording();
+    setTransportState("recording");
+  }
+  else if (transportState === "recording") {
+    // toggle off
     await stopRecording();
     stopPlayhead();
     onRecordingEnded();
     await getTracksFromStorage();
     loadAllTracksIntoUI();
-    // return;
   }
-  await playAllTracks(tracksStorage, storage);
-  startPlayhead();
-  setTransportState("playing");
-  console.log("right after calling playAllTracks");
+  else if (transportState === "playing") {
+    // do nothing
+    return;
+  }
+  // AI says to make sure the AudioElement.onstop changes the state to idle
+};
+
+// g_stopBtn.onclick = async () => {
+//   stopAllPlayback();
+//   await stopRecording();
+//   stopPlayhead();
+//   onRecordingEnded();
+//   await getTracksFromStorage();
+//   loadAllTracksIntoUI();
+// };
+g_playBtn.onclick = async () => {
+  if (transportState === "idle") {
+    await playAllTracks(tracksStorage, storage);
+    startPlayhead();
+    setTransportState("playing");
+    return;
+  }
+  else if (transportState === "playing") {
+    stopAllPlayback();
+    stopPlayhead();
+    onPlaybackEnded();
+    return;
+  }
+  else if (transportState === "recording") {
+    // stopAllPlayback();
+    // await stopRecording();
+    // stopPlayhead();
+    // onRecordingEnded();
+    // await getTracksFromStorage();
+    // loadAllTracksIntoUI();
+    return;
+  }
 };
 
 // Transport State Machine
@@ -334,11 +353,11 @@ function bindTrackPlayButton(
     // activePlayers.push(audioEl);
     audioEl.onended = () => {
 
-      // activePlayers = activePlayers.filter(p => p !== audioEl); // may not be needed for per-track playback
+      activePlayers = activePlayers.filter(p => p !== audioEl); // may not be needed for per-track playback
       // If no more players, reset transport state
-      // if (activePlayers.length === 0) {
-      //   setTransportState("idle");
-      // } // not for per-track playback
+      if (activePlayers.length === 0) {
+        setTransportState("idle");
+      } // maybe not for per-track playback?
 
       // Reset UI when done playing
       audioEl = null;
