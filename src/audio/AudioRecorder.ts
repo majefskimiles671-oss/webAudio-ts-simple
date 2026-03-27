@@ -3,13 +3,19 @@ export class AudioRecorder {
   private mediaRecorder?: MediaRecorder;
   private chunks: Blob[] = [];
 
-  constructor(private mimeType = "audio/webm") {}
+  constructor(private mimeType = "audio/webm") { }
+
+  onstop: (() => void) | null = null;
 
   async start() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     this.chunks = [];
 
     this.mediaRecorder = new MediaRecorder(stream, { mimeType: this.mimeType });
+
+    this.mediaRecorder.onstop = () => {
+      if (this.onstop) this.onstop();
+    };
 
     this.mediaRecorder.ondataavailable = e => this.chunks.push(e.data);
     this.mediaRecorder.start();

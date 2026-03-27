@@ -21,10 +21,49 @@ function getTimelineWidth() {
 }
 
 
+let timerStartTime = 0;
+let timerRAF = 0;
+
+function startTimer() {
+  timerStartTime = performance.now();
+  updateTimer();
+}
+function updateTimer() {
+  const timerElem = document.querySelector(".timer") as HTMLElement;
+  const elapsedMs = performance.now() - timerStartTime;
+
+  const totalSeconds = elapsedMs / 1000;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  const hundredths = Math.floor((totalSeconds * 100) % 100);
+
+  timerElem.textContent = 
+      `${String(minutes).padStart(2, "0")}:` +
+      `${String(seconds).padStart(2, "0")}.` +
+      `${String(hundredths).padStart(2, "0")}`;
+
+  timerRAF = requestAnimationFrame(updateTimer);
+}
+
+function stopTimer() {
+  cancelAnimationFrame(timerRAF);
+
+  const timerElem = document.querySelector(".timer") as HTMLElement;
+  timerElem.textContent = "00:00.00";
+}
+
 const recorder = new AudioRecorder();
 const storage = new LocalStorageProvider();  // ← Swap providers here
 let activePlayers: HTMLAudioElement[] = [];
 let tracksStorage: StoredAudio[];
+
+
+recorder.onstop = () => {
+  stopTimer();
+  setTransportState("idle");
+
+  // handle saving blob... NO I don't think so!?
+};
 
 
 async function getTracksFromStorage() {
@@ -33,7 +72,8 @@ async function getTracksFromStorage() {
 }
 
 async function loadAllTracksIntoUI() {
-  g_tracks.innerHTML = "";
+  g_tracks.innerHTML = `<div id="playhead" class="playhead"></div>`;
+  findPlayhead();
   await getTracksFromStorage();
   tracksStorage.forEach((rec, idx) => addTrack(rec, idx));
 }
@@ -50,10 +90,12 @@ g_recBtn.onclick = async () => {
   if (transportState === "idle") {
     // start recording
     await startRecording();
+    startTimer();
     setTransportState("recording");
   }
   else if (transportState === "recording") {
     // toggle off
+    stopTimer()
     await stopRecording();
     stopPlayhead();
     onRecordingEnded();
@@ -78,11 +120,13 @@ g_recBtn.onclick = async () => {
 g_playBtn.onclick = async () => {
   if (transportState === "idle") {
     await playAllTracks(tracksStorage, storage);
+    startTimer();
     startPlayhead();
     setTransportState("playing");
     return;
   }
   else if (transportState === "playing") {
+    stopTimer();
     stopAllPlayback();
     stopPlayhead();
     onPlaybackEnded();
@@ -188,12 +232,16 @@ function startPlayhead() {
 
 
 const PIXELS_PER_SECOND = 100;
-const playhead = document.getElementById("playhead")!;
+let playhead = document.getElementById("playhead")!;
+
+function findPlayhead() {
+  playhead = document.getElementById("playhead")!;
+}
 
 function animatePlayhead() {
   const elapsed = (performance.now() - playheadStartTime) / 1000;
   const x = elapsed * PIXELS_PER_SECOND;
-
+console.log(playhead);
   playhead.style.transform = `translateX(${x}px)`;
   playheadAnimationFrame = requestAnimationFrame(animatePlayhead);
 }
@@ -214,7 +262,7 @@ function animatePlayhead() {
 function stopPlayhead() {
   console.log("stopPlayhead");
   cancelAnimationFrame(playheadAnimationFrame);
-  const playhead = document.getElementById("playhead")!;
+  // const playhead = document.getElementById("playhead")!;
   playhead.style.transform = "translateX(0px)";
 }
 
@@ -231,6 +279,7 @@ async function playAllTracks(recordings: Recording[], storage: StorageProvider) 
       // If no more players, reset transport state
       if (activePlayers.length === 0) {
         stopPlayhead();
+        stopTimer();
         setTransportState("idle");
       }
       audio = null;
