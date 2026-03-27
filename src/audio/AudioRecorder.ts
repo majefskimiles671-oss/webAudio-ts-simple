@@ -1,4 +1,3 @@
-// src/audio/AudioRecorder.ts
 export class AudioRecorder {
   private mediaRecorder?: MediaRecorder;
   private chunks: BlobPart[] = [];
@@ -20,25 +19,21 @@ export class AudioRecorder {
     this.mediaRecorder.onstop = async () => {
       const blob = new Blob(this.chunks, { type: "audio/webm" });
 
-      // Compute exact duration
+      // Compute real duration
       const ctx = new AudioContext();
       const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
       const duration = buf.length / buf.sampleRate;
+      ctx.close();
 
       if (this.onstop) this.onstop(blob, duration);
-      ctx.close();
     };
 
     this.mediaRecorder.start();
   }
 
-  stop(): Promise<Blob> {
-    return new Promise(resolve => {
-      if (!this.mediaRecorder) return resolve(new Blob([]));
-      const mr = this.mediaRecorder;
-
-      mr.onstop = () => resolve(new Blob(this.chunks, { type: "audio/webm" }));
-      mr.stop();
-    });
+  stop() {
+    if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+      this.mediaRecorder.stop();
+    }
   }
 }

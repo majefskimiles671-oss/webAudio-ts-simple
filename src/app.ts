@@ -14,15 +14,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const transport = new TransportController(audio, tracks, recorder);
 
 
-  const zoomLevels = [0.25, 0.5, 1, 2, 4];
-  const zoomSlider = document.getElementById("zoom-slider") as HTMLInputElement;
-
-  zoomSlider.oninput = async () => {
-    const idx = parseInt(zoomSlider.value);
-    const zoom = zoomLevels[idx]!;
-    await tracks.setZoom(zoom, document.getElementById("g_tracks")!);
-  };
-
 
   await tracks.loadTracks();
   await tracks.renderTracks(document.getElementById("g_tracks")!, 1);
