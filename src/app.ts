@@ -79,7 +79,6 @@ async function loadAllTracksIntoUI() {
 }
 
 const g_recBtn = document.getElementById("g-record-btn")!;
-// const g_stopBtn = document.getElementById("g-stop-btn")!;
 const g_playBtn = document.getElementById("g-play-btn")!;
 const g_tracks = document.getElementById("g_tracks")!;
 async function startRecording() {
@@ -109,14 +108,6 @@ g_recBtn.onclick = async () => {
   // AI says to make sure the AudioElement.onstop changes the state to idle
 };
 
-// g_stopBtn.onclick = async () => {
-//   stopAllPlayback();
-//   await stopRecording();
-//   stopPlayhead();
-//   onRecordingEnded();
-//   await getTracksFromStorage();
-//   loadAllTracksIntoUI();
-// };
 g_playBtn.onclick = async () => {
   if (transportState === "idle") {
     await playAllTracks(tracksStorage, storage);
@@ -133,12 +124,6 @@ g_playBtn.onclick = async () => {
     return;
   }
   else if (transportState === "recording") {
-    // stopAllPlayback();
-    // await stopRecording();
-    // stopPlayhead();
-    // onRecordingEnded();
-    // await getTracksFromStorage();
-    // loadAllTracksIntoUI();
     return;
   }
 };
@@ -241,28 +226,15 @@ function findPlayhead() {
 function animatePlayhead() {
   const elapsed = (performance.now() - playheadStartTime) / 1000;
   const x = elapsed * PIXELS_PER_SECOND;
-console.log(playhead);
   playhead.style.transform = `translateX(${x}px)`;
   playheadAnimationFrame = requestAnimationFrame(animatePlayhead);
 }
 
 
-// function animatePlayhead() {
-//   const playhead = document.getElementById("playhead")!;
-//   const elapsed = (performance.now() - playheadStartTime) / 1000; // seconds
-
-//   const px = elapsed * 100; // 100px per second (or whatever your timeline scale is)
-//   playhead.style.transform = `translateX(${px}px)`;
-//   const timelineWidth = getTimelineWidth();
-//   const x = Math.min(px, timelineWidth);
-//   playhead.style.transform = `translateX(${x}px)`;
-//   playheadAnimationFrame = requestAnimationFrame(animatePlayhead);
-// }
 
 function stopPlayhead() {
   console.log("stopPlayhead");
   cancelAnimationFrame(playheadAnimationFrame);
-  // const playhead = document.getElementById("playhead")!;
   playhead.style.transform = "translateX(0px)";
 }
 
@@ -275,7 +247,6 @@ async function playAllTracks(recordings: Recording[], storage: StorageProvider) 
     let audio: HTMLAudioElement | null = new Audio(url);
     audio.onended = () => {
       activePlayers = activePlayers.filter(p => p !== audio);
-      console.log(`activePlayers count onended: ${activePlayers.length}`);
       // If no more players, reset transport state
       if (activePlayers.length === 0) {
         stopPlayhead();
@@ -285,13 +256,11 @@ async function playAllTracks(recordings: Recording[], storage: StorageProvider) 
       audio = null;
     };
     activePlayers.push(audio);
-    console.log(`activePlayers count: ${activePlayers.length}`);
     audio.play();
   }
 }
 
 function addTrack(recording: any, index: any) {
-  console.log("addtrack");
   const template = document.getElementById("track-template")! as HTMLTemplateElement;
   const clone = template.content.cloneNode(true) as DocumentFragment;
   const trackEl = clone.querySelector(".track") as HTMLElement;
@@ -414,19 +383,10 @@ function bindTrackPlayButton(
       playBtn.classList.remove("playing");
     };
 
-    playBtn.textContent = "⏹";  // stop icon
+    playBtn.textContent = "⏹";
     playBtn.classList.add("playing");
 
     await audioEl.play();
   };
 }
 
-
-// document.addEventListener("DOMContentLoaded", () => main());
-
-// async function main() {
-//   await loadAllTracksIntoUI();
-//   bindTransportButtons();
-//   initPlayhead();
-//   console.log("DAW Ready");
-// }
