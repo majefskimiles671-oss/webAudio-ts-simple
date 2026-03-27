@@ -439,6 +439,35 @@ body {
   border-radius: 4px;
 }
 
+/* inspector button */
+.track-inspect {
+  background: #222;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.track-inspect:hover {
+  background: #333;
+  transform: scale(1.1);
+}
+
+.inspect-icon {
+  width: 18px;
+  height: 18px;
+  fill: #ffbf3f; /* your DAW's yellow/gold accent */
+  transition: fill 0.15s ease;
+}
+
+.track-inspect:hover .inspect-icon {
+  fill: #ffdf7a; /* lighter hover color */
+}
+/* end */
 
 /* #track-area { border: 2px solid red; }
 .tracks { border: 2px solid blue; }

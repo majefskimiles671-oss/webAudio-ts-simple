@@ -1,6 +1,7 @@
 // src/tracks/TrackManager.ts
 import type { StorageProvider, Recording } from "../storage/StorageProvider.js";
 import { AudioEngine } from "../audio/AudioEngine.js";
+import { AudioInspector } from "../audio/AudioInspector.js";
 import { WaveformRenderer } from "./WaveformRenderer.js";
 
 export const PIXELS_PER_SECOND = 100;
@@ -14,7 +15,8 @@ export class TrackManager {
   constructor(
     private storage: StorageProvider,
     private audio: AudioEngine,
-    private waveform: WaveformRenderer
+    private waveform: WaveformRenderer,
+    private inspector: AudioInspector
   ) { }
 
 
@@ -56,6 +58,27 @@ export class TrackManager {
     const clone = template.content.cloneNode(true) as DocumentFragment;
 
     const el = clone.querySelector(".track") as HTMLElement;
+
+    const inspectBtn = el.querySelector(".track-inspect") as HTMLButtonElement;
+
+    inspectBtn.onclick = async () => {
+      const blob = await this.storage.get(rec.id);
+      const info = await this.inspector.inspectBlob(blob);
+
+      console.log("Audio Info for", rec.name, info);
+      const stat = info.channelStats[0]!;
+      // OPTIONAL: pretty-print as an alert or panel
+      alert(
+        `Track: ${rec.name ?? "(unnamed)"}\n` +
+        `Sample rate: ${info.sampleRate}\n` +
+        `Duration: ${info.duration.toFixed(2)} sec\n` +
+        `Channels: ${info.channels}\n` +
+        `Peak: ${stat.peakDb.toFixed(1)} dBFS\n` +
+        `RMS: ${stat.rmsDb.toFixed(1)} dBFS\n` +
+        `Clipped: ${stat.clipped ? 'YES' : 'no'}`
+      );
+    };
+
 
     const title = el.querySelector(".track-title")! as HTMLElement;
     title.textContent = rec.name ?? `Track ${index + 1}`;
