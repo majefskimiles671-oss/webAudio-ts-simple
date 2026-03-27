@@ -92,14 +92,17 @@ function startPlayhead() {
 
 function animatePlayhead() {
   const elapsed = (performance.now() - playheadStartTime) / 1000;
-  playhead.style.transform = `translateX(${elapsed * PIXELS_PER_SECOND * zoom}px)`;
 
+  const shouldClamp = true;
+  if (shouldClamp) {
+    const x = elapsed * PIXELS_PER_SECOND * zoom;
+    const clamped = Math.min(x, timelineWidthPx);
+    playhead.style.transform = `translateX(${clamped}px)`;
+  } else {
+    playhead.style.transform = `translateX(${elapsed * PIXELS_PER_SECOND * zoom}px)`;
+  }
 
-  // const x = elapsed * PIXELS_PER_SECOND * zoom;
-  // const clamped = Math.min(x, timelineWidthPx);
-  // playhead.style.transform = `translateX(${clamped}px)`;
   playheadRAF = requestAnimationFrame(animatePlayhead);
-
 }
 
 function stopPlayhead() {
@@ -116,9 +119,9 @@ g_recBtn.onclick = async () => {
     setTransportState("recording");
   }
   else if (transportState === "recording") {
+    stopPlayhead();
     await stopRecording();
     stopTimer();
-    stopPlayhead();
     setTransportState("idle");
     await reloadTracksIntoUI();
   }
@@ -127,14 +130,14 @@ g_recBtn.onclick = async () => {
 g_playBtn.onclick = async () => {
   if (transportState === "idle") {
     startTimer();
-    startPlayhead();
     await playAllTracks(tracksStorage, storage);
+    startPlayhead();
     setTransportState("playing");
   }
   else if (transportState === "playing") {
+    stopPlayhead();
     stopTimer();
     stopAllPlayback();
-    stopPlayhead();
     setTransportState("idle");
   }
 };
@@ -243,7 +246,7 @@ async function addTrack(recording: Recording, index: number) {
 
   // update timeline width
   timelineWidthPx = Math.max(timelineWidthPx, width!);
-
+  console.log(`timelineWidthPx in addTrack: ${timelineWidthPx}`);
 
   g_tracks.appendChild(clone);
 }
@@ -391,6 +394,7 @@ async function buildWaveform(
   const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
   const duration = audioBuffer.length / audioBuffer.sampleRate;
+  console.log(`duration in buildWaveForm: ${duration}`);
   const width = Math.max(50, duration * PIXELS_PER_SECOND * zoom);
 
   const height = 80;
@@ -565,4 +569,5 @@ document.addEventListener("DOMContentLoaded", () => main());
 async function main() {
   await reloadTracksIntoUI();
   console.log("DAW Ready");
+  console.log(`timelineWidthPx in main: ${timelineWidthPx}`);
 }
