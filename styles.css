@@ -1,3 +1,4 @@
+
 /* =============================
    GLOBAL
 ============================= */
@@ -18,7 +19,6 @@ body {
   flex-direction: column;
 }
 
-
 /* =============================
    TRANSPORT BAR
 ============================= */
@@ -31,47 +31,26 @@ body {
   border-bottom: 1px solid #333;
 }
 
-
 /* =============================
-   TWO-COLUMN TRACK GRID
+   TIMELINE AREA (GLOBAL SCROLL)
 ============================= */
 
-.tracks-root {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 220px 1fr; /* ← Left fixed controls, right timeline */
-  overflow: hidden;
-  position: relative;
-}
-
-
-/* LEFT COLUMN — FIXED CONTROLS */
-.tracks-controls-column {
-  overflow: hidden;          /* never scroll horizontally */
-  position: relative;
-  z-index: 50;
-  background: #111;
-}
-
-
-/* RIGHT COLUMN — SCROLLABLE TIMELINE */
 #timeline-area {
-  overflow-x: auto;          /* ← horizontal scroll lives HERE */
-  overflow-y: auto;
   position: relative;
-  scroll-behavior: smooth;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
   background: #111;
 }
 
-
-/* =================================
+/* =============================
    PLAYHEAD OVERLAY
-================================= */
+============================= */
 
 #timeline-overlay {
   position: absolute;
   top: 0;
-  left: 220px;       /* timeline-pane already excludes controls */
+  left: 220px;
   right: 0;
   bottom: 0;
   pointer-events: none;
@@ -82,33 +61,32 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 3px;
+  width: 2px;
   background: #ff9500;
 }
 
+/* =============================
+   TRACK ROW (AUTHORITATIVE)
+============================= */
 
-/* =================================
-   TRACK ROWS
-================================= */
-
-.track {
+.track-row {
   display: grid;
   grid-template-columns: 220px 1fr;
-  width: 100%;
+  align-items: stretch;
   margin-bottom: 1rem;
 }
 
-/* LEFT TRACK CONTROLS */
+/* =============================
+   TRACK CONTROLS (LEFT)
+============================= */
+
 .track-controls {
-  position: sticky;
-  left: 0;
-  top: 0;
-  padding: 0.6rem;
   background: #222;
-  z-index: 20;
+  padding: 0.6rem;
   border-radius: 8px 0 0 8px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
 }
 
 .track-header,
@@ -124,11 +102,13 @@ body {
   gap: 0.5rem;
 }
 
-/* RIGHT WAVEFORM COLUMN */
+/* =============================
+   TRACK TIMELINE (RIGHT)
+============================= */
+
 .track-timeline {
-  position: relative;
   padding: 0.6rem 0;
-  background: transparent;
+  position: relative;
 }
 
 .waveform {
@@ -139,18 +119,26 @@ body {
 }
 
 .waveform-canvas {
-  height: 100%;
   display: block;
+  height: 100%;
 }
 
+/* =============================
+   BUTTONS
+============================= */
 
-/* BUTTONS */
 .track-play {
   width: 32px;
   height: 32px;
   background: #4cd964;
   border: none;
   border-radius: 50%;
+  cursor: pointer;
+}
+
+.track-play.playing {
+  background: #ff3b30;
+  color: white;
 }
 
 .track-delete {
@@ -158,6 +146,7 @@ body {
   border: none;
   padding: 0.3rem 0.6rem;
   border-radius: 4px;
+  cursor: pointer;
 }
 
 .track-inspect {
@@ -165,36 +154,11 @@ body {
   border: 1px solid #555;
   border-radius: 4px;
   padding: 4px 6px;
+  cursor: pointer;
 }
 
 .inspect-icon {
   width: 18px;
   height: 18px;
   fill: #ffbf3f;
-}
-
-
-
-
-.track-row {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  align-items: stretch; /* CRITICAL */
-  margin-bottom: 1rem;
-}
-
-.track-controls {
-  background: #222;
-  padding: 0.6rem;
-  border-radius: 8px 0 0 8px;
-}
-
-.track-timeline {
-  padding: 0.6rem 0;
-}
-
-.waveform {
-  height: 80px; /* authoritative height */
-  background: #333;
-  border-radius: 0 8px 8px 0;
 }
