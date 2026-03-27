@@ -1,20 +1,23 @@
 // src/storage/StorageProvider.ts
-// export interface StoredAudio {
-//   id: string;
-//   timestamp: number;
-// }
-
-export interface StorageProvider {
-  save(blob: Blob, name: string ,duration: number): Promise<string>;
-  get(id: string): Promise<Blob>;
-  list(): Promise<Recording[]>;
-  delete(id: string): Promise<void>;
-}
 
 export interface Recording {
   id: string;
-  name: string;
   timestamp: number;
+
+  name: string | null;
+  gain: number;
   duration: number;
-  gain?: number; // optional for now
+}
+
+export interface StoredAudio extends Recording {
+  blob?: Blob;
+}
+
+export interface StorageProvider {
+  save(blob: Blob, duration: number, name?: string): Promise<string>;
+  get(id: string): Promise<Blob>;
+  list(): Promise<Recording[]>;
+  delete(id: string): Promise<void>;
+  updateName(id: string, name: string): Promise<void>;
+  updateGain(id: string, gain: number): Promise<void>;
 }

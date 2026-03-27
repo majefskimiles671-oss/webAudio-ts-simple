@@ -1,38 +1,44 @@
 // src/audio/AudioRecorder.ts
 export class AudioRecorder {
   private mediaRecorder?: MediaRecorder;
-  private chunks: Blob[] = [];
+  private chunks: BlobPart[] = [];
 
-  constructor(private mimeType = "audio/webm") { }
-
+  onstop: ((blob: Blob, duration: number) => void) | null = null;
   onstream: ((stream: MediaStream) => void) | null = null;
-  onstop: (() => void) | null = null;
 
   async start() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     if (this.onstream) this.onstream(stream);
+
+    this.mediaRecorder = new MediaRecorder(stream);
     this.chunks = [];
 
-    this.mediaRecorder = new MediaRecorder(stream, { mimeType: this.mimeType });
-
-    this.mediaRecorder.onstop = () => {
-      if (this.onstop) this.onstop();
+    this.mediaRecorder.ondataavailable = e => {
+      this.chunks.push(e.data);
     };
 
-    this.mediaRecorder.ondataavailable = e => this.chunks.push(e.data);
+    this.mediaRecorder.onstop = async () => {
+      const blob = new Blob(this.chunks, { type: "audio/webm" });
+
+      // Compute exact duration
+      const ctx = new AudioContext();
+      const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
+      const duration = buf.length / buf.sampleRate;
+
+      if (this.onstop) this.onstop(blob, duration);
+      ctx.close();
+    };
+
     this.mediaRecorder.start();
   }
 
-  async stop(): Promise<Blob> {
+  stop(): Promise<Blob> {
     return new Promise(resolve => {
-      if (!this.mediaRecorder) throw new Error("Recorder not started");
+      if (!this.mediaRecorder) return resolve(new Blob([]));
+      const mr = this.mediaRecorder;
 
-      this.mediaRecorder.onstop = () => {
-        const blob = new Blob(this.chunks, { type: this.mimeType });
-        resolve(blob);
-      };
-
-      this.mediaRecorder.stop();
+      mr.onstop = () => resolve(new Blob(this.chunks, { type: "audio/webm" }));
+      mr.stop();
     });
   }
 }

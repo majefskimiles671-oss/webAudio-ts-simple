@@ -1,28 +1,25 @@
+// src/storage/LocalStorageProvider.ts
+import type { StorageProvider, Recording } from "./StorageProvider.js";
 import { openDB } from "idb";
-import type { StorageProvider, Recording } from "./StorageProvider";
 
 export class LocalStorageProvider implements StorageProvider {
-  private dbPromise = openDB("audioDB", 1, {
-    upgrade(db) {
+  dbPromise = openDB("audioDB", 2, {
+    upgrade(db, oldVersion, newVersion, transaction) {
+      let store;
+
       if (!db.objectStoreNames.contains("audio")) {
-        db.createObjectStore("audio", { keyPath: "id" });
+        store = db.createObjectStore("audio", { keyPath: "id" });
+      } else {
+        store = transaction.objectStore("audio");
+      }
+
+      if (!store.indexNames.contains("name")) {
+        store.createIndex("name", "name");
       }
     }
   });
 
-  // async save(blob: Blob): Promise<string> {
-  //   const id = crypto.randomUUID();
-  //   const timestamp = Date.now();
-  //   const duration  = 0; //Not Sure about this
-
-  //   const db = await this.dbPromise;
-  //   await db.put("audio", { id, timestamp, blob, duration, name: "Track " + (timestamp % 10000) });
-
-  //   return id;
-  // }
-
-
-  async save(blob: Blob, name: string, duration: number): Promise<string> {
+  async save(blob: Blob, duration: number, name?: string): Promise<string> {
     const id = crypto.randomUUID();
     const timestamp = Date.now();
 
@@ -31,23 +28,20 @@ export class LocalStorageProvider implements StorageProvider {
       id,
       timestamp,
       blob,
-      duration,   // <<< ADD THIS
-      name: name,
-      gain: 1,
+      duration,
+      name: name ?? `Track ${timestamp}`,
+      gain: 1
     });
+
     return id;
   }
-
-
-
 
   async get(id: string): Promise<Blob> {
     const db = await this.dbPromise;
     const item = await db.get("audio", id);
-    if (!item) throw new Error("Audio not found: " + id);
+    if (!item) throw new Error("Not found");
     return item.blob;
   }
-
 
   async list(): Promise<Recording[]> {
     const db = await this.dbPromise;
@@ -56,27 +50,30 @@ export class LocalStorageProvider implements StorageProvider {
     return items.map(item => ({
       id: item.id,
       timestamp: item.timestamp,
-      duration: item.duration,
-      name: item.name ?? null,   // Explicitly return null if missing
-      gain: item.gain ?? 1,      // Default gain 1 if missing
+      name: item.name ?? null,
+      gain: item.gain ?? 1,
+      duration: item.duration ?? 0
     }));
   }
-
 
   async delete(id: string): Promise<void> {
     const db = await this.dbPromise;
     await db.delete("audio", id);
   }
 
-
-  async updateTrackName(id: string, newName: string) {
-    console.log(`updating track name: ${newName}`);
-    const db = await this.dbPromise; // or via storage method
+  async updateName(id: string, name: string): Promise<void> {
+    const db = await this.dbPromise;
     const item = await db.get("audio", id);
     if (!item) return;
-
-    item.name = newName;
+    item.name = name;
     await db.put("audio", item);
   }
 
+  async updateGain(id: string, gain: number): Promise<void> {
+    const db = await this.dbPromise;
+    const item = await db.get("audio", id);
+    if (!item) return;
+    item.gain = gain;
+    await db.put("audio", item);
+  }
 }
