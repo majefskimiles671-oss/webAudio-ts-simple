@@ -289,3 +289,55 @@ If canvas width affects row height, the layout is broken.
 .waveform owns height
 <canvas> owns width
 no width set on .waveform
+---
+
+If you want next:
+
+draw simple fake waveforms into the canvases
+add random silence gaps to test overlay math
+auto‑resync overlay on window resize
+
+---
+
+Yes — this is exactly the right moment to move to **CSS variables**.
+You already have the correct instinct.
+
+Below is a **clean, robust theming model** that:
+- keeps layout untouched
+- makes themes scalable
+- avoids copy‑pasted CSS blocks
+- stays easy to reason about in a layout demo
+
+---
+
+## Theme Rule — CSS Variables as the Only Theme Surface
+
+[*] All theme differences must be expressed via **CSS variables**  
+[*] Structural/layout CSS must never change per theme  
+[*] JS may only toggle a single theme attribute or class  
+
+---
+
+## Step 1 — Define Semantic Theme Variables (Once)
+
+Replace hardcoded colors with **semantic variables**:
+
+```css
+:root {
+  --bg-app: #111;
+  --bg-surface: #222;
+  --bg-panel: #1a1a1a;
+
+  --text-main: #eee;
+  --text-muted: #aaa;
+
+  --accent-primary: #ff9500;
+  --accent-danger: #ff3b30;
+  --accent-highlight: #ffd400;
+
+  --waveform-a: #333;
+  --waveform-b: #2a2a2a;
+
+  --border-subtle: #333;
+}
+``
