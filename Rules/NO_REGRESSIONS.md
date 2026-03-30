@@ -1,4 +1,6 @@
-# 🚫 No‑Regressions Rules — DAW Timeline & Layout
+## [No Regressions](/Rules/NO_REGRESSIONS.md)
+
+## 🚫 No‑Regressions Rules — DAW Timeline & Layout
 
 This file defines **non‑negotiable invariants** for the DAW UI and architecture.
 
