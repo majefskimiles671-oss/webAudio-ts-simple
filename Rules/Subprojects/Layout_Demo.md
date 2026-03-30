@@ -111,10 +111,6 @@ During playback, the playhead must never fully leave the visible timeline area d
 ``
 ---
 
-## Inline Rule - timer display
- - put a timer at the top of the page next to the transport buttons
 
-## Inline Rule - volume meter for mic input volume
- - a colorful decibel meter that is hidden unless recording is in progress
 
 

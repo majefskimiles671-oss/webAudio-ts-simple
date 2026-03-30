@@ -54,3 +54,8 @@ They do not introduce audio, timing accuracy, or signal processing requirements.
 ---
 
 
+Invariant (Worth Saving)
+The menu bar and its dropdowns must always live in a higher stacking layer than the timeline.
+If a dropdown is ever hidden behind content, the layout is wrong.
+
+---
