@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Layout Demo</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #111;
+  color: #eee;
+  font-family: system-ui, sans-serif;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Transport */
+
+.transport {
+  height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+}
+
+.transport button {
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.transport button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.record-btn.recording {
+  background: #ff3b30;
+  color: black;
+}
+
+/* Timer */
+
+.timer {
+  font-variant-numeric: tabular-nums;
+  min-width: 80px;
+}
+
+/* Meter */
+
+.meter {
+  width: 120px;
+  height: 10px;
+  background: #333;
+  border-radius: 3px;
+  overflow: hidden;
+  display: none;
+}
+
+.meter.active {
+  display: block;
+}
+
+.meter-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(to right, #4cd964, #ffd400, #ff3b30);
+  transition: width 0.1s linear;
+}
+
+/* Layout */
+
+.layout-root {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  overflow: hidden;
+}
+
+/* Controls column */
+
+#controls-column {
+  background: #222;
+  overflow: hidden;
+}
+
+.control-row {
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+/* Track name */
+
+.track-title {
+  font-weight: bold;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-title:hover {
+  background: #2a2a2a;
+}
+
+.track-title:focus {
+  outline: 1px solid #ff9500;
+  background: #333;
+}
+
+/* Track controls */
+
+.track-controls {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.solo-btn {
+  padding: 2px 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.solo-btn.active {
+  background: #ffd400;
+  color: black;
+}
+
+.gain-slider {
+  width: 100%;
+}
+
+/* Timeline */
+
+#timeline-area {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: auto;
+  background: #111;
+}
+
+#timeline-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #ff9500;
+}
+
+.timeline-row {
+  padding: 8px 0;
+  box-sizing: border-box;
+}
+
+.waveform {
+  display: inline-block;
+  height: 80px;
+  width: 2400px;
+  background-color: #333;
+  background-image: repeating-linear-gradient(
+    90deg,
+    #333,
+    #333 20px,
+    #2a2a2a 20px,
+    #2a2a2a 40px
+  );
+}
+</style>
+</head>
+
+<body>
+
+<div class="transport">
+  <button id="playBtn">Play</button>
+  <button id="recordBtn" class="record-btn">Record</button>
+  <div class="timer" id="timer">00:00.0</div>
+  <div class="meter" id="meter">
+    <div class="meter-bar" id="meterBar"></div>
+  </div>
+</div>
+
+<div class="layout-root">
+  <div id="controls-column"></div>
+
+  <div id="timeline-area">
+    <div id="timeline-overlay">
+      <div id="playhead"></div>
+    </div>
+    <div id="timeline-column"></div>
+  </div>
+</div>
+
+<script>
+const controlsCol = document.getElementById("controls-column");
+const timelineCol = document.getElementById("timeline-column");
+const timelineArea = document.getElementById("timeline-area");
+
+for (let i = 0; i < 4; i++) {
+  const control = document.createElement("div");
+  control.className = "control-row";
+
+  const title = document.createElement("div");
+  title.className = "track-title";
+  title.contentEditable = "true";
+  title.textContent = `Track ${i + 1}`;
+  title.spellcheck = false;
+
+  title.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      title.blur();
+    }
+  });
+
+  title.addEventListener("blur", () => {
+    const t = title.textContent.trim();
+    title.textContent = t === "" ? `Track ${i + 1}` : t;
+  });
+
+  const controls = document.createElement("div");
+  controls.className = "track-controls";
+
+  const soloBtn = document.createElement("button");
+  soloBtn.textContent = "S";
+  soloBtn.className = "solo-btn";
+  soloBtn.onclick = () => soloBtn.classList.toggle("active");
+
+  const gain = document.createElement("input");
+  gain.type = "range";
+  gain.min = 0;
+  gain.max = 100;
+  gain.value = 80;
+  gain.className = "gain-slider";
+
+  controls.appendChild(soloBtn);
+  controls.appendChild(gain);
+
+  control.appendChild(title);
+  control.appendChild(controls);
+
+  const timeline = document.createElement("div");
+  timeline.className = "timeline-row";
+  timeline.innerHTML = `<div class="waveform"></div>`;
+
+  controlsCol.appendChild(control);
+  timelineCol.appendChild(timeline);
+
+  const ro = new ResizeObserver(([e]) => {
+    control.style.height = `${e.contentRect.height}px`;
+  });
+  ro.observe(timeline);
+}
+
+/* Transport logic */
+
+const playBtn = document.getElementById("playBtn");
+const recordBtn = document.getElementById("recordBtn");
+const playhead = document.getElementById("playhead");
+const timer = document.getElementById("timer");
+const meter = document.getElementById("meter");
+const meterBar = document.getElementById("meterBar");
+
+let playing = false;
+let recording = false;
+let startTime = 0;
+
+const PPS = 100;
+const SCROLL_THRESHOLD = 120;
+
+function updatePlayhead() {
+  if (!playing) return;
+
+  const elapsed = (performance.now() - startTime) / 1000;
+  const x = elapsed * PPS;
+
+  playhead.style.transform = `translateX(${x}px)`;
+
+  const right = timelineArea.scrollLeft + timelineArea.clientWidth;
+  if (x > right - SCROLL_THRESHOLD) {
+    timelineArea.scrollLeft =
+      x - (timelineArea.clientWidth - SCROLL_THRESHOLD);
+  }
+
+  timer.textContent = formatTime(elapsed);
+  requestAnimationFrame(updatePlayhead);
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  const t = Math.floor((s * 10) % 10);
+  return `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}.${t}`;
+}
+
+function updateMeter() {
+  if (!recording) return;
+  meterBar.style.width = `${20 + Math.random() * 80}%`;
+  requestAnimationFrame(updateMeter);
+}
+
+playBtn.onclick = () => {
+  if (recording) return;
+  playing = !playing;
+  playBtn.textContent = playing ? "Stop" : "Play";
+  if (playing) {
+    startTime = performance.now();
+    updatePlayhead();
+  } else {
+    playhead.style.transform = "translateX(0px)";
+    timelineArea.scrollLeft = 0;
+    timer.textContent = "00:00.0";
+  }
+};
+
+recordBtn.onclick = () => {
+  recording = !recording;
+  recordBtn.textContent = recording ? "Stop" : "Record";
+  recordBtn.classList.toggle("recording", recording);
+
+  playBtn.disabled = recording;
+
+  meter.classList.toggle("active", recording);
+  if (recording) updateMeter();
+};
+</script>
+
+</body>
+</html>
