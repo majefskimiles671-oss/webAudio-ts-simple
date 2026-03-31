@@ -340,4 +340,161 @@ Replace hardcoded colors with **semantic variables**:
 
   --border-subtle: #333;
 }
-``
+```
+
+
+
+## Inline Rule — Time Scrubber (Layout Demo)
+
+[*] The layout demo may include a **time scrubber** for direct navigation along the timeline  
+[*] The scrubber is a **UI and geometry tool**, not an audio feature  
+
+---
+
+## What the Time Scrubber Is (in the Demo)
+
+- A **horizontal interaction surface** representing timeline time
+- Dragging it:
+  - moves the playhead horizontally
+  - scrolls the timeline as needed
+- No audio seeking required
+
+This is about **feel and alignment**, not correctness of playback.
+
+---
+
+## Placement Rule (Important)
+
+[*] The time scrubber belongs **above the timeline**, not inside tracks
+
+Recommended placement order:
+1. Menu bar  
+2. Transport  
+3. **Time scrubber**  
+4. Track area  
+
+This mirrors real DAWs and avoids layout coupling.
+
+---
+
+## Geometry Rules (Non‑Negotiable)
+
+- Scrubber width = **timeline viewport width**
+- Scrubber coordinate space = **same as playhead**
+- Scrubber must align exactly with:
+  - waveform starts
+  - playhead zero position
+
+[x] Scrubber must not:
+- affect track heights
+- scroll independently
+- introduce a second horizontal scroll container
+
+---
+
+## Interaction Rules (Demo Scope)
+
+- Click on scrubber → move playhead
+- Drag on scrubber → scrub playhead
+- Scrubbing may:
+  - pause playback temporarily
+  - resume on release (optional)
+
+Exact behavior can be tuned later.
+
+---
+
+## Implementation Guidance (Conceptual)
+
+- Scrubber is a thin bar (e.g. 18–24px tall)
+- Visual elements:
+  - background track
+  - position indicator
+- Playhead position should be derived from:
+  - scrubber X
+  - timeline content width
+
+The scrubber and playhead must share **one source of truth for time → X mapping**.
+
+---
+
+## Why This Is a Good Addition *Now*
+
+[*] Forces correctness of timeline geometry  
+[*] Tests playhead ↔ scroll ↔ time math  
+[*] Exposes hidden layout assumptions  
+[*] Improves perceived “DAW‑ness” without adding logic  
+
+---
+
+## Explicit Non‑Goals
+
+[x] No snapping
+[x] No grid
+[x] No looping
+[x] No audio seek accuracy
+[x] No keyboard shortcuts (yet)
+
+---
+
+## Recommendation
+
+Proceed with a **minimal visual scrubber** in the layout demo.
+
+If it feels wrong here, it would feel *very* wrong later.
+
+---
+
+If you want next, say one of:
+- “define time scrubber rules in detail”
+- “add a minimal scrubber to the demo HTML”
+- “decide scrubber vs ruler responsibilities”
+
+---
+
+
+```js
+timelineArea.addEventListener("scroll", () => {
+  controlsCol.scrollTop = timelineArea.scrollTop;
+
+  if (document.body.classList.contains("debug")) {
+    controlsCol.dataset.scroll =
+      controlsCol.scrollTop;
+    timelineArea.dataset.scroll =
+      timelineArea.scrollTop;
+  }
+});
+```
+
+```css
+body.debug #controls-column::after,
+body.debug #timeline-area::after {
+  content: attr(data-scroll);
+  position: sticky;
+  top: 4px;
+  font-size: 10px;
+  color: #aaa;
+  background: rgba(0,0,0,0.6);
+  padding: 2px 4px;
+}
+```
+
+```css
+.control-row {
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.timeline-row {
+  padding: 0;
+  box-sizing: border-box;
+}
+```
+
+
+#timeline-overlay {
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1;
+}

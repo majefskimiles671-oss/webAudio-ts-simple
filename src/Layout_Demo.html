@@ -119,11 +119,12 @@
 
         #controls-column {
             background: var(--bg-app);
-            overflow: hidden;
+            overflow-y: hidden;
+            overflow-x: hidden;
         }
 
         .control-row {
-            padding: 8px;
+            padding: 0px;
             box-sizing: border-box;
         }
 
@@ -149,6 +150,11 @@
         }
 
         /* Track controls */
+
+        /* #controls-column::-webkit-scrollbar {
+            display: none;
+        } */
+
 
         .track-controls {
             display: flex;
@@ -179,14 +185,15 @@
             overflow-x: auto;
             overflow-y: auto;
             background: var(--bg-panel);
+            overscroll-behavior: none;
         }
 
         #timeline-overlay {
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            /* right: 0; */
+            /* bottom: 0; */
             pointer-events: none;
             z-index: 1;
         }
@@ -201,8 +208,12 @@
         }
 
         .timeline-row {
-            padding: 8px 0;
+            padding: 0px;
             box-sizing: border-box;
+        }
+
+        .row-inner {
+            padding: 8px;
         }
 
         .waveform {
@@ -334,6 +345,25 @@
     <style>
         /* Other CSS */
         /* =============================
+            DEBUG SCROLL
+        ============================= */
+
+        body.debug {
+            /* padding: 15px; */
+        }
+
+        body.debug #controls-column::after,
+        body.debug #timeline-area::after {
+            content: attr(data-scroll);
+            position: sticky;
+            top: 4px;
+            font-size: 10px;
+            color: #aaa;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 2px 4px;
+        }
+
+        /* =============================
             DEBUG BOUNDING BOXES
         ============================= */
 
@@ -371,7 +401,7 @@
     </style>
 </head>
 
-<body class="debug">
+<body>
 
 
     <div class="menu-bar">
@@ -420,7 +450,30 @@
         const timelineCol = document.getElementById("timeline-column");
         const timelineArea = document.getElementById("timeline-area");
 
-        for (let i = 0; i < 4; i++) {
+        // Sync scrollTop from timeline → controls
+        // Add this once, after you define timelineArea and controlsCol:
+        timelineArea.addEventListener("scroll", () => {
+            controlsCol.scrollTop = timelineArea.scrollTop;
+
+            // debug output
+            if (document.body.classList.contains("debug")) {
+                controlsCol.dataset.scroll =
+                    controlsCol.scrollTop;
+                timelineArea.dataset.scroll =
+                    timelineArea.scrollTop;
+            }
+        });
+
+        // add this js once
+        controlsCol.addEventListener("wheel", (e) => {
+            timelineArea.scrollTop += e.deltaY;
+            e.preventDefault();
+        }, { passive: false });
+
+
+
+
+        for (let i = 0; i < 8; i++) {
             const control = document.createElement("div");
             control.className = "control-row";
 
@@ -460,23 +513,36 @@
             controls.appendChild(soloBtn);
             controls.appendChild(gain);
 
-            control.appendChild(title);
-            control.appendChild(controls);
+            // control.appendChild(title);
+            // control.appendChild(controls);
+
+
+            const controlInner = document.createElement("div");
+            controlInner.className = "row-inner";
+
+            controlInner.appendChild(title);
+            controlInner.appendChild(controls);
+            control.appendChild(controlInner);
+
 
             const timeline = document.createElement("div");
             timeline.className = "timeline-row";
             //   timeline.innerHTML = `<div class="waveform"></div>`;
 
-            const canvasWidth = 300 + i * 350; // different width per track
+            const canvasWidth = 300 + i * 200; // different width per track
 
             timeline.innerHTML = `
-            <div class="waveform">
+            
+            <div class="row-inner">
+                <div class="waveform">
                 <canvas
-                class="waveform-canvas"
-                width="${canvasWidth}"
-                height="80">
+                    class="waveform-canvas"
+                    width="${canvasWidth}"
+                    height="80">
                 </canvas>
+                </div>
             </div>
+
             `;
 
 
@@ -585,6 +651,22 @@
 
         // must be after all tracks are added
         timelineOverlay.style.width = `${timelineColumn.scrollWidth}px`;
+
+        function syncTimelineOverlay() {
+            const timelineColumn = document.getElementById("timeline-column");
+            const timelineOverlay = document.getElementById("timeline-overlay");
+
+            if (!timelineColumn || !timelineOverlay) return;
+
+            timelineOverlay.style.width =
+                `${timelineColumn.scrollWidth}px`;
+
+            timelineOverlay.style.height =
+                `${timelineColumn.scrollHeight}px`;
+        }
+
+        // call this after all tracks are rendered
+        syncTimelineOverlay();
 
 
     </script>

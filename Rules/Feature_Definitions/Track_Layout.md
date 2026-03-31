@@ -168,6 +168,10 @@ This aligns exactly with the rule:
 - Value changes do not need to affect audio
 
 ---
+### Controls column and timeline column
+Vertical scroll position must be shared.
+Horizontal scroll position must be exclusive.
+If controls and timeline ever diverge vertically, the layout is broken.
 
 
 
