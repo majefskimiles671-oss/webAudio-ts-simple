@@ -691,11 +691,22 @@
          * Deterministic
          * Stateless
          * Used by animation loop
+         * 
+         * State machines are for branching decisions, not for mutations.
+
+            So:
+
+            getTransportState() → decision logic
+            button handlers → state changes
+            animation/UI sync → rendering
+
          **/
         function isTransportMoving() {
-            return playing || recording;
+            return getTransportState() !== "IDLE";
         }
 
+        // tiny state machine
+        // Use getTransportState() to explain behavior, not to control everything.
         function getTransportState() {
             if (playing && recording) return "PLAY_RECORD";
             if (playing) return "PLAY";
@@ -733,18 +744,12 @@
          * If something looks wrong visually, the bug is here, not in button handlers.
          **/
         function syncTransportUI() {
-            const playRecordBtn =
-                document.getElementById("playRecordBtn");
+            const state = getTransportState();
 
-            playBtn.classList.toggle("active", playing);
-            recordBtn.classList.toggle("recording", recording);
-
-            playRecordBtn.classList.toggle(
-                "active",
-                playing && recording
-            );
-
-            meter.classList.toggle("active", recording);
+            playBtn.classList.toggle("active", state === "PLAY" || state === "PLAY_RECORD");
+            recordBtn.classList.toggle("recording", state === "RECORD" || state === "PLAY_RECORD");
+            playRecordBtn.classList.toggle("active",state === "PLAY_RECORD");
+            meter.classList.toggle("active", state === "RECORD" || state === "PLAY_RECORD");
         }
 
         //#endregion
@@ -765,7 +770,7 @@
          * This dramatically lowers cognitive load.
          **/
         function updatePlayhead() {
-            if (!playing && !recording) return;
+            if (getTransportState() === "IDLE") return;
 
             const elapsed = (performance.now() - startTime) / 1000;
             const x = elapsed * PPS;
