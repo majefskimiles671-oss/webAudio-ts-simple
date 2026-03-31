@@ -707,6 +707,10 @@
 
         // tiny state machine
         // Use getTransportState() to explain behavior, not to control everything.
+        /** 
+         * State mutations change flags.
+         * Transition detection decides behavior.
+         **/
         function getTransportState() {
             if (playing && recording) return "PLAY_RECORD";
             if (playing) return "PLAY";
@@ -748,7 +752,7 @@
 
             playBtn.classList.toggle("active", state === "PLAY" || state === "PLAY_RECORD");
             recordBtn.classList.toggle("recording", state === "RECORD" || state === "PLAY_RECORD");
-            playRecordBtn.classList.toggle("active",state === "PLAY_RECORD");
+            playRecordBtn.classList.toggle("active", state === "PLAY_RECORD");
             meter.classList.toggle("active", state === "RECORD" || state === "PLAY_RECORD");
         }
 
@@ -794,6 +798,12 @@
 
             timer.textContent = formatTime(elapsed);
             requestAnimationFrame(updatePlayhead);
+        }
+
+        function resetPlayhead() {
+            playhead.style.transform = "translateX(0px)";
+            timelineArea.scrollLeft = 0;
+            timer.textContent = "00:00.0";
         }
 
         function updateMeter() {
@@ -1009,36 +1019,59 @@
          * This is where future complexity will live — now it’s clearly contained.
          **/
         playBtn.onclick = () => {
+            const prevState = getTransportState();
+            const wasRecording = recording;
+
             playing = !playing;
-            if (playing && !recording) {
+
+            const nextState = getTransportState();
+            const isRecording = recording;
+
+
+
+            if (prevState === "IDLE" && nextState !== "IDLE") {
                 startTime = performance.now();
                 updatePlayhead();
             }
-            if (!playing && !recording) {
-                playhead.style.transform = "translateX(0px)";
-                timelineArea.scrollLeft = 0;
-                timer.textContent = "00:00.0";
+
+            if (prevState !== "IDLE" && nextState === "IDLE") {
+                resetPlayhead();
             }
-            // update record range
-            if (!recording) {
+
+            // Recording-range lifecycle
+            if (wasRecording && !isRecording) {
                 recordRange.style.display = "none";
                 recordStartX = null;
             }
+
             syncTransportUI();
         };
 
         recordBtn.onclick = () => {
+            const prevState = getTransportState();
+            const wasRecording = recording;
+
             recording = !recording;
-            recordBtn.classList.toggle("recording", recording);
 
-            meter.classList.toggle("active", recording);
+            const nextState = getTransportState();
+            const isRecording = recording;
+            const isRecordingActive = recording; // in case we add an "armed" state to the recording process
 
-            if (recording && !playing) {
+            recordBtn.classList.toggle("recording", isRecordingActive);
+            meter.classList.toggle("active", isRecordingActive);
+
+            // Transport motion transitions
+            if (prevState === "IDLE" && nextState !== "IDLE") {
                 startTime = performance.now();
                 updatePlayhead();
             }
 
-            if (recording && recordStartX === null) {
+            if (prevState !== "IDLE" && nextState === "IDLE") {
+                resetPlayhead();
+            }
+
+            // Recording lifecycle: START
+            if (!wasRecording && isRecording) {
                 recordStartX = getPlayheadX();
 
                 recordRange.style.display = "block";
@@ -1046,43 +1079,37 @@
                 recordRange.style.width = "0px";
             }
 
-            if (!recording && !playing) {
-                playhead.style.transform = "translateX(0px)";
-                timelineArea.scrollLeft = 0;
-                timer.textContent = "00:00.0";
-
-
-                if (!recording) {
-                    recordRange.style.display = "none";
-                    recordStartX = null;
-                }
-
+            // Recording lifecycle: END
+            if (wasRecording && !isRecording) {
+                recordRange.style.display = "none";
+                recordStartX = null;
             }
+
             syncTransportUI();
         };
 
         playRecordBtn.onclick = () => {
-            const wasMoving = isTransportMoving();
-            const enable = !(playing && recording);
+            const prevState = getTransportState();
+            const wasRecording = recording;
 
+            const enable = prevState !== "PLAY_RECORD";
             playing = enable;
             recording = enable;
 
-            if (enable) {
-                // Start time ONLY if we were idle
-                if (!wasMoving) {
-                    startTime = performance.now();
-                    updatePlayhead();
-                }
-            } else {
-                // Only reset when fully stopping
-                playhead.style.transform = "translateX(0px)";
-                timelineArea.scrollLeft = 0;
-                timer.textContent = "00:00.0";
+            const nextState = getTransportState();
+            const isRecording = recording;
+
+            if (prevState === "IDLE" && nextState !== "IDLE") {
+                startTime = performance.now();
+                updatePlayhead();
             }
 
-            // recording range indicator
-            if (recording && recordStartX === null) {
+            if (prevState !== "IDLE" && nextState === "IDLE") {
+                resetPlayhead();
+            }
+
+            // Recording lifecycle: START
+            if (!wasRecording && isRecording) {
                 recordStartX = getPlayheadX();
 
                 recordRange.style.display = "block";
@@ -1090,10 +1117,25 @@
                 recordRange.style.width = "0px";
             }
 
-            if (!recording) {
+            // Recording lifecycle: END
+            if (wasRecording && !isRecording) {
                 recordRange.style.display = "none";
                 recordStartX = null;
             }
+
+            // // recording range indicator
+            // if (recording && recordStartX === null) {
+            //     recordStartX = getPlayheadX();
+
+            //     recordRange.style.display = "block";
+            //     recordRange.style.left = `${recordStartX}px`;
+            //     recordRange.style.width = "0px";
+            // }
+
+            // if (!recording) {
+            //     recordRange.style.display = "none";
+            //     recordStartX = null;
+            // }
 
             syncTransportUI();
         };

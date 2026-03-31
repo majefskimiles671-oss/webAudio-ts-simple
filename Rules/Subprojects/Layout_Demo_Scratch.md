@@ -824,3 +824,51 @@ function getTransportState() {
   if (recording) return "RECORD";
   return "IDLE";
 }
+```
+```js
+playBtn.onclick = () => {
+  const prevState = getTransportState();
+
+  playing = !playing;
+
+  const nextState = getTransportState();
+
+  if (prevState === "IDLE" && nextState !== "IDLE") {
+    startTime = performance.now();
+    updatePlayhead();
+  }
+
+  if (prevState !== "IDLE" && nextState === "IDLE") {
+    resetPlayhead();
+  }
+
+  syncTransportUI();
+};
+```
+```js
+playRecordBtn.onclick = () => {
+  const prevState = getTransportState();
+
+  const enable = prevState !== "PLAY_RECORD";
+  playing = enable;
+  recording = enable;
+
+  const nextState = getTransportState();
+
+  if (prevState === "IDLE" && nextState !== "IDLE") {
+    startTime = performance.now();
+    updatePlayhead();
+  }
+
+  if (prevState !== "IDLE" && nextState === "IDLE") {
+    resetPlayhead();
+  }
+
+  syncTransportUI();
+};
+```
+
+collapse all three handlers into one applyTransportChange() without refactoring
+add a tiny debug overlay that prints getTransportState()
+confirm there are no remaining hidden transitions in your code
+
