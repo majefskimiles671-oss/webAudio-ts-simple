@@ -776,3 +776,51 @@ playRecordBtn.onclick = () => {
   syncTransportUI();
 };
 ```
+
+---
+
+Nice work getting it to this point — the demo is doing a *lot* now, and it’s stable.
+You’re right to pause and ask about **readability + maintainability** before adding more behavior.
+
+Short answer: **yes, a tiny state machine abstraction would help**, but you don’t need a library or multiple files. You can get 80% of the benefit with a few small structural changes.
+
+Below are **concrete, incremental improvements** that keep everything **in one file**.
+
+---
+
+## 1. Separate “State”, “Effects”, and “Rendering”
+
+Right now, most handlers:
+- mutate state
+- trigger side‑effects
+- update UI
+all in one place.
+
+You already started fixing this with `syncTransportUI()` — that’s good.  
+You can go one step further.
+
+### Recommendation
+
+Treat your JS in three layers:
+
+- **State**: booleans, counters, positions
+- **Effects**: playhead, meter, timers
+- **Render / Sync**: DOM updates
+
+You *do not* need classes or frameworks to do this.
+
+---
+
+## 2. Formalize Transport State (Without a Big FSM)
+
+You already *have* a state machine — it’s just implicit.
+
+Make it explicit with **one derived value**.
+
+```js
+function getTransportState() {
+  if (playing && recording) return "PLAY_RECORD";
+  if (playing) return "PLAY";
+  if (recording) return "RECORD";
+  return "IDLE";
+}

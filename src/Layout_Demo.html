@@ -604,9 +604,213 @@
 
 
     <script>
+        // ----- Constants -----
+        // ----- DOM References -----
+        // ----- Transport State -----
+        // ----- Transport Helpers -----
+        // ----- Transport Rendering -----
+        // ----- Animation Loops -----
+        // ----- Scroll / Geometry Sync -----
+        // ----- Track & Control Interaction -----
+        // ----- Theme / Debug / Global UI -----
+        // ----- One‑time Initialization -----
+
+        // ==========================
+        // CONSTANTS
+        // ==========================
+        //#region CONSTANTS
+        /**
+         * Constant values
+         **/
+        const PPS = 100;
+        const SCROLL_THRESHOLD = 120;
+
+        //#endregion
+        // ==========================
+        // DOM REFERENCES
+        // ==========================
+        //#region DOM REFERENCES
+        /**
+                 * Put all DOM queries at the top.
+                 * Nothing else allowed here.
+                 * If you ever need a new DOM element later, it goes here, not inline in logic.
+                 * This alone reduces mental context switching a lot.
+                 **/
         const controlsCol = document.getElementById("controls-column");
         const timelineCol = document.getElementById("timeline-column");
         const timelineArea = document.getElementById("timeline-area");
+        const timelineColumn = document.getElementById("timeline-column");
+        const timelineOverlay = document.getElementById("timeline-overlay");
+
+        // templates
+        const controlTpl = document.getElementById("control-row-template");
+        const timelineTpl = document.getElementById("timeline-row-template");
+
+        // transport
+        const playBtn = document.getElementById("playBtn");
+        const playRecordBtn = document.getElementById("playRecordBtn");
+        const recordBtn = document.getElementById("recordBtn");
+        const playhead = document.getElementById("playhead");
+        const timer = document.getElementById("timer");
+        const meter = document.getElementById("meter");
+        const meterBar = document.getElementById("meterBar");
+        const recordRange =
+            document.getElementById("record-range");
+        const transportToggles =
+            document.querySelectorAll("#transport-toggles .transport-toggle");
+
+        //#endregion
+        // ==========================
+        // TRANSPORT STATE
+        // ==========================
+        //#region
+        /**
+         * This section contains only variables, no functions.
+         * When you read this block, you should think:
+         * “This is the entire transport memory.”
+         **/
+        let playing = false;
+        let recording = false;
+        let startTime = 0;
+        let recordStartX = null;
+
+        //#endregion
+        // ==========================
+        // TRANSPORT HELPERS
+        // ==========================
+        //#region
+        /**
+         * These helpers answer questions or calculations.
+         * They do not mutate DOM.
+         * You are not required to use these everywhere yet.
+         * Their existence alone stabilizes the mental model.
+         * 
+         * This is pure logic. No DOM mutation.
+         * This is a query, not an effect
+         * Multiple future features will use this (record ranges, scrubbing, punch‑in)
+         * Deterministic
+         * Stateless
+         * Used by animation loop
+         **/
+        function isTransportMoving() {
+            return playing || recording;
+        }
+
+        function getTransportState() {
+            if (playing && recording) return "PLAY_RECORD";
+            if (playing) return "PLAY";
+            if (recording) return "RECORD";
+            return "IDLE";
+        }
+
+        function getPlayheadX() {
+            const transform = playhead.style.transform;
+            if (!transform) return 0;
+
+            const match = transform.match(/translateX\(([-\d.]+)px\)/);
+            return match ? parseFloat(match[1]) : 0;
+        }
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            const t = Math.floor((s * 10) % 10);
+            return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}.${t}`;
+        }
+
+        //#endregion
+        // ==========================
+        // TRANSPORT UI DOM SYNC
+        // ==========================
+        //#region
+        /**
+         * This is your UI truth layer.
+         * Nothing in here:
+         * toggles state
+         * decides behavior
+         * starts timers
+         * It only reflects current state.
+         * If something looks wrong visually, the bug is here, not in button handlers.
+         **/
+        function syncTransportUI() {
+            const playRecordBtn =
+                document.getElementById("playRecordBtn");
+
+            playBtn.classList.toggle("active", playing);
+            recordBtn.classList.toggle("recording", recording);
+
+            playRecordBtn.classList.toggle(
+                "active",
+                playing && recording
+            );
+
+            meter.classList.toggle("active", recording);
+        }
+
+        //#endregion
+        // ==========================
+        // ANIMATION LOOPS
+        // ==========================
+        //#region
+        /**
+         * These are special. They:
+         * run forever
+         * draw based on state
+         * never change state
+         * 
+         * Notice:
+         * no buttons
+         * no toggles
+         * no branching chaos
+         * This dramatically lowers cognitive load.
+         **/
+        function updatePlayhead() {
+            if (!playing && !recording) return;
+
+            const elapsed = (performance.now() - startTime) / 1000;
+            const x = elapsed * PPS;
+
+            playhead.style.transform = `translateX(${x}px)`;
+
+            // recording range update
+            if (recording && recordStartX !== null) {
+                const width = x - recordStartX;
+
+                recordRange.style.width =
+                    `${Math.max(0, width)}px`;
+            }
+
+            // scroll
+            const right = timelineArea.scrollLeft + timelineArea.clientWidth;
+            if (x > right - SCROLL_THRESHOLD) {
+                timelineArea.scrollLeft =
+                    x - (timelineArea.clientWidth - SCROLL_THRESHOLD);
+            }
+
+            timer.textContent = formatTime(elapsed);
+            requestAnimationFrame(updatePlayhead);
+        }
+
+        function updateMeter() {
+            if (recording) {
+                meterBar.style.width = `${20 + Math.random() * 80}%`;
+            }
+            requestAnimationFrame(updateMeter);
+        }
+
+        //#endregion
+        // ==========================
+        // SCROLL / GEOMETRY SYNC
+        // ==========================
+        //#region
+        /**
+         * This governs shared vertical scrolling, which is orthogonal to transport.
+         * Why here
+         * It’s not transport logic
+         * It’s not UI rendering
+         * It’s about input routing + geometry
+         * Later, if bugs appear here, your brain knows exactly where to look.
+         **/
 
         // Sync scrollTop from timeline → controls
         // Add this once, after you define timelineArea and controlsCol:
@@ -629,11 +833,115 @@
         }, { passive: false });
 
 
-        // Tracks from Template
+        function syncTimelineOverlay() {
+            const timelineColumn = document.getElementById("timeline-column");
+            const timelineOverlay = document.getElementById("timeline-overlay");
 
-        const controlTpl = document.getElementById("control-row-template");
-        const timelineTpl = document.getElementById("timeline-row-template");
+            if (!timelineColumn || !timelineOverlay) return;
 
+            timelineOverlay.style.width =
+                `${timelineColumn.scrollWidth}px`;
+
+            timelineOverlay.style.height =
+                `${timelineColumn.scrollHeight}px`;
+        }
+
+
+        function syncTimelineOverlayWidth() {
+            timelineOverlay.style.width =
+                `${timelineColumn.scrollWidth}px`;
+        }
+
+
+        //#endregion
+        // ==========================
+        // TRACK & CONTROL INTERACTION
+        // ==========================
+        //#region
+        /* This is local UI behavior, not transport state. Why here
+
+        These are not play/record state
+        They are UI‑only mode selectors
+        Later could move to their own helper 
+
+        track‑local control behavior.
+
+        Why here
+
+        Operates on tracks
+        Has its own micro‑state
+        Should never bleed into transport concerns
+        */
+        // linked toggle behavior
+        transportToggles.forEach(btn => {
+            btn.addEventListener("click", () => {
+                transportToggles.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+            });
+        });
+
+        // solo buttons
+
+        function setupSoloBtns() {
+            const soloButtons = Array.from(
+                document.querySelectorAll(".solo-btn")
+            );
+            soloButtons.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const isActive = btn.classList.contains("active");
+
+                    // Reset all
+                    soloButtons.forEach(b => {
+                        b.classList.remove("active");
+                        b.disabled = false;
+                    });
+
+                    // If clicked button was not active, activate it and disable others
+                    if (!isActive) {
+                        btn.classList.add("active");
+                        soloButtons.forEach(b => {
+                            if (b !== btn) b.disabled = true;
+                        });
+                    }
+                });
+            });
+        }
+
+        //#endregion
+        // ==========================
+        // THEME / DEBUG / GLOBAL UI
+        // ==========================
+        //#region
+        /* Menu and Themes Logic 
+        Global UI concern
+        No effect on transport or tracks
+
+        Global tool
+        Orthogonal to everything else
+        */
+
+        document.querySelectorAll("[data-theme]").forEach(el => {
+            el.onclick = () => {
+                document.body.setAttribute("data-theme", el.dataset.theme);
+            };
+        });
+
+        document.body.setAttribute("data-theme", "light");
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "d") {
+                document.body.classList.toggle("debug");
+            }
+        });
+
+        //#endregion
+        // ==========================
+        // TRACK CREATION
+        // ==========================
+        //#region
+        /**
+         * When you read this block later, you know it does not affect transport state.
+         **/
         for (let i = 0; i < 8; i++) {
             /* ----- Controls Row ----- */
 
@@ -685,88 +993,16 @@
             ro.observe(timelineRow);
         }
 
-
-        /* Transport logic */
-
-        const playBtn = document.getElementById("playBtn");
-        const recordBtn = document.getElementById("recordBtn");
-        const playhead = document.getElementById("playhead");
-        const timer = document.getElementById("timer");
-        const meter = document.getElementById("meter");
-        const meterBar = document.getElementById("meterBar");
-
-        const recordRange =
-            document.getElementById("record-range");
-
-
-        let playing = false;
-        let recording = false;
-        let startTime = 0;
-        let recordStartX = null;
-
-        const PPS = 100;
-        const SCROLL_THRESHOLD = 120;
-
-
-        function updatePlayhead() {
-            if (!playing && !recording) return;
-
-            const elapsed = (performance.now() - startTime) / 1000;
-            const x = elapsed * PPS;
-
-            playhead.style.transform = `translateX(${x}px)`;
-
-            // recording range update
-            if (recording && recordStartX !== null) {
-                const width = x - recordStartX;
-
-                recordRange.style.width =
-                    `${Math.max(0, width)}px`;
-            }
-
-
-
-            // scroll
-            const right = timelineArea.scrollLeft + timelineArea.clientWidth;
-            if (x > right - SCROLL_THRESHOLD) {
-                timelineArea.scrollLeft =
-                    x - (timelineArea.clientWidth - SCROLL_THRESHOLD);
-            }
-
-            timer.textContent = formatTime(elapsed);
-            requestAnimationFrame(updatePlayhead);
-        }
-
-        function getPlayheadX() {
-            const transform = playhead.style.transform;
-            if (!transform) return 0;
-
-            const match = transform.match(/translateX\(([-\d.]+)px\)/);
-            return match ? parseFloat(match[1]) : 0;
-        }
-
-
-        function formatTime(s) {
-            const m = Math.floor(s / 60);
-            const sec = Math.floor(s % 60);
-            const t = Math.floor((s * 10) % 10);
-            return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}.${t}`;
-        }
-
-        function updateMeter() {
-            if (recording) {
-                meterBar.style.width = `${20 + Math.random() * 80}%`;
-            }
-            requestAnimationFrame(updateMeter);
-        }
-        updateMeter();
-
-
-        function isTransportMoving() {
-            return playing || recording;
-        }
-
-
+        //#endregion
+        // ==========================
+        // TRANSPORT BUTTON HANDLERS
+        // ==========================
+        //#region
+        /**
+         * This is the only place where transport state changes. 
+         * Keep them boring and small.
+         * This is where future complexity will live — now it’s clearly contained.
+         **/
         playBtn.onclick = () => {
             playing = !playing;
             if (playing && !recording) {
@@ -820,9 +1056,6 @@
             syncTransportUI();
         };
 
-
-        const playRecordBtn = document.getElementById("playRecordBtn");
-
         playRecordBtn.onclick = () => {
             const wasMoving = isTransportMoving();
             const enable = !(playing && recording);
@@ -861,106 +1094,19 @@
         };
 
 
-
-        function syncTransportUI() {
-
-            const playRecordBtn =
-                document.getElementById("playRecordBtn");
-
-            playBtn.classList.toggle("active", playing);
-            recordBtn.classList.toggle("recording", recording);
-
-
-            playRecordBtn.classList.toggle(
-                "active",
-                playing && recording
-            );
-
-
-            meter.classList.toggle("active", recording);
-        }
-
-
-
-        // linked toggle behavior
-        const transportToggles =
-            document.querySelectorAll("#transport-toggles .transport-toggle");
-
-        transportToggles.forEach(btn => {
-            btn.addEventListener("click", () => {
-                transportToggles.forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-            });
-        });
-
-        // solo buttons
-        const soloButtons = Array.from(
-            document.querySelectorAll(".solo-btn")
-        );
-
-        soloButtons.forEach(btn => {
-            btn.addEventListener("click", () => {
-                const isActive = btn.classList.contains("active");
-
-                // Reset all
-                soloButtons.forEach(b => {
-                    b.classList.remove("active");
-                    b.disabled = false;
-                });
-
-                // If clicked button was not active, activate it and disable others
-                if (!isActive) {
-                    btn.classList.add("active");
-                    soloButtons.forEach(b => {
-                        if (b !== btn) b.disabled = true;
-                    });
-                }
-            });
-        });
-
-
-
-        /* Menu and Themes Logic */
-
-        document.querySelectorAll("[data-theme]").forEach(el => {
-            el.onclick = () => {
-                document.body.setAttribute("data-theme", el.dataset.theme);
-            };
-        });
-
-        document.body.setAttribute("data-theme", "light");
-
-
-
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "d") {
-                document.body.classList.toggle("debug");
-            }
-        });
-
-
-
-        const timelineColumn = document.getElementById("timeline-column");
-        const timelineOverlay = document.getElementById("timeline-overlay");
-
-        // must be after all tracks are added
-        timelineOverlay.style.width = `${timelineColumn.scrollWidth}px`;
-
-        function syncTimelineOverlay() {
-            const timelineColumn = document.getElementById("timeline-column");
-            const timelineOverlay = document.getElementById("timeline-overlay");
-
-            if (!timelineColumn || !timelineOverlay) return;
-
-            timelineOverlay.style.width =
-                `${timelineColumn.scrollWidth}px`;
-
-            timelineOverlay.style.height =
-                `${timelineColumn.scrollHeight}px`;
-        }
-
-        // call this after all tracks are rendered
+        //#endregion
+        // ==========================
+        // INITIALIZATION
+        // ==========================
+        //#region
+        setupSoloBtns();
+        updateMeter();
+        syncTimelineOverlayWidth();
         syncTimelineOverlay();
+        //#endregion
+        // ==========================
+        // END OF SCRIPT
+        // ==========================
 
 
     </script>
