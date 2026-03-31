@@ -253,9 +253,6 @@
             padding: 0;
             cursor: pointer;
             border-radius: 3px;
-            /* background: var(--border-subtle);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-main); */
         }
 
         .toggle-btn.active {
@@ -277,8 +274,6 @@
             position: absolute;
             top: 0;
             left: 0;
-            /* right: 0; */
-            /* bottom: 0; */
             pointer-events: none;
             z-index: 1;
         }
@@ -689,8 +684,7 @@
 
         const PPS = 100;
         const SCROLL_THRESHOLD = 120;
-        // const playText = "▶";
-        // const recordText = "●"
+
 
         function updatePlayhead() {
             if (!playing && !recording) return;
@@ -726,9 +720,7 @@
         updateMeter();
 
         playBtn.onclick = () => {
-            // if (recording) return;
             playing = !playing;
-            // playBtn.textContent = playing ? "Stop" : "Play";
             if (playing && !recording) {
                 startTime = performance.now();
                 updatePlayhead();
@@ -743,7 +735,6 @@
 
         recordBtn.onclick = () => {
             recording = !recording;
-            // recordBtn.textContent = recording ? "Stop" : "Record";
             recordBtn.classList.toggle("recording", recording);
 
             meter.classList.toggle("active", recording);
