@@ -665,4 +665,114 @@ playRecordBtn.onclick = () => {
   syncTransportUI();
 };
 
+
+
+if (recording && recordStartX === null) {
+  recordStartX = getPlayheadX();
+
+  recordRange.style.display = "block";
+  recordRange.style.left = `${recordStartX}px`;
+  recordRange.style.width = "0px";
+}
+
+
+
+
+if (!recording) {
+  recordRange.style.display = "none";
+  recordStartX = null;
+}
+
+```
+
+
+```js
+//time
+
+const seconds =
+  transportSamplePosition / sampleRate;
+const pixels =
+  transportSamplePosition * pixelsPerSample;
+  const frameIndex =
+  Math.floor(transportSamplePosition / samplesPerFrame);
+
+transportSamplePosition += framesProcessed;
+//recording starts
+const recordStartSample = transportSamplePosition;
+
+/ recording ends
+
+const recordEndSample = transportSamplePosition;
+const recordedLength = recordEndSample - recordStartSample;
+
+
+```
+Antio-Patterns to avoid   
+let timeSeconds += delta;        // drift
+let timeMs = performance.now(); // not deterministic
+let playheadX += speed;         // UI‑driven time
+```
+
+Practical Naming Suggestions
+Good:
+
+transportSamplePosition
+currentSample
+timelineSample
+playheadSample
+
+Avoid:
+
+currentTime
+elapsedMs
+audioTime
+positionFloat
+
+Names should remind you this is discrete time.
+
+Why This Scales Later
+This model naturally supports:
+
+punch‑in/out
+loop points
+automation lanes
+sample‑accurate edits
+offline rendering
+zoom without precision loss
+
+You’re building the right foundation.
+
+One‑Line Summary
+Track samples, not seconds.
+Everything else is math.
+If you want next, I can:
+
+map this cleanly onto the Web Audio API render loop
+show how to sync your playhead animation to sample time
+help design your on‑disk clip metadata format
+```
+
+```js
+playRecordBtn.onclick = () => {
+  const wasMoving = isTransportMoving();
+  const enable = !(playing && recording);
+
+  playing = enable;
+  recording = enable;
+
+  if (enable) {
+    // Start time ONLY if we were idle
+    if (!wasMoving) {
+      startTime = performance.now();
+      updatePlayhead();
+    }
+  } else {
+    // Only reset when fully stopping
+    playhead.style.transform = "translateX(0px)";
+    timelineArea.scrollLeft = 0;
+    timer.textContent = "00:00.0";
+  }
+
+  syncTransportUI();
+};
 ```

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Layout Demo</title>
+    <title>BareTrack/AudioPad/WaveStack - Layout Demo</title>
 
     <style>
         /* Structural CSS */
@@ -287,6 +287,22 @@
             z-index: 10;
         }
 
+
+        #record-range {
+
+            position: absolute;
+            top: 0;
+            height: 2px;
+
+            background: var(--accent-danger);
+            opacity: 0.85;
+
+            display: none;
+            pointer-events: none;
+
+        }
+
+
         .timeline-row {
             padding: 0px;
             box-sizing: border-box;
@@ -548,6 +564,7 @@
         <div id="timeline-area">
             <div id="timeline-overlay">
                 <div id="playhead"></div>
+                <div id="record-range"></div>
             </div>
             <div id="timeline-column"></div>
         </div>
@@ -678,9 +695,14 @@
         const meter = document.getElementById("meter");
         const meterBar = document.getElementById("meterBar");
 
+        const recordRange =
+            document.getElementById("record-range");
+
+
         let playing = false;
         let recording = false;
         let startTime = 0;
+        let recordStartX = null;
 
         const PPS = 100;
         const SCROLL_THRESHOLD = 120;
@@ -694,6 +716,17 @@
 
             playhead.style.transform = `translateX(${x}px)`;
 
+            // recording range update
+            if (recording && recordStartX !== null) {
+                const width = x - recordStartX;
+
+                recordRange.style.width =
+                    `${Math.max(0, width)}px`;
+            }
+
+
+
+            // scroll
             const right = timelineArea.scrollLeft + timelineArea.clientWidth;
             if (x > right - SCROLL_THRESHOLD) {
                 timelineArea.scrollLeft =
@@ -703,6 +736,15 @@
             timer.textContent = formatTime(elapsed);
             requestAnimationFrame(updatePlayhead);
         }
+
+        function getPlayheadX() {
+            const transform = playhead.style.transform;
+            if (!transform) return 0;
+
+            const match = transform.match(/translateX\(([-\d.]+)px\)/);
+            return match ? parseFloat(match[1]) : 0;
+        }
+
 
         function formatTime(s) {
             const m = Math.floor(s / 60);
@@ -719,6 +761,12 @@
         }
         updateMeter();
 
+
+        function isTransportMoving() {
+            return playing || recording;
+        }
+
+
         playBtn.onclick = () => {
             playing = !playing;
             if (playing && !recording) {
@@ -729,6 +777,11 @@
                 playhead.style.transform = "translateX(0px)";
                 timelineArea.scrollLeft = 0;
                 timer.textContent = "00:00.0";
+            }
+            // update record range
+            if (!recording) {
+                recordRange.style.display = "none";
+                recordStartX = null;
             }
             syncTransportUI();
         };
@@ -744,10 +797,25 @@
                 updatePlayhead();
             }
 
+            if (recording && recordStartX === null) {
+                recordStartX = getPlayheadX();
+
+                recordRange.style.display = "block";
+                recordRange.style.left = `${recordStartX}px`;
+                recordRange.style.width = "0px";
+            }
+
             if (!recording && !playing) {
                 playhead.style.transform = "translateX(0px)";
                 timelineArea.scrollLeft = 0;
                 timer.textContent = "00:00.0";
+
+
+                if (!recording) {
+                    recordRange.style.display = "none";
+                    recordStartX = null;
+                }
+
             }
             syncTransportUI();
         };
@@ -756,18 +824,37 @@
         const playRecordBtn = document.getElementById("playRecordBtn");
 
         playRecordBtn.onclick = () => {
+            const wasMoving = isTransportMoving();
             const enable = !(playing && recording);
 
             playing = enable;
             recording = enable;
 
             if (enable) {
-                startTime = performance.now();
-                updatePlayhead();
+                // Start time ONLY if we were idle
+                if (!wasMoving) {
+                    startTime = performance.now();
+                    updatePlayhead();
+                }
             } else {
+                // Only reset when fully stopping
                 playhead.style.transform = "translateX(0px)";
                 timelineArea.scrollLeft = 0;
                 timer.textContent = "00:00.0";
+            }
+
+            // recording range indicator
+            if (recording && recordStartX === null) {
+                recordStartX = getPlayheadX();
+
+                recordRange.style.display = "block";
+                recordRange.style.left = `${recordStartX}px`;
+                recordRange.style.width = "0px";
+            }
+
+            if (!recording) {
+                recordRange.style.display = "none";
+                recordStartX = null;
             }
 
             syncTransportUI();
