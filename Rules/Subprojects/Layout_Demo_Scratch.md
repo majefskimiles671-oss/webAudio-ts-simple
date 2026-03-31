@@ -498,3 +498,171 @@ body.debug #timeline-area::after {
   pointer-events: none;
   z-index: 1;
 }
+
+```css
+
+.transport-toggle {
+  width: 22px;
+  height: 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  cursor: pointer;
+}
+```
+
+
+
+### Transport States
+
+| Playing | Recording | Meaning                         | Playhead |
+|---------|-----------|---------------------------------|----------|
+| off     | off       | Idle                            | stopped  |
+| on      | off       | Playback only                   | moving   |
+| off     | on        | Record‑from‑start               | moving   |
+| on      | on        | Record while playing (overdub)  | moving   |
+
+```js
+playBtn.onclick = () => {
+  playing = !playing;
+  playBtn.textContent = playing ? "Stop" : "Play";
+
+  if (playing && !recording) {
+    startTime = performance.now();
+    updatePlayhead();
+  }
+
+  if (!playing && !recording) {
+    playhead.style.transform = "translateX(0px)";
+    timelineArea.scrollLeft = 0;
+    timer.textContent = "00:00.0";
+  }
+};
+
+recordBtn.onclick = () => {
+  recording = !recording;
+  recordBtn.textContent = recording ? "Stop" : "Record";
+  recordBtn.classList.toggle("recording", recording);
+
+  meter.classList.toggle("active", recording);
+
+  if (recording && !playing) {
+    startTime = performance.now();
+    updatePlayhead();
+    updateMeter();
+  }
+
+  if (!recording && !playing) {
+    playhead.style.transform = "translateX(0px)";
+    timelineArea.scrollLeft = 0;
+    timer.textContent = "00:00.0";
+  }
+};
+
+
+function updateMeter() {
+  if (recording) {
+    meterBar.style.width = `${20 + Math.random() * 80}%`;
+  }
+  requestAnimationFrame(updateMeter);
+}
+
+```
+
+## Button Behavior Matrix
+
+### Play Button
+
+| Current State        | Action           | Resulting State |
+|----------------------|------------------|-----------------|
+| playing = off        | Click Play       | playing = on    |
+| playing = on         | Click Play       | playing = off   |
+| recording = on       | Click Play       | toggles playing |
+| recording unchanged  |                  |                 |
+
+Play never changes `recording`.
+
+---
+
+### Record Button
+
+| Current State        | Action            | Resulting State |
+|----------------------|-------------------|-----------------|
+| recording = off      | Click Record      | recording = on  |
+| recording = on       | Click Record      | recording = off |
+| playing = on         | Click Record      | overdub         |
+| playing unchanged    |                   |                 |
+
+Record never changes `playing`.
+
+---
+
+### Play+Record Button (▶●)
+
+| Current State | Action            | Resulting State              |
+|---------------|-------------------|------------------------------|
+| off / off     | Click ▶●          | on / on                      |
+| on / on       | Click ▶●          | off / off                    |
+| mixed         | Click ▶●          | on / on                      |
+
+▶● is an **absolute toggle**, not relative.
+
+---
+
+## Playhead Rules
+
+- Playhead moves if `playing == true OR recording == true`
+- Playhead stops only when `playing == false AND recording == false`
+- Playhead resets only when transitioning to Idle
+
+---
+
+## Invariants
+
+- Playing and Recording are **independent**
+- Recording does not stop playback
+- Playback does not stop recording
+- ▶● sets both states explicitly
+- No transport button lies about state
+
+---
+
+```js
+function syncTransportUI() {
+  playBtn.textContent = playing ? "Stop" : "Play";
+
+  recordBtn.textContent = recording ? "Stop" : "Record";
+  recordBtn.classList.toggle("recording", recording);
+
+  const both = playing && recording;
+  playRecordBtn.classList.toggle("active", both);
+
+  meter.classList.toggle("active", recording);
+}
+
+
+playRecordBtn.onclick = () => {
+  const enable = !(playing && recording);
+
+  playing = enable;
+  recording = enable;
+
+  if (enable) {
+    startTime = performance.now();
+    updatePlayhead();
+  } else {
+    playhead.style.transform = "translateX(0px)";
+    timelineArea.scrollLeft = 0;
+    timer.textContent = "00:00.0";
+  }
+
+  syncTransportUI();
+};
+
+```

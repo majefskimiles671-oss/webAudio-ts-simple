@@ -11,9 +11,11 @@
             --bg-app: #111;
             --bg-surface: #222;
             --bg-panel: #1a1a1a;
+            --bg-button: #828282;
 
             --text-main: #eee;
             --text-muted: #aaa;
+            --text-button: #2f2f2f;
 
             --accent-primary: #ff9500;
             --accent-danger: #ff3b30;
@@ -46,6 +48,13 @@
 
         }
 
+
+        button {
+            background: var(--bg-button);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-button);
+        }
+
         /* Transport */
 
         .transport {
@@ -72,10 +81,64 @@
             cursor: not-allowed;
         }
 
+
+        #transport-toggles {
+            display: flex;
+            gap: 8px;
+        }
+
+        .transport-toggle {
+            /* width: 22px; */
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .transport-toggle.active {
+            background: #ff3b30;
+            color: black;
+        }
+
+
         .record-btn.recording {
             background: #ff3b30;
             color: black;
         }
+
+
+        #playBtn.active {
+            background: var(--accent-primary);
+            color: black;
+        }
+
+
+        #playRecordBtn {
+            border-radius: 6px 10px 10px 6px;
+            padding: 5px;
+        }
+
+        #playRecordBtn.active {
+            box-shadow:
+                inset 0 0 0 2px rgba(0, 0, 0, 0.35);
+
+
+            background: linear-gradient(90deg,
+                    var(--accent-primary) 0%,
+                    var(--accent-primary) 30%,
+                    color-mix(in oklab, var(--accent-primary), var(--accent-danger)) 50%,
+                    var(--accent-danger) 70%,
+                    var(--accent-danger) 100%);
+
+
+        }
+
+
 
         /* Timer */
 
@@ -149,13 +212,6 @@
             background: var(--bg-surface);
         }
 
-        /* Track controls */
-
-        /* #controls-column::-webkit-scrollbar {
-            display: none;
-        } */
-
-
         .track-controls {
             display: flex;
             gap: 6px;
@@ -174,9 +230,38 @@
             color: black;
         }
 
+
+        .solo-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         .gain-slider {
             width: 100%;
         }
+
+
+        .track-toggles {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .toggle-btn {
+            width: 22px;
+            height: 16px;
+            padding: 0;
+            cursor: pointer;
+            border-radius: 3px;
+            /* background: var(--border-subtle);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main); */
+        }
+
+        .toggle-btn.active {
+            background: var(--accent-highlight);
+        }
+
 
         /* Timeline */
 
@@ -219,21 +304,13 @@
         .waveform {
             display: inline-block;
             height: 80px;
-            /* width: 2400px; */
             background-color: var(--bg-surface);
-            /* background-image: repeating-linear-gradient(90deg,
-                    #333,
-                    #333 20px,
-                    #2a2a2a 20px,
-                    #2a2a2a 40px); */
 
             background-image: repeating-linear-gradient(90deg,
                     var(--waveform-a),
                     var(--waveform-a) 20px,
                     var(--waveform-b) 20px,
                     var(--waveform-b) 40px);
-
-
         }
 
         .waveform-canvas {
@@ -426,8 +503,44 @@
 
 
     <div class="transport">
-        <button id="playBtn">Play</button>
-        <button id="recordBtn" class="record-btn">Record</button>
+
+        <div id="transport-toggles">
+            <button class="transport-toggle">A</button>
+            <button class="transport-toggle">B</button>
+            <button class="transport-toggle">C</button>
+            <button class="transport-toggle">D</button>
+            <button class="transport-toggle">E</button>
+        </div>
+
+
+        <button id="playBtn" aria-label="Play">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                <polygon points="3,2 12,7 3,12" fill="currentColor" />
+            </svg>
+        </button>
+
+
+        <button id="playRecordBtn" class="transport-toggle" aria-label="Play and Record">
+
+
+
+            <svg width="24" height="14" viewBox="0 0 24 14" aria-hidden="true">
+                <polygon points="1,2 8,7 1,12" fill="currentColor" />
+                <circle cx="18.5" cy="7" r="4.5" fill="currentColor" />
+            </svg>
+
+
+
+        </button>
+
+
+        <button id="recordBtn" class="record-btn" aria-label="Record">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                <circle cx="7" cy="7" r="5" fill="currentColor" />
+            </svg>
+        </button>
+
+
         <div class="timer" id="timer">00:00.0</div>
         <div class="meter" id="meter">
             <div class="meter-bar" id="meterBar"></div>
@@ -444,6 +557,39 @@
             <div id="timeline-column"></div>
         </div>
     </div>
+
+
+    <template id="control-row-template">
+        <div class="control-row">
+            <div class="row-inner">
+                <div class="track-title" contenteditable="true"></div>
+                <div class="track-controls">
+                    <button class="solo-btn">S</button>
+                    <input type="range" class="gain-slider" min="0" max="100" value="80" />
+                </div>
+
+                <div class="track-toggles">
+                    <button class="toggle-btn">A</button>
+                    <button class="toggle-btn">B</button>
+                    <button class="toggle-btn">C</button>
+                    <button class="toggle-btn">D</button>
+                    <button class="toggle-btn">E</button>
+                </div>
+
+            </div>
+        </div>
+    </template>
+
+    <template id="timeline-row-template">
+        <div class="timeline-row">
+            <div class="row-inner">
+                <div class="waveform">
+                    <canvas class="waveform-canvas" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </template>
+
 
     <script>
         const controlsCol = document.getElementById("controls-column");
@@ -471,19 +617,23 @@
         }, { passive: false });
 
 
+        // Tracks from Template
 
+        const controlTpl = document.getElementById("control-row-template");
+        const timelineTpl = document.getElementById("timeline-row-template");
 
         for (let i = 0; i < 8; i++) {
-            const control = document.createElement("div");
-            control.className = "control-row";
+            /* ----- Controls Row ----- */
 
-            const title = document.createElement("div");
-            title.className = "track-title";
-            title.contentEditable = "true";
+            const controlFrag = controlTpl.content.cloneNode(true);
+            const controlRow = controlFrag.querySelector(".control-row");
+            const title = controlFrag.querySelector(".track-title");
+            const soloBtn = controlFrag.querySelector(".solo-btn");
+
             title.textContent = `Track ${i + 1}`;
             title.spellcheck = false;
 
-            title.addEventListener("keydown", e => {
+            title.addEventListener("keydown", (e) => {
                 if (e.key === "Enter") {
                     e.preventDefault();
                     title.blur();
@@ -495,65 +645,34 @@
                 title.textContent = t === "" ? `Track ${i + 1}` : t;
             });
 
-            const controls = document.createElement("div");
-            controls.className = "track-controls";
+            controlFrag.querySelectorAll(".toggle-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    btn.classList.toggle("active");
+                });
+            });
 
-            const soloBtn = document.createElement("button");
-            soloBtn.textContent = "S";
-            soloBtn.className = "solo-btn";
-            soloBtn.onclick = () => soloBtn.classList.toggle("active");
+            controlsCol.appendChild(controlFrag);
 
-            const gain = document.createElement("input");
-            gain.type = "range";
-            gain.min = 0;
-            gain.max = 100;
-            gain.value = 80;
-            gain.className = "gain-slider";
+            /* ----- Timeline Row ----- */
 
-            controls.appendChild(soloBtn);
-            controls.appendChild(gain);
+            const timelineFrag = timelineTpl.content.cloneNode(true);
+            const timelineRow = timelineFrag.querySelector(".timeline-row");
+            const canvas = timelineFrag.querySelector(".waveform-canvas");
 
-            // control.appendChild(title);
-            // control.appendChild(controls);
+            const canvasWidth = 300 + i * 200;
+            canvas.width = canvasWidth;
 
+            timelineCol.appendChild(timelineFrag);
 
-            const controlInner = document.createElement("div");
-            controlInner.className = "row-inner";
-
-            controlInner.appendChild(title);
-            controlInner.appendChild(controls);
-            control.appendChild(controlInner);
-
-
-            const timeline = document.createElement("div");
-            timeline.className = "timeline-row";
-            //   timeline.innerHTML = `<div class="waveform"></div>`;
-
-            const canvasWidth = 300 + i * 200; // different width per track
-
-            timeline.innerHTML = `
-            
-            <div class="row-inner">
-                <div class="waveform">
-                <canvas
-                    class="waveform-canvas"
-                    width="${canvasWidth}"
-                    height="80">
-                </canvas>
-                </div>
-            </div>
-
-            `;
-
-
-            controlsCol.appendChild(control);
-            timelineCol.appendChild(timeline);
+            /* ----- Height Sync ----- */
 
             const ro = new ResizeObserver(([e]) => {
-                control.style.height = `${e.contentRect.height}px`;
+                controlRow.style.height = `${e.contentRect.height}px`;
             });
-            ro.observe(timeline);
+
+            ro.observe(timelineRow);
         }
+
 
         /* Transport logic */
 
@@ -570,9 +689,11 @@
 
         const PPS = 100;
         const SCROLL_THRESHOLD = 120;
+        // const playText = "▶";
+        // const recordText = "●"
 
         function updatePlayhead() {
-            if (!playing) return;
+            if (!playing && !recording) return;
 
             const elapsed = (performance.now() - startTime) / 1000;
             const x = elapsed * PPS;
@@ -597,16 +718,59 @@
         }
 
         function updateMeter() {
-            if (!recording) return;
-            meterBar.style.width = `${20 + Math.random() * 80}%`;
+            if (recording) {
+                meterBar.style.width = `${20 + Math.random() * 80}%`;
+            }
             requestAnimationFrame(updateMeter);
         }
+        updateMeter();
 
         playBtn.onclick = () => {
-            if (recording) return;
+            // if (recording) return;
             playing = !playing;
-            playBtn.textContent = playing ? "Stop" : "Play";
-            if (playing) {
+            // playBtn.textContent = playing ? "Stop" : "Play";
+            if (playing && !recording) {
+                startTime = performance.now();
+                updatePlayhead();
+            }
+            if (!playing && !recording) {
+                playhead.style.transform = "translateX(0px)";
+                timelineArea.scrollLeft = 0;
+                timer.textContent = "00:00.0";
+            }
+            syncTransportUI();
+        };
+
+        recordBtn.onclick = () => {
+            recording = !recording;
+            // recordBtn.textContent = recording ? "Stop" : "Record";
+            recordBtn.classList.toggle("recording", recording);
+
+            meter.classList.toggle("active", recording);
+
+            if (recording && !playing) {
+                startTime = performance.now();
+                updatePlayhead();
+            }
+
+            if (!recording && !playing) {
+                playhead.style.transform = "translateX(0px)";
+                timelineArea.scrollLeft = 0;
+                timer.textContent = "00:00.0";
+            }
+            syncTransportUI();
+        };
+
+
+        const playRecordBtn = document.getElementById("playRecordBtn");
+
+        playRecordBtn.onclick = () => {
+            const enable = !(playing && recording);
+
+            playing = enable;
+            recording = enable;
+
+            if (enable) {
                 startTime = performance.now();
                 updatePlayhead();
             } else {
@@ -614,18 +778,70 @@
                 timelineArea.scrollLeft = 0;
                 timer.textContent = "00:00.0";
             }
+
+            syncTransportUI();
         };
 
-        recordBtn.onclick = () => {
-            recording = !recording;
-            recordBtn.textContent = recording ? "Stop" : "Record";
+
+
+        function syncTransportUI() {
+
+            const playRecordBtn =
+                document.getElementById("playRecordBtn");
+
+            playBtn.classList.toggle("active", playing);
             recordBtn.classList.toggle("recording", recording);
 
-            playBtn.disabled = recording;
+
+            playRecordBtn.classList.toggle(
+                "active",
+                playing && recording
+            );
+
 
             meter.classList.toggle("active", recording);
-            if (recording) updateMeter();
-        };
+        }
+
+
+
+        // linked toggle behavior
+        const transportToggles =
+            document.querySelectorAll("#transport-toggles .transport-toggle");
+
+        transportToggles.forEach(btn => {
+            btn.addEventListener("click", () => {
+                transportToggles.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+            });
+        });
+
+        // solo buttons
+        const soloButtons = Array.from(
+            document.querySelectorAll(".solo-btn")
+        );
+
+        soloButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const isActive = btn.classList.contains("active");
+
+                // Reset all
+                soloButtons.forEach(b => {
+                    b.classList.remove("active");
+                    b.disabled = false;
+                });
+
+                // If clicked button was not active, activate it and disable others
+                if (!isActive) {
+                    btn.classList.add("active");
+                    soloButtons.forEach(b => {
+                        if (b !== btn) b.disabled = true;
+                    });
+                }
+            });
+        });
+
+
+
         /* Menu and Themes Logic */
 
         document.querySelectorAll("[data-theme]").forEach(el => {
@@ -634,7 +850,7 @@
             };
         });
 
-        document.body.setAttribute("data-theme", "dark");
+        document.body.setAttribute("data-theme", "light");
 
 
 
