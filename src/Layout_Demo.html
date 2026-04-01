@@ -24,7 +24,7 @@
             --waveform-a: #333;
             --waveform-b: #2a2a2a;
 
-            --border-subtle: #333;
+            --border-subtle: #6b6b6b;
         }
 
         html,
@@ -33,7 +33,7 @@
             padding: 0;
             height: 100%;
             background: #111;
-            color: #eee;
+            /* color: #eee; */
             font-family: system-ui, sans-serif;
             overflow: hidden;
         }
@@ -102,7 +102,7 @@
 
         .transport-toggle.active {
             background: #ff3b30;
-            color: black;
+            color: var(--text-main);
         }
 
         /* Metronome */
@@ -126,13 +126,13 @@
 
         .record-btn.recording {
             background: #ff3b30;
-            color: black;
+            color: var(--text-main);
         }
 
 
         #playBtn.active {
             background: var(--accent-primary);
-            color: black;
+            color: var(--text-main);
         }
 
 
@@ -267,7 +267,7 @@
 
         .solo-btn.active {
             background: #ffd400;
-            color: black;
+            color: var(--text-main);
         }
 
 
@@ -310,12 +310,14 @@
             position: sticky;
             top: 0;
             z-index: 5;
+            /* color: var(--text-main); */
         }
 
 
         .timeline-ruler-inner {
             position: relative;
             height: 100%;
+            /* color: var(--text-main); */
         }
 
         #timeline-ruler-canvas {
@@ -329,6 +331,7 @@
             position: relative;
             width: max-content;
             overflow: visible;
+            /* color: red; */
         }
 
 
@@ -338,6 +341,7 @@
             overflow-y: auto;
             background: var(--bg-panel);
             overscroll-behavior: none;
+            /* color: var(--text-main); */
         }
 
         #timeline-overlay {
@@ -424,6 +428,8 @@
 
             --waveform-a: #333;
             --waveform-b: #2a2a2a;
+
+            /* --border-subtle: red; */
         }
 
 
@@ -901,6 +907,21 @@
 
         function renderTimelineRuler() {
 
+const style = getComputedStyle(document.body);
+
+const textMain =
+  style.getPropertyValue("--text-main").trim();
+
+const textMuted =
+  style.getPropertyValue("--text-muted").trim();
+
+  const borderSubtle =
+  style.getPropertyValue("--border-subtle").trim();
+
+    const accentPrimary =
+  style.getPropertyValue("--accent-Primary").trim();
+
+
             const contentWidth = timelineInner.scrollWidth;
             const viewWidth = timelineArea.clientWidth;
 
@@ -920,7 +941,7 @@
             const endSeconds = pixelsToSeconds(scrollLeft + viewWidth);
 
             rulerCtx.font = "10px monospace";
-            rulerCtx.fillStyle = "var(--text-muted)";
+            rulerCtx.fillStyle = textMuted;
 
             let ticks = [];
 
@@ -995,7 +1016,7 @@
                 const x = secondsToPixels(tick.time);
 
                 if (tick.major) {
-                    rulerCtx.strokeStyle = "var(--text-main)";
+                    rulerCtx.strokeStyle = textMain;
                     rulerCtx.beginPath();
                     rulerCtx.moveTo(x + 0.5, height);
                     rulerCtx.lineTo(x + 0.5, 8);
@@ -1005,7 +1026,7 @@
                         rulerCtx.fillText(tick.label, x + 2, 10);
                     }
                 } else {
-                    rulerCtx.strokeStyle = "var(--border-subtle)";
+                    rulerCtx.strokeStyle = borderSubtle;
                     rulerCtx.beginPath();
                     rulerCtx.moveTo(x + 0.5, height);
                     rulerCtx.lineTo(x + 0.5, height - 6);
@@ -1020,7 +1041,7 @@
             if (getTransportState() !== "IDLE") {
                 const playheadX = getPlayheadX();
 
-                rulerCtx.strokeStyle = "var(--accent-primary)";
+                rulerCtx.strokeStyle = accentPrimary;
                 rulerCtx.lineWidth = 1;
 
                 rulerCtx.beginPath();
@@ -1294,19 +1315,9 @@
 
             playhead.style.transform = `translateX(${x}px)`;
 
-            // recording range update
-            // if (recording && recordStartX !== null) {
-            //     const width = x - recordStartX;
-
-            //     recordRange.style.width =
-            //         `${Math.max(0, width)}px`;
-            // }
-
-
             if (recording) {
                 updateRecordRange();
             }
-
 
             // scroll
             const right = timelineArea.scrollLeft + timelineArea.clientWidth;
@@ -1453,6 +1464,7 @@
         document.querySelectorAll("[data-theme]").forEach(el => {
             el.onclick = () => {
                 document.body.setAttribute("data-theme", el.dataset.theme);
+                renderTimelineRuler();
             };
         });
 
