@@ -184,10 +184,28 @@
         /* Controls column */
 
         #controls-column {
+
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+
+        }
+
+        #controls-column-spacer {
+
+            height: 32px;
+            /* must match ruler height */
+            flex-shrink: 0;
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-panel);
+
+        }
+
+        #controls-scroll-column {
             background: var(--bg-app);
-            overflow-y: hidden;
-            overflow-x: hidden;
-            padding-top: 32px;
+            overflow-y: auto;
+            /* overflow-x: hidden;
+            padding-top: 32px; */
         }
 
         .control-row {
@@ -625,7 +643,11 @@
 
 
     <div class="layout-root">
-        <div id="controls-column"></div>
+        <div id="controls-column">
+            <div id="controls-column-spacer"></div>
+            <div id="controls-scroll-column"></div>
+        </div>
+
 
         <div id="timeline-area">
             <div id="timeline-inner">
@@ -705,6 +727,7 @@
         // DOM REFERENCES
         // ==========================
         const controlsCol = document.getElementById("controls-column");
+        const controlsScrollCol = document.getElementById("controls-scroll-column");
         const timelineCol = document.getElementById("timeline-column");
         const timelineArea = document.getElementById("timeline-area");
         const timelineInner = document.getElementById("timeline-inner");
@@ -1010,19 +1033,19 @@
         // Sync scrollTop from timeline → controls
         // Add this once, after you define timelineArea and controlsCol:
         timelineArea.addEventListener("scroll", () => {
-            controlsCol.scrollTop = timelineArea.scrollTop;
+            controlsScrollCol.scrollTop = timelineArea.scrollTop;
 
             // debug output
             if (document.body.classList.contains("debug")) {
-                controlsCol.dataset.scroll =
-                    controlsCol.scrollTop;
+                controlsScrollCol.dataset.scroll =
+                    controlsScrollCol.scrollTop;
                 timelineArea.dataset.scroll =
                     timelineArea.scrollTop;
             }
         });
 
         // add this js once
-        controlsCol.addEventListener("wheel", (e) => {
+        controlsScrollCol.addEventListener("wheel", (e) => {
             timelineArea.scrollTop += e.deltaY;
             e.preventDefault();
         }, { passive: false });
@@ -1182,7 +1205,7 @@
                 });
             });
 
-            controlsCol.appendChild(controlFrag);
+            controlsScrollCol.appendChild(controlFrag);
 
             /* ----- Timeline Row ----- */
 
