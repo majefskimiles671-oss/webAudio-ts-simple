@@ -110,7 +110,20 @@
             position: relative;
             width: 80px;
             height: 18px;
-            background: var(--bg-surface);
+            background-color: var(--bg-surface);
+
+            /* background-image: repeating-linear-gradient(90deg,
+                    rgba(255, 255, 255, 0.25),
+                    rgba(255, 255, 255, 0.25) 2px,
+                    transparent 2px,
+                    transparent 20px); */
+
+            background-image: repeating-linear-gradient(90deg,
+                    var(--text-button),
+                    var(--text-button) 2px,
+                    transparent 2px,
+                    transparent 20px);
+
             border: 1px solid var(--border-subtle);
             border-radius: 3px;
             overflow: hidden;
@@ -221,9 +234,7 @@
 
         #controls-scroll-column {
             background: var(--bg-app);
-            overflow-y: auto;
-            /* overflow-x: hidden;
-            padding-top: 32px; */
+            overflow-y: hidden;
         }
 
         .control-row {
@@ -299,6 +310,127 @@
             background: var(--accent-highlight);
         }
 
+        /* Zoom slider */
+
+
+        #zoom-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 20px;
+            background: transparent;
+            margin: 0;
+        }
+
+        .zoom-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 140px;
+        }
+
+        .zoom-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .zoom-labels span {
+            cursor: default;
+        }
+
+
+        #zoom-slider::-webkit-slider-runnable-track {
+            height: 4px;
+            background: var(--bg-panel);
+            border-radius: 2px;
+            border: 1px solid var(--border-subtle);
+        }
+
+
+
+        #zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            border: 2px solid var(--bg-app);
+            margin-top: -6px;
+            /* centers thumb on track */
+            cursor: pointer;
+        }
+
+
+
+        #zoom-slider:hover::-webkit-slider-thumb,
+        #zoom-slider:focus-visible::-webkit-slider-thumb {
+            background: var(--accent-highlight);
+        }
+
+        /* #zoom-slider:hover::-moz-range-thumb,
+#zoom-slider:focus-visible::-moz-range-thumb {
+  background: var(--accent-highlight);
+} */
+
+        /* #zoom-slider:focus-visible {
+  outline: none;
+} */
+
+
+        /* #zoom-slider {
+  cursor: ew-resize;
+} */
+
+
+        .zoom-slider-wrap {
+            position: relative;
+            width: 140px;
+        }
+
+
+        .zoom-labels {
+            position: relative;
+            height: 14px;
+            margin-top: 4px;
+        }
+
+        .zoom-labels span {
+            position: absolute;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+
+        .zoom-labels span[data-pos="0"] {
+            left: 0%;
+            transform: translateX(0);
+        }
+
+        .zoom-labels span[data-pos="1"] {
+            left: 25%;
+        }
+
+        .zoom-labels span[data-pos="2"] {
+            left: 50%;
+        }
+
+        .zoom-labels span[data-pos="3"] {
+            left: 75%;
+        }
+
+        .zoom-labels span[data-pos="4"] {
+            left: 100%;
+            transform: translateX(-100%);
+        }
+
+
+
+
 
         /* Timeline */
 
@@ -339,7 +471,7 @@
             position: relative;
             overflow-x: auto;
             overflow-y: auto;
-            background: var(--bg-panel);
+            background: var(--bg-surface);
             overscroll-behavior: none;
             /* color: var(--text-main); */
         }
@@ -404,7 +536,7 @@
         }
 
 
-        .waveform::after {
+        /* .waveform::after {
             content: "";
             position: absolute;
             inset: 0;
@@ -413,50 +545,275 @@
                     transparent,
                     rgba(0, 0, 0, 0.04));
             pointer-events: none;
-        }
+        } */
     </style>
     <style>
         /* Themes CSS */
 
         body[data-theme="dark"] {
-            --bg-app: #111;
-            --bg-surface: #222;
-            --bg-panel: #1a1a1a;
+            /* Surfaces */
+            --bg-app: #111827;
+            /* deep neutral */
+            --bg-surface: #1f2937;
+            /* primary surface */
+            --bg-panel: #020617;
+            /* panel contrast */
+            --bg-button: #374151;
+            /* restrained button bg */
 
-            --text-main: #eee;
-            --text-muted: #aaa;
+            /* Text */
+            --text-main: #e5e7eb;
+            /* light neutral */
+            --text-muted: #9ca3af;
+            /* true muted */
+            --text-button: #e5e7eb;
 
-            --waveform-a: #333;
-            --waveform-b: #2a2a2a;
+            /* UI chrome */
+            --border-subtle: #374151;
 
-            /* --border-subtle: red; */
+            /* Accents */
+            --accent-primary: #ff9500;
+            --accent-danger: #ff3b30;
+            --accent-highlight: #ffd400;
+
+            /* Empty track background (quiet) */
+            --waveform-a: #1f2937;
+            --waveform-b: #111827;
+
         }
 
 
         body[data-theme="light"] {
-            --bg-app: #f5f5f5;
-            --bg-surface: #ffffff;
-            --bg-panel: #e6e6e6;
 
-            --text-main: #111;
-            --text-muted: #555;
+            /* Surfaces */
+            --bg-app: #f3f4f6;
+            /* slightly cooler, less yellow */
+            --bg-surface: #cdcbcb;
+            /* true surface */
+            --bg-panel: #e5e7eb;
+            /* clearer separation from app */
 
-            --waveform-a: #ddd;
-            --waveform-b: #ccc;
+            /* Text */
+            --text-main: #111827;
+            /* neutral dark, not pure black */
+            --text-muted: #6b7280;
+            /* actual “muted”, not near-black */
+            --text-button: #111827;
+
+            /* UI chrome */
+            --border-subtle: #d1d5db;
+
+            /* Accents stay the same */
+            --accent-primary: #ff9500;
+            --accent-danger: #ff3b30;
+            --accent-highlight: #ffd400;
+
+            /* Empty track background (quiet) */
+            --waveform-a: #e5e7eb;
+            --waveform-b: #d1d5db;
+
+            --bg-button: #e0dfdf;
+
         }
 
 
         body[data-theme="studio"] {
-            --bg-app: #0f172a;
-            --bg-surface: #111827;
+            /* Surfaces */
+            --bg-app: #020617;
+            /* near-black */
+            --bg-surface: #0f172a;
+            /* console surface */
             --bg-panel: #020617;
+            /* unified panel */
+            --bg-button: #1e293b;
+            /* tactile button */
 
+            /* Text */
             --text-main: #d1d5db;
-            --text-muted: #9ca3af;
+            /* soft light */
+            --text-muted: #94a3b8;
+            /* cool muted */
+            --text-button: #e5e7eb;
 
-            --waveform-a: #1f2933;
-            --waveform-b: #111827;
+            /* UI chrome */
+            --border-subtle: #1e293b;
+
+            /* Accents */
+            --accent-primary: #38bdf8;
+            /* studio cyan */
+            --accent-danger: #ef4444;
+            --accent-highlight: #7dd3fc;
+
+            /* Empty track background (quiet) */
+            --waveform-a: #020617;
+            --waveform-b: #0f172a;
+
         }
+
+        body[data-theme="Ice"] {
+            /* Surfaces */
+            --bg-app: #eaf2f8;
+            /* icy blue-gray */
+            --bg-surface: #ffffff;
+            /* clean surface */
+            --bg-panel: #dbe7f0;
+            /* cool separation */
+
+            /* Text */
+            --text-main: #0f172a;
+            /* deep blue-black */
+            --text-muted: #475569;
+            /* cool muted */
+            --text-button: #0f172a;
+
+            /* UI chrome */
+            --border-subtle: #c7d6e2;
+
+            /* Accents */
+            --accent-primary: #38bdf8;
+            /* ice blue */
+            --accent-danger: #ef4444;
+            --accent-highlight: #7dd3fc;
+
+            /* Empty track background (quiet) */
+            --waveform-a: #dbe7f0;
+            --waveform-b: #c7d6e2;
+
+            --bg-button: #c6d2c9;
+
+        }
+
+        body[data-theme="Fire"] {
+            /* Surfaces */
+            --bg-app: #2a0f0a;
+            /* deep ember */
+            --bg-surface: #3b1410;
+            /* heated surface */
+            --bg-panel: #4a1a14;
+            /* layered warmth */
+
+            /* Text */
+            --text-main: #fef2f2;
+            /* hot white */
+            --text-muted: #fca5a5;
+            /* ember muted */
+            --text-button: #1f0a06;
+
+            /* UI chrome */
+            --border-subtle: #7c2d12;
+
+            /* Accents */
+            --accent-primary: #f97316;
+            /* flame orange */
+            --accent-danger: #dc2626;
+            --accent-highlight: #fde047;
+
+            /* Empty track background (quiet) */
+            --waveform-a: #4a1a14;
+            --waveform-b: #5c241c;
+
+            --bg-button: #120f0f;
+        }
+
+        body[data-theme="Earth"] {
+            /* Surfaces */
+            --bg-app: #2b2a25;
+            /* soil */
+            --bg-surface: #3a372f;
+            /* stone */
+            --bg-panel: #463f34;
+            /* layered earth */
+
+            /* Text */
+            --text-main: #f5f5f4;
+            /* warm neutral */
+            --text-muted: #a8a29e;
+            /* clay muted */
+            --text-button: #1c1917;
+
+            /* UI chrome */
+            --border-subtle: #57534e;
+
+            /* Accents */
+            --accent-primary: #84cc16;
+            /* moss green */
+            --accent-danger: #b91c1c;
+            --accent-highlight: #eab308;
+
+            /* Empty track background (quiet) */
+            --waveform-a: #463f34;
+            --waveform-b: #57534e;
+
+            --bg-button: #5c5151;
+
+        }
+
+        body[data-theme="Wind"] {
+            /* Surfaces */
+            --bg-app: #f8fafc;
+            /* sky white */
+            --bg-surface: #ffffff;
+            /* pure */
+            --bg-panel: #e2e8f0;
+            /* soft separation */
+
+            /* Text */
+            --text-main: #0f172a;
+            /* clear ink */
+            --text-muted: #64748b;
+            /* airy muted */
+            --text-button: #0f172a;
+
+            /* UI chrome */
+            --border-subtle: #cbd5e1;
+
+            /* Accents */
+            --accent-primary: #22d3ee;
+            /* wind blue */
+            --accent-danger: #ef4444;
+            --accent-highlight: #a5f3fc;
+
+            /* Empty track background (quiet) */
+            --waveform-a: #e2e8f0;
+            --waveform-b: #cbd5e1;
+
+            --bg-button: #a99292;
+
+        }
+
+        body[data-theme="Sol"] {
+            /* Surfaces */
+            --bg-app: #fff7ed;
+            /* sunlit paper */
+            --bg-surface: #ffffff;
+            /* bright surface */
+            --bg-panel: #ffedd5;
+            /* warm glow */
+
+            /* Text */
+            --text-main: #78350f;
+            /* warm brown */
+            --text-muted: #a16207;
+            /* golden muted */
+            --text-button: #78350f;
+
+            /* UI chrome */
+            --border-subtle: #fed7aa;
+
+            /* Accents */
+            --accent-primary: #f59e0b;
+            /* solar gold */
+            --accent-danger: #dc2626;
+            --accent-highlight: #fde047;
+
+            /* Empty track background (quiet) */
+            --waveform-a: #ffedd5;
+            --waveform-b: #fed7aa;
+
+            --bg-button: #dec5cc;
+
+        }
+
 
 
         /* Menu CSS */
@@ -615,9 +972,14 @@
         <div class="menu">
             <span class="menu-label">Settings</span>
             <div class="menu-pop">
+                <div data-theme="studio">Theme: Studio</div>
                 <div data-theme="dark">Theme: Dark</div>
                 <div data-theme="light">Theme: Light</div>
-                <div data-theme="studio">Theme: Studio</div>
+                <div data-theme="Ice">Theme: Ice</div>
+                <div data-theme="Fire">Theme: Fire</div>
+                <div data-theme="Earth">Theme: Earth</div>
+                <div data-theme="Wind">Theme: Wind</div>
+                <div data-theme="Sol">Theme: Sol</div>
                 <hr />
                 <div data-ruler="seconds">Ruler Mode: Seconds</div>
                 <div data-ruler="bars">Ruler Mode: Bars</div>
@@ -675,16 +1037,21 @@
         </div>
 
         <div class="zoom-container">
-            <input id="zoom-slider" type="range" min="0" max="4" step="1" value="2" />
+            <div class="zoom-slider-wrap">
+                <input id="zoom-slider" type="range" min="0" max="4" step="1" value="2" />
 
-            <div class="zoom-labels">
-                <span data-pos="0">0.25x</span>
-                <span data-pos="1">0.5x</span>
-                <span data-pos="2">1x</span>
-                <span data-pos="3">2x</span>
-                <span data-pos="4">4x</span>
+                <div class="zoom-labels">
+                    <span data-pos="0">¼</span>
+                    <span data-pos="1">½</span>
+                    <span data-pos="2">1x</span>
+                    <span data-pos="3">2x</span>
+                    <span data-pos="4">4x</span>
+                </div>
             </div>
         </div>
+
+
+
     </div>
 
 
@@ -907,19 +1274,19 @@
 
         function renderTimelineRuler() {
 
-const style = getComputedStyle(document.body);
+            const style = getComputedStyle(document.body);
 
-const textMain =
-  style.getPropertyValue("--text-main").trim();
+            const textMain =
+                style.getPropertyValue("--text-main").trim();
 
-const textMuted =
-  style.getPropertyValue("--text-muted").trim();
+            const textMuted =
+                style.getPropertyValue("--text-muted").trim();
 
-  const borderSubtle =
-  style.getPropertyValue("--border-subtle").trim();
+            const borderSubtle =
+                style.getPropertyValue("--border-subtle").trim();
 
-    const accentPrimary =
-  style.getPropertyValue("--accent-Primary").trim();
+            const accentPrimary =
+                style.getPropertyValue("--accent-Primary").trim();
 
 
             const contentWidth = timelineInner.scrollWidth;
@@ -1065,10 +1432,10 @@ const textMuted =
 
 
             const spbar = secondsPerBar();
-            // const phase = (t / spbar) % 1; // bar mode
+            const phase = (t / spbar) % 1; // bar mode
 
 
-            const phase = (t / spb) % 1;   // beat mode     // 0 → 1 per beat
+            // const phase = (t / spb) % 1;   // beat mode     // 0 → 1 per beat
 
             const scan = document.querySelector(".metronome-scan");
             const line = scan.querySelector(".metronome-line");
@@ -1076,14 +1443,14 @@ const textMuted =
             const width = scan.clientWidth;
             const x = phase * width;
 
-// blink at beginning of phase
-if (phase < 0.03) {
-  line.style.opacity = "1";
-  line.style.width = "3px";
-} else {
-  line.style.opacity = "0.7";
-  line.style.width = "2px";
-}
+            // blink at beginning of phase
+            if (phase < 0.03) {
+                line.style.opacity = "1";
+                line.style.width = "3px";
+            } else {
+                line.style.opacity = "0.7";
+                line.style.width = "2px";
+            }
 
 
             line.style.transform = `translateX(${x}px)`;
