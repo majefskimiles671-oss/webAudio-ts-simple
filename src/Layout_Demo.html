@@ -400,19 +400,16 @@
         }
 
 
-.waveform::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.04),
-    transparent,
-    rgba(0,0,0,0.04)
-  );
-  pointer-events: none;
-}
-
+        .waveform::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom,
+                    rgba(0, 0, 0, 0.04),
+                    transparent,
+                    rgba(0, 0, 0, 0.04));
+            pointer-events: none;
+        }
     </style>
     <style>
         /* Themes CSS */
@@ -1046,8 +1043,8 @@
             const spb = secondsPerBeat();       // already defined
 
 
-const spbar = secondsPerBar();
-const phase = (t / spbar) % 1;
+            const spbar = secondsPerBar();
+            const phase = (t / spbar) % 1;
 
 
             // const phase = (t / spb) % 1;        // 0 → 1 per beat
