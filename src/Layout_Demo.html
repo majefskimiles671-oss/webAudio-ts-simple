@@ -294,20 +294,11 @@
             z-index: 5;
         }
 
-        /* .timeline-ruler {
-            position: relative;   REQUIRED
-            height: 32px;
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--border-subtle);
-            z-index: 5;
-        } */
 
-
-
-.timeline-ruler-inner {
-  position: relative;
-  height: 100%;
-}
+        .timeline-ruler-inner {
+            position: relative;
+            height: 100%;
+        }
 
         #timeline-ruler-canvas {
             height: 100%;
@@ -355,40 +346,18 @@
         }
 
 
+
         #record-range {
-
-            /* position: absolute;
-            top: 0;
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            /* ✅ now works correctly */
             height: 2px;
-
+            background: var(--accent-danger);
+            pointer-events: none;
             background: var(--accent-danger);
             opacity: 0.85;
-
-            display: none;
-            pointer-events: none; */
-
         }
-
-
-        /* #record-range {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 2px;
-        } */
-
-
-#record-range {
-  position: absolute;
-  left: 0;
-  bottom: 0;          /* ✅ now works correctly */
-  height: 2px;
-  background: var(--accent-danger);
-  pointer-events: none;
-}
-
-
-
 
 
         .row-inner {
@@ -1029,9 +998,9 @@
             // }
 
 
-if (recording) {
-  updateRecordRange();
-}
+            if (recording) {
+                updateRecordRange();
+            }
 
 
             // scroll
@@ -1294,40 +1263,33 @@ if (recording) {
          * This is where future complexity will live — now it’s clearly contained.
          **/
 
-        // function startRecordingRange() {
-        //     recordStartX = getPlayheadX();
-        //     recordRange.style.display = "block";
-        //     recordRange.style.left = `${recordStartX}px`;
-        //     recordRange.style.width = "0px";
-        // }
+
+        let recordStartTime = null;
+
+        function startRecordingRange() {
+            recordStartTime = getPlayheadTime(); // seconds
+            recordRange.style.display = "block";
+            recordRange.style.width = "0px";
+        }
 
 
-let recordStartTime = null;
-
-function startRecordingRange() {
-  recordStartTime = getPlayheadTime(); // seconds
-  recordRange.style.display = "block";
-  recordRange.style.width = "0px";
-}
+        function getPlayheadTime() {
+            const x = getPlayheadX();
+            return pixelsToSeconds(x);
+        }
 
 
-function getPlayheadTime() {
-  const x = getPlayheadX();
-  return pixelsToSeconds(x);
-}
+        function updateRecordRange() {
+            if (recordStartTime === null) return;
 
+            const currentTime = getPlayheadTime();
 
-function updateRecordRange() {
-  if (recordStartTime === null) return;
+            const startX = secondsToPixels(recordStartTime);
+            const endX = secondsToPixels(currentTime);
 
-  const currentTime = getPlayheadTime();
-
-  const startX = secondsToPixels(recordStartTime);
-  const endX = secondsToPixels(currentTime);
-
-  recordRange.style.left = `${startX}px`;
-  recordRange.style.width = `${Math.max(0, endX - startX)}px`;
-}
+            recordRange.style.left = `${startX}px`;
+            recordRange.style.width = `${Math.max(0, endX - startX)}px`;
+        }
 
 
         function clearRecordingRange() {
