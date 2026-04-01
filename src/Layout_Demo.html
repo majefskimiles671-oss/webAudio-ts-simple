@@ -41,13 +41,9 @@
         body {
             display: flex;
             flex-direction: column;
-
-
             background: var(--bg-app);
             color: var(--text-main);
-
         }
-
 
         button {
             background: var(--bg-button);
@@ -63,9 +59,6 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            /* background: #1a1a1a;
-            border-bottom: 1px solid #333; */
-
             background: var(--bg-panel);
             border-bottom: 1px solid var(--border-subtle);
 
@@ -112,12 +105,6 @@
             height: 18px;
             background-color: var(--bg-surface);
 
-            /* background-image: repeating-linear-gradient(90deg,
-                    rgba(255, 255, 255, 0.25),
-                    rgba(255, 255, 255, 0.25) 2px,
-                    transparent 2px,
-                    transparent 20px); */
-
             background-image: repeating-linear-gradient(90deg,
                     var(--text-button),
                     var(--text-button) 2px,
@@ -158,7 +145,6 @@
             box-shadow:
                 inset 0 0 0 2px rgba(0, 0, 0, 0.35);
 
-
             background: linear-gradient(90deg,
                     var(--accent-primary) 0%,
                     var(--accent-primary) 30%,
@@ -166,9 +152,7 @@
                     var(--accent-danger) 70%,
                     var(--accent-danger) 100%);
 
-
         }
-
 
 
         /* Timer */
@@ -201,8 +185,6 @@
         }
 
 
-
-
         /* Layout */
 
         .layout-root {
@@ -215,21 +197,17 @@
         /* Controls column */
 
         #controls-column {
-
             display: flex;
             flex-direction: column;
             overflow: hidden;
-
         }
 
         #controls-column-spacer {
-
             height: 32px;
             /* must match ruler height */
             flex-shrink: 0;
             border-bottom: 1px solid var(--border-subtle);
             background: var(--bg-panel);
-
         }
 
         #controls-scroll-column {
@@ -291,7 +269,6 @@
             width: 100%;
         }
 
-
         .track-toggles {
             display: flex;
             gap: 6px;
@@ -311,7 +288,6 @@
         }
 
         /* Zoom slider */
-
 
         #zoom-slider {
             -webkit-appearance: none;
@@ -340,15 +316,12 @@
             cursor: default;
         }
 
-
         #zoom-slider::-webkit-slider-runnable-track {
             height: 4px;
             background: var(--bg-panel);
             border-radius: 2px;
             border: 1px solid var(--border-subtle);
         }
-
-
 
         #zoom-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -363,33 +336,15 @@
             cursor: pointer;
         }
 
-
-
         #zoom-slider:hover::-webkit-slider-thumb,
         #zoom-slider:focus-visible::-webkit-slider-thumb {
             background: var(--accent-highlight);
         }
 
-        /* #zoom-slider:hover::-moz-range-thumb,
-#zoom-slider:focus-visible::-moz-range-thumb {
-  background: var(--accent-highlight);
-} */
-
-        /* #zoom-slider:focus-visible {
-  outline: none;
-} */
-
-
-        /* #zoom-slider {
-  cursor: ew-resize;
-} */
-
-
         .zoom-slider-wrap {
             position: relative;
             width: 140px;
         }
-
 
         .zoom-labels {
             position: relative;
@@ -404,7 +359,6 @@
             color: var(--text-muted);
             white-space: nowrap;
         }
-
 
         .zoom-labels span[data-pos="0"] {
             left: 0%;
@@ -430,8 +384,6 @@
 
 
 
-
-
         /* Timeline */
 
         .timeline-ruler {
@@ -442,14 +394,11 @@
             position: sticky;
             top: 0;
             z-index: 5;
-            /* color: var(--text-main); */
         }
-
 
         .timeline-ruler-inner {
             position: relative;
             height: 100%;
-            /* color: var(--text-main); */
         }
 
         #timeline-ruler-canvas {
@@ -458,14 +407,11 @@
             display: block;
         }
 
-
         #timeline-inner {
             position: relative;
             width: max-content;
             overflow: visible;
-            /* color: red; */
         }
-
 
         #timeline-area {
             position: relative;
@@ -473,7 +419,6 @@
             overflow-y: auto;
             background: var(--bg-surface);
             overscroll-behavior: none;
-            /* color: var(--text-main); */
         }
 
         #timeline-overlay {
@@ -499,20 +444,16 @@
             z-index: 10;
         }
 
-
-
         #record-range {
             position: absolute;
             left: 0;
             bottom: 0;
-            /* ✅ now works correctly */
             height: 2px;
             background: var(--accent-danger);
             pointer-events: none;
             background: var(--accent-danger);
             opacity: 0.85;
         }
-
 
         .row-inner {
             padding: 8px;
@@ -534,18 +475,6 @@
             display: block;
             height: 100%;
         }
-
-
-        /* .waveform::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom,
-                    rgba(0, 0, 0, 0.04),
-                    transparent,
-                    rgba(0, 0, 0, 0.04));
-            pointer-events: none;
-        } */
     </style>
     <style>
         /* Themes CSS */
@@ -876,7 +805,7 @@
         }
     </style>
     <style>
-        /* Other CSS */
+        /* Debug CSS */
 
         /* =============================
             DEBUG TRANSPORT STATE
@@ -957,8 +886,7 @@
 </head>
 
 <body>
-
-
+    // ---- .menu-bar div ----
     <div class="menu-bar">
         <div class="menu">
             <span class="menu-label">File</span>
@@ -987,7 +915,7 @@
         </div>
     </div>
 
-
+    // ---- .transport div ----
     <div class="transport">
 
         <div id="transport-toggles">
@@ -1012,14 +940,10 @@
 
         <button id="playRecordBtn" class="transport-toggle" aria-label="Play and Record">
 
-
-
             <svg width="24" height="14" viewBox="0 0 24 14" aria-hidden="true">
                 <polygon points="1,2 8,7 1,12" fill="currentColor" />
                 <circle cx="18.5" cy="7" r="4.5" fill="currentColor" />
             </svg>
-
-
 
         </button>
 
@@ -1050,11 +974,9 @@
             </div>
         </div>
 
-
-
     </div>
 
-
+    // ---- .layout-root div ----
     <div class="layout-root">
         <div id="controls-column">
             <div id="controls-column-spacer"></div>
@@ -1087,6 +1009,7 @@
     </div>
 
 
+    // ---- templates ----
     <template id="control-row-template">
         <div class="control-row">
             <div class="row-inner">
@@ -1122,26 +1045,11 @@
 
     <script>
         // ----- Constants -----
-        // ----- DOM References -----
-        // ----- Transport State -----
-        // ----- Transport Helpers -----
-        // ----- Transport Rendering -----
-        // ----- Animation Loops -----
-        // ----- Scroll / Geometry Sync -----
-        // ----- Track & Control Interaction -----
-        // ----- Theme / Debug / Global UI -----
-        // ----- One‑time Initialization -----
-
-        // ==========================
-        // CONSTANTS
-        // ==========================
         const BASE_PPS = 100;
         const SCROLL_THRESHOLD = 120;
 
 
-        // ==========================
-        // DOM REFERENCES
-        // ==========================
+        // ----- DOM References -----
         const controlsCol = document.getElementById("controls-column");
         const controlsScrollCol = document.getElementById("controls-scroll-column");
         const timelineCol = document.getElementById("timeline-column");
@@ -1172,9 +1080,7 @@
         const debugTransportState = document.getElementById("debug-transport-state");
 
 
-        // ==========================
-        // ZOOM STATE
-        // ==========================
+        // ----- Zoom State -----
         const zoomLevels = [0.25, 0.5, 1, 2, 4];
         let zoomIndex = 2;           // default = 1x
         let zoom = zoomLevels[zoomIndex];
@@ -1191,86 +1097,6 @@
         function pixelsToSeconds(px) {
             return px / (BASE_PPS * zoom);
         }
-
-
-        // function renderTimelineRuler() {
-
-        //     const contentWidth = timelineInner.scrollWidth;
-        //     const viewWidth = timelineArea.clientWidth;
-
-
-        //     const rulerHeight = 32;
-
-        //     rulerCanvas.style.height = `${rulerHeight}px`;
-        //     rulerCanvas.height = rulerHeight;
-
-
-        //     const height = rulerCanvas.height;
-
-        //     // Resize canvas for crisp rendering
-        //     rulerCanvas.width = contentWidth;
-        //     rulerCanvas.height = height;
-
-        //     rulerCtx.clearRect(0, 0, contentWidth, height);
-
-        //     const scrollLeft = timelineArea.scrollLeft;
-        //     const startSeconds = pixelsToSeconds(scrollLeft);
-        //     const endSeconds = pixelsToSeconds(scrollLeft + viewWidth);
-
-        //     // Choose tick spacing based on zoom
-        //     const majorStep = zoom <= 0.5 ? 4 :
-        //         zoom <= 1 ? 2 :
-        //             zoom <= 2 ? 1 : 0.5;
-
-        //     const minorStep = majorStep / 4;
-
-        //     rulerCtx.fillStyle = "var(--text-muted)";
-        //     rulerCtx.font = "10px monospace";
-
-        //     for (
-        //         let t = Math.floor(startSeconds / minorStep) * minorStep;
-        //         t <= endSeconds;
-        //         t += minorStep
-        //     ) {
-        //         const x = secondsToPixels(t);// - scrollLeft;
-
-        //         if (Math.abs(t % majorStep) < 0.0001) {
-        //             // Major tick
-        //             rulerCtx.strokeStyle = "var(--text-main)";
-        //             rulerCtx.beginPath();
-        //             rulerCtx.moveTo(x, height);
-        //             rulerCtx.lineTo(x, 8);
-        //             rulerCtx.stroke();
-
-        //             // Label
-        //             rulerCtx.fillText(
-        //                 formatTime(t),
-        //                 x + 2,
-        //                 10
-        //             );
-        //         } else {
-        //             // Minor tick
-        //             rulerCtx.strokeStyle = "var(--border-subtle)";
-        //             rulerCtx.beginPath();
-        //             rulerCtx.moveTo(x, height);
-        //             rulerCtx.lineTo(x, height - 6);
-        //             rulerCtx.stroke();
-        //         }
-        //     }
-
-        //     // DRAW PLAYHEAD LINE
-        //     if (getTransportState() !== "IDLE") {
-        //         const playheadX = getPlayheadX(); // Absolute timeline X coordinates are valid inside the ruler canvas.
-        //         rulerCtx.strokeStyle = "var(--accent-primary)";
-        //         rulerCtx.lineWidth = 1;
-
-        //         rulerCtx.beginPath();
-        //         rulerCtx.moveTo(playheadX + 0.5, 0);     // pixel snapping
-        //         rulerCtx.lineTo(playheadX + 0.5, height);
-        //         rulerCtx.stroke();
-        //     }
-
-        // }
 
         function renderTimelineRuler() {
 
@@ -1457,18 +1283,10 @@
         }
 
 
-
-        // ==========================
-        // RULER STATE
-        // ==========================
-
+        // ----- Ruler State -----
         let rulerMode = "seconds"; // "seconds" | "bars"
 
-
-
-        // ==========================
-        // MUSICAL GRID
-        // ==========================
+        // ----- Musical Grid -----
 
         let bpm = 120;         // beats per minute
         let beatsPerBar = 4;  // time signature numerator
@@ -1571,19 +1389,14 @@
         }
 
 
-
-        // ==========================
-        // TRANSPORT STATE
-        // ==========================
+        // ----- Transport State -----
         let playing = false;
         let recording = false;
         let startTime = 0;
         let recordStartX = null;
 
 
-        // ==========================
-        // TRANSPORT HELPERS
-        // ==========================
+        // ----- Transport Helpers -----
         /**
          * These helpers answer questions or calculations.
          * They do not mutate DOM.
@@ -1639,9 +1452,7 @@
         }
 
 
-        // ==========================
-        // TRANSPORT UI DOM SYNC
-        // ==========================
+        // ----- Transport UI DOM Sync -----
         /**
          * This is your UI truth layer.
          * Nothing in here:
@@ -1669,9 +1480,8 @@
         }
 
 
-        // ==========================
-        // ANIMATION LOOPS
-        // ==========================
+        // ----- Transport Rendering -----
+        // ----- Animation Loops -----
         /**
          * These are special. They:
          * run forever
@@ -1723,9 +1533,7 @@
         }
 
 
-        // ==========================
-        // SCROLL / GEOMETRY SYNC
-        // ==========================
+        // ----- Scroll / Geometry Sync -----
         /**
          * This governs shared vertical scrolling, which is orthogonal to transport.
          * Why here
@@ -1775,9 +1583,7 @@
         }
 
 
-        // ==========================
-        // TRACK & CONTROL INTERACTION
-        // ==========================
+        // ----- Track & Control Interaction -----
         /* This is local UI behavior, not transport state. Why here
 
         These are not play/record state
@@ -1827,9 +1633,7 @@
         }
 
 
-        // ==========================
-        // THEME / DEBUG / GLOBAL UI
-        // ==========================
+        // ----- Theme / Debug / Global UI -----
         /* Menu and Themes Logic 
         Global UI concern
         No effect on transport or tracks
@@ -1860,10 +1664,7 @@
             };
         });
 
-
-        // ==========================
-        // TRACK CREATION
-        // ==========================
+        // ----- Track Creation -----
         /**
          * When you read this block later, you know it does not affect transport state.
          **/
@@ -1950,11 +1751,7 @@
 
             ro.observe(timelineRow);
         }
-
-        // ==========================
-        // ZOOM HANDLER
-        // ==========================
-
+        // ----- Zoom Handler -----
         zoomSlider.oninput = () => {
             const centerTime = timelineArea.scrollLeft / (BASE_PPS * zoom);
 
@@ -1968,9 +1765,7 @@
         };
 
 
-        // ==========================
-        // TRANSPORT BUTTON HANDLERS
-        // ==========================
+        // ----- Transport Button Handlers -----
         /**
          * This is the only place where transport state changes. 
          * Keep them boring and small.
@@ -2049,18 +1844,15 @@
             });
 
 
-        // ==========================
-        // INITIALIZATION
-        // ==========================
+        // ----- One‑time Initialization -----
         setupSoloBtns();
         updateMeter();
         syncTimelineOverlayWidth();
         syncTimelineOverlay();
         renderTimelineRuler();
 
-        // ==========================
-        // END OF SCRIPT
-        // ==========================
+
+        // ----- End of Script -----
 
 
     </script>
