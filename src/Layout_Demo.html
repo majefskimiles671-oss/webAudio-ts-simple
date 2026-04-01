@@ -582,6 +582,9 @@
                 <div data-theme="dark">Theme: Dark</div>
                 <div data-theme="light">Theme: Light</div>
                 <div data-theme="studio">Theme: Studio</div>
+                <hr/>
+                <div data-ruler="seconds">Ruler Mode: Seconds</div>
+                <div data-ruler="bars">Ruler Mode: Bars</div>
             </div>
         </div>
     </div>
@@ -783,23 +786,98 @@
         }
 
 
+        // function renderTimelineRuler() {
+
+        //     const contentWidth = timelineInner.scrollWidth;
+        //     const viewWidth = timelineArea.clientWidth;
+
+
+        //     const rulerHeight = 32;
+
+        //     rulerCanvas.style.height = `${rulerHeight}px`;
+        //     rulerCanvas.height = rulerHeight;
+
+
+        //     const height = rulerCanvas.height;
+
+        //     // Resize canvas for crisp rendering
+        //     rulerCanvas.width = contentWidth;
+        //     rulerCanvas.height = height;
+
+        //     rulerCtx.clearRect(0, 0, contentWidth, height);
+
+        //     const scrollLeft = timelineArea.scrollLeft;
+        //     const startSeconds = pixelsToSeconds(scrollLeft);
+        //     const endSeconds = pixelsToSeconds(scrollLeft + viewWidth);
+
+        //     // Choose tick spacing based on zoom
+        //     const majorStep = zoom <= 0.5 ? 4 :
+        //         zoom <= 1 ? 2 :
+        //             zoom <= 2 ? 1 : 0.5;
+
+        //     const minorStep = majorStep / 4;
+
+        //     rulerCtx.fillStyle = "var(--text-muted)";
+        //     rulerCtx.font = "10px monospace";
+
+        //     for (
+        //         let t = Math.floor(startSeconds / minorStep) * minorStep;
+        //         t <= endSeconds;
+        //         t += minorStep
+        //     ) {
+        //         const x = secondsToPixels(t);// - scrollLeft;
+
+        //         if (Math.abs(t % majorStep) < 0.0001) {
+        //             // Major tick
+        //             rulerCtx.strokeStyle = "var(--text-main)";
+        //             rulerCtx.beginPath();
+        //             rulerCtx.moveTo(x, height);
+        //             rulerCtx.lineTo(x, 8);
+        //             rulerCtx.stroke();
+
+        //             // Label
+        //             rulerCtx.fillText(
+        //                 formatTime(t),
+        //                 x + 2,
+        //                 10
+        //             );
+        //         } else {
+        //             // Minor tick
+        //             rulerCtx.strokeStyle = "var(--border-subtle)";
+        //             rulerCtx.beginPath();
+        //             rulerCtx.moveTo(x, height);
+        //             rulerCtx.lineTo(x, height - 6);
+        //             rulerCtx.stroke();
+        //         }
+        //     }
+
+        //     // DRAW PLAYHEAD LINE
+        //     if (getTransportState() !== "IDLE") {
+        //         const playheadX = getPlayheadX(); // Absolute timeline X coordinates are valid inside the ruler canvas.
+        //         rulerCtx.strokeStyle = "var(--accent-primary)";
+        //         rulerCtx.lineWidth = 1;
+
+        //         rulerCtx.beginPath();
+        //         rulerCtx.moveTo(playheadX + 0.5, 0);     // pixel snapping
+        //         rulerCtx.lineTo(playheadX + 0.5, height);
+        //         rulerCtx.stroke();
+        //     }
+
+        // }
+
         function renderTimelineRuler() {
 
             const contentWidth = timelineInner.scrollWidth;
             const viewWidth = timelineArea.clientWidth;
 
-
             const rulerHeight = 32;
 
+            // Canvas sizing (authoritative)
             rulerCanvas.style.height = `${rulerHeight}px`;
+            rulerCanvas.width = contentWidth;
             rulerCanvas.height = rulerHeight;
 
-
             const height = rulerCanvas.height;
-
-            // Resize canvas for crisp rendering
-            rulerCanvas.width = contentWidth;
-            rulerCanvas.height = height;
 
             rulerCtx.clearRect(0, 0, contentWidth, height);
 
@@ -807,65 +885,234 @@
             const startSeconds = pixelsToSeconds(scrollLeft);
             const endSeconds = pixelsToSeconds(scrollLeft + viewWidth);
 
-            // Choose tick spacing based on zoom
-            const majorStep = zoom <= 0.5 ? 4 :
-                zoom <= 1 ? 2 :
-                    zoom <= 2 ? 1 : 0.5;
-
-            const minorStep = majorStep / 4;
-
-            rulerCtx.fillStyle = "var(--text-muted)";
             rulerCtx.font = "10px monospace";
+            rulerCtx.fillStyle = "var(--text-muted)";
 
-            for (
-                let t = Math.floor(startSeconds / minorStep) * minorStep;
-                t <= endSeconds;
-                t += minorStep
-            ) {
-                const x = secondsToPixels(t);// - scrollLeft;
+            let ticks = [];
 
-                if (Math.abs(t % majorStep) < 0.0001) {
-                    // Major tick
+            // ==========================
+            // TICK GENERATION
+            // ==========================
+
+            if (rulerMode === "seconds") {
+
+                const majorStep =
+                    zoom <= 0.5 ? 4 :
+                        zoom <= 1 ? 2 :
+                            zoom <= 2 ? 1 : 0.5;
+
+                const minorStep = majorStep / 4;
+
+                for (
+                    let t = Math.floor(startSeconds / minorStep) * minorStep;
+                    t <= endSeconds;
+                    t += minorStep
+                ) {
+                    ticks.push({
+                        time: t,
+                        major: Math.abs(t % majorStep) < 0.0001,
+                        label:
+                            Math.abs(t % majorStep) < 0.0001
+                                ? formatTime(t)
+                                : null
+                    });
+                }
+
+            } else if (rulerMode === "bars") {
+
+                const barLen = secondsPerBar();
+                const beatLen = secondsPerBeat();
+
+                const firstBar =
+                    Math.floor(startSeconds / barLen);
+
+                let barTime = firstBar * barLen;
+
+                while (barTime <= endSeconds) {
+
+                    // Major bar tick
+                    ticks.push({
+                        time: barTime,
+                        major: true,
+                        label: `Bar ${firstBar + 1 + ((barTime - firstBar * barLen) / barLen)}`
+                    });
+
+                    // Beat ticks
+                    for (let b = 1; b < beatsPerBar; b++) {
+                        const bt = barTime + b * beatLen;
+                        if (bt >= startSeconds && bt <= endSeconds) {
+                            ticks.push({
+                                time: bt,
+                                major: false,
+                                label: null
+                            });
+                        }
+                    }
+
+                    barTime += barLen;
+                }
+            }
+
+            // ==========================
+            // TICK RENDERING
+            // ==========================
+
+            for (const tick of ticks) {
+                const x = secondsToPixels(tick.time);
+
+                if (tick.major) {
                     rulerCtx.strokeStyle = "var(--text-main)";
                     rulerCtx.beginPath();
-                    rulerCtx.moveTo(x, height);
-                    rulerCtx.lineTo(x, 8);
+                    rulerCtx.moveTo(x + 0.5, height);
+                    rulerCtx.lineTo(x + 0.5, 8);
                     rulerCtx.stroke();
 
-                    // Label
-                    rulerCtx.fillText(
-                        formatTime(t),
-                        x + 2,
-                        10
-                    );
+                    if (tick.label) {
+                        rulerCtx.fillText(tick.label, x + 2, 10);
+                    }
                 } else {
-                    // Minor tick
                     rulerCtx.strokeStyle = "var(--border-subtle)";
                     rulerCtx.beginPath();
-                    rulerCtx.moveTo(x, height);
-                    rulerCtx.lineTo(x, height - 6);
+                    rulerCtx.moveTo(x + 0.5, height);
+                    rulerCtx.lineTo(x + 0.5, height - 6);
                     rulerCtx.stroke();
                 }
             }
 
-            // DRAW PLAYHEAD LINE
+            // ==========================
+            // PLAYHEAD LINE
+            // ==========================
+
             if (getTransportState() !== "IDLE") {
-                const playheadX = getPlayheadX(); // Absolute timeline X coordinates are valid inside the ruler canvas.
+                const playheadX = getPlayheadX();
+
                 rulerCtx.strokeStyle = "var(--accent-primary)";
                 rulerCtx.lineWidth = 1;
 
                 rulerCtx.beginPath();
-                rulerCtx.moveTo(playheadX + 0.5, 0);     // pixel snapping
+                rulerCtx.moveTo(playheadX + 0.5, 0);
                 rulerCtx.lineTo(playheadX + 0.5, height);
                 rulerCtx.stroke();
             }
-
         }
 
 
         timelineArea.addEventListener("scroll", () => {
             renderTimelineRuler();
         });
+
+
+        // ==========================
+        // RULER STATE
+        // ==========================
+
+        let rulerMode = "seconds"; // "seconds" | "bars"
+
+
+
+        // ==========================
+        // MUSICAL GRID
+        // ==========================
+
+        let bpm = 120;         // beats per minute
+        let beatsPerBar = 4;  // time signature numerator
+
+
+        function secondsPerBeat() {
+            return 60 / bpm;
+        }
+
+        function secondsPerBar() {
+            return secondsPerBeat() * beatsPerBar;
+        }
+
+
+        function getRulerTicks(startSeconds, endSeconds) {
+            if (rulerMode === "seconds") {
+                return getSecondTicks(startSeconds, endSeconds);
+            }
+            if (rulerMode === "bars") {
+                return getBarTicks(startSeconds, endSeconds);
+            }
+        }
+
+
+        function getSecondTicks(startSeconds, endSeconds) {
+            const majorStep =
+                zoom <= 0.5 ? 4 :
+                    zoom <= 1 ? 2 :
+                        zoom <= 2 ? 1 : 0.5;
+
+            const minorStep = majorStep / 4;
+            const ticks = [];
+
+            for (
+                let t = Math.floor(startSeconds / minorStep) * minorStep;
+                t <= endSeconds;
+                t += minorStep
+            ) {
+                ticks.push({
+                    time: t,
+                    major: Math.abs(t % majorStep) < 0.0001,
+                    label: Math.abs(t % majorStep) < 0.0001
+                        ? formatTime(t)
+                        : null
+                });
+            }
+
+            return ticks;
+        }
+
+
+        function getBarTicks(startSeconds, endSeconds) {
+            const barLength = secondsPerBar();
+            const beatLength = secondsPerBeat();
+            const ticks = [];
+
+            const startBar =
+                Math.floor(startSeconds / barLength);
+
+            let t = startBar * barLength;
+
+            while (t <= endSeconds) {
+                // Major bar tick
+                ticks.push({
+                    time: t,
+                    major: true,
+                    label: `Bar ${startBar + 1}`
+                });
+
+                // Beat ticks
+                for (let b = 1; b < beatsPerBar; b++) {
+                    const bt = t + b * beatLength;
+                    if (bt >= startSeconds && bt <= endSeconds) {
+                        ticks.push({
+                            time: bt,
+                            major: false,
+                            label: null
+                        });
+                    }
+                }
+
+                t += barLength;
+            }
+
+            return ticks;
+        }
+
+
+        function toggleRulerMode() {
+            rulerMode =
+                rulerMode === "seconds" ? "bars" : "seconds";
+            renderTimelineRuler();
+        }
+
+        function setRulerMode(mode) {
+
+            rulerMode = mode;
+                // rulerMode === "seconds" ? "bars" : "seconds";
+            renderTimelineRuler();
+        }
 
 
 
@@ -1156,6 +1403,13 @@
             if (e.key === "d") {
                 document.body.classList.toggle("debug");
             }
+        });
+
+        document.querySelectorAll("[data-ruler]").forEach(el => {
+            el.onclick = () => {
+                const mode = el.getAttribute("data-ruler");
+                setRulerMode(mode);
+            };
         });
 
 
