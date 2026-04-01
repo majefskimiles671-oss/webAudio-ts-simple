@@ -94,7 +94,7 @@
             align-items: center;
             justify-content: center;
             padding: 0;
-            background: var(--bg-surface);
+            /* background: var(--bg-surface); */
             border: 1px solid var(--border-subtle);
             border-radius: 3px;
             cursor: pointer;
@@ -1065,16 +1065,26 @@ const textMuted =
 
 
             const spbar = secondsPerBar();
-            const phase = (t / spbar) % 1;
+            // const phase = (t / spbar) % 1; // bar mode
 
 
-            // const phase = (t / spb) % 1;        // 0 → 1 per beat
+            const phase = (t / spb) % 1;   // beat mode     // 0 → 1 per beat
 
             const scan = document.querySelector(".metronome-scan");
             const line = scan.querySelector(".metronome-line");
 
             const width = scan.clientWidth;
             const x = phase * width;
+
+// blink at beginning of phase
+if (phase < 0.03) {
+  line.style.opacity = "1";
+  line.style.width = "3px";
+} else {
+  line.style.opacity = "0.7";
+  line.style.width = "2px";
+}
+
 
             line.style.transform = `translateX(${x}px)`;
         }
