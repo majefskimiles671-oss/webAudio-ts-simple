@@ -294,6 +294,20 @@
             z-index: 5;
         }
 
+        /* .timeline-ruler {
+            position: relative;   REQUIRED
+            height: 32px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-subtle);
+            z-index: 5;
+        } */
+
+
+
+.timeline-ruler-inner {
+  position: relative;
+  height: 100%;
+}
 
         #timeline-ruler-canvas {
             height: 100%;
@@ -305,6 +319,7 @@
         #timeline-inner {
             position: relative;
             width: max-content;
+            overflow: visible;
         }
 
 
@@ -342,7 +357,7 @@
 
         #record-range {
 
-            position: absolute;
+            /* position: absolute;
             top: 0;
             height: 2px;
 
@@ -350,9 +365,28 @@
             opacity: 0.85;
 
             display: none;
-            pointer-events: none;
+            pointer-events: none; */
 
         }
+
+
+        /* #record-range {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 2px;
+        } */
+
+
+#record-range {
+  position: absolute;
+  left: 0;
+  bottom: 0;          /* ✅ now works correctly */
+  height: 2px;
+  background: var(--accent-danger);
+  pointer-events: none;
+}
+
 
 
 
@@ -654,13 +688,16 @@
 
                 <!-- TIMELINE RULER NOW LIVES INSIDE SCROLLING SPACE -->
                 <div class="timeline-ruler">
-                    <canvas id="timeline-ruler-canvas"></canvas>
+                    <div class="timeline-ruler-inner">
+                        <canvas id="timeline-ruler-canvas"></canvas>
+                        <div id="record-range"></div>
+                    </div>
                 </div>
 
                 <!-- OVERLAY (PLAYHEAD + RECORD RANGE) -->
                 <div id="timeline-overlay">
                     <div id="playhead"></div>
-                    <div id="record-range"></div>
+                    <!-- <div id="record-range"></div> -->
                 </div>
 
                 <!-- TRACK CONTENT -->
@@ -844,9 +881,7 @@
 
             // DRAW PLAYHEAD LINE
             if (getTransportState() !== "IDLE") {
-                // const playheadX =
-                //     getPlayheadX() - timelineArea.scrollLeft;
-                const playheadX = getPlayheadX();
+                const playheadX = getPlayheadX(); // Absolute timeline X coordinates are valid inside the ruler canvas.
                 rulerCtx.strokeStyle = "var(--accent-primary)";
                 rulerCtx.lineWidth = 1;
 
@@ -986,12 +1021,18 @@
             playhead.style.transform = `translateX(${x}px)`;
 
             // recording range update
-            if (recording && recordStartX !== null) {
-                const width = x - recordStartX;
+            // if (recording && recordStartX !== null) {
+            //     const width = x - recordStartX;
 
-                recordRange.style.width =
-                    `${Math.max(0, width)}px`;
-            }
+            //     recordRange.style.width =
+            //         `${Math.max(0, width)}px`;
+            // }
+
+
+if (recording) {
+  updateRecordRange();
+}
+
 
             // scroll
             const right = timelineArea.scrollLeft + timelineArea.clientWidth;
@@ -1253,12 +1294,41 @@
          * This is where future complexity will live — now it’s clearly contained.
          **/
 
-        function startRecordingRange() {
-            recordStartX = getPlayheadX();
-            recordRange.style.display = "block";
-            recordRange.style.left = `${recordStartX}px`;
-            recordRange.style.width = "0px";
-        }
+        // function startRecordingRange() {
+        //     recordStartX = getPlayheadX();
+        //     recordRange.style.display = "block";
+        //     recordRange.style.left = `${recordStartX}px`;
+        //     recordRange.style.width = "0px";
+        // }
+
+
+let recordStartTime = null;
+
+function startRecordingRange() {
+  recordStartTime = getPlayheadTime(); // seconds
+  recordRange.style.display = "block";
+  recordRange.style.width = "0px";
+}
+
+
+function getPlayheadTime() {
+  const x = getPlayheadX();
+  return pixelsToSeconds(x);
+}
+
+
+function updateRecordRange() {
+  if (recordStartTime === null) return;
+
+  const currentTime = getPlayheadTime();
+
+  const startX = secondsToPixels(recordStartTime);
+  const endX = secondsToPixels(currentTime);
+
+  recordRange.style.left = `${startX}px`;
+  recordRange.style.width = `${Math.max(0, endX - startX)}px`;
+}
+
 
         function clearRecordingRange() {
             recordRange.style.display = "none";
