@@ -105,6 +105,24 @@
             color: black;
         }
 
+        /* Metronome */
+        .metronome-scan {
+            position: relative;
+            width: 80px;
+            height: 18px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .metronome-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--accent-primary);
+        }
 
         .record-btn.recording {
             background: #ff3b30;
@@ -380,6 +398,21 @@
             display: block;
             height: 100%;
         }
+
+
+.waveform::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.04),
+    transparent,
+    rgba(0,0,0,0.04)
+  );
+  pointer-events: none;
+}
+
     </style>
     <style>
         /* Themes CSS */
@@ -582,7 +615,7 @@
                 <div data-theme="dark">Theme: Dark</div>
                 <div data-theme="light">Theme: Light</div>
                 <div data-theme="studio">Theme: Studio</div>
-                <hr/>
+                <hr />
                 <div data-ruler="seconds">Ruler Mode: Seconds</div>
                 <div data-ruler="bars">Ruler Mode: Bars</div>
             </div>
@@ -600,6 +633,10 @@
             <button class="transport-toggle">E</button>
         </div>
 
+
+        <div class="metronome-scan">
+            <div class="metronome-line"></div>
+        </div>
 
         <button id="playBtn" aria-label="Play">
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
@@ -1002,6 +1039,30 @@
         });
 
 
+        function renderMetronomeScan() {
+            if (getTransportState() === "IDLE") return;
+
+            const t = getPlayheadTime();        // seconds
+            const spb = secondsPerBeat();       // already defined
+
+
+const spbar = secondsPerBar();
+const phase = (t / spbar) % 1;
+
+
+            // const phase = (t / spb) % 1;        // 0 → 1 per beat
+
+            const scan = document.querySelector(".metronome-scan");
+            const line = scan.querySelector(".metronome-line");
+
+            const width = scan.clientWidth;
+            const x = phase * width;
+
+            line.style.transform = `translateX(${x}px)`;
+        }
+
+
+
         // ==========================
         // RULER STATE
         // ==========================
@@ -1110,7 +1171,7 @@
         function setRulerMode(mode) {
 
             rulerMode = mode;
-                // rulerMode === "seconds" ? "bars" : "seconds";
+            // rulerMode === "seconds" ? "bars" : "seconds";
             renderTimelineRuler();
         }
 
@@ -1259,6 +1320,7 @@
 
             timer.textContent = formatTime(elapsed);
             renderTimelineRuler();
+            renderMetronomeScan();
             requestAnimationFrame(updatePlayhead);
         }
 
@@ -1425,18 +1487,30 @@
         }
 
         function rerenderWaveforms() {
+            /**
+             * Make sure that every time you draw a waveform you do this first:
+             * canvas.height = TRACK_HEIGHT;          // e.g. 80
+             * canvas.style.height = `${TRACK_HEIGHT}px`;
+             **/
             document.querySelectorAll(".timeline-row").forEach((row, i) => {
                 const canvas = row.querySelector(".waveform-canvas");
                 if (!canvas) return;
 
                 const durationSeconds = 10 + i * 5;
-                canvas.width = computeWaveformWidth(durationSeconds);
+                const waveformWidth = computeWaveformWidth(durationSeconds);
+
+                const TRACK_HEIGHT = 80;
+                canvas.width = waveformWidth;
+                canvas.height = TRACK_HEIGHT;
 
                 // Optional: redraw a fake waveform
+
+
                 const ctx = canvas.getContext("2d");
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "#666";
-                ctx.fillRect(0, canvas.height / 2, canvas.width, 1);
+                // ctx.fillStyle = "#666";
+                // ctx.fillRect(0, canvas.height / 2, canvas.width, 1);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
             });
         }
 
