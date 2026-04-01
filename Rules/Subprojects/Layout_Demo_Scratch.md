@@ -872,3 +872,77 @@ collapse all three handlers into one applyTransportChange() without refactoring
 add a tiny debug overlay that prints getTransportState()
 confirm there are no remaining hidden transitions in your code
 
+
+```html
+        <div class="zoom-container">
+            <input id="zoom-slider" type="range" min="0" max="4" step="1" value="2" />
+
+            <div class="zoom-labels">
+                <span data-pos="0">0.25x</span>
+                <span data-pos="1">0.5x</span>
+                <span data-pos="2">1x</span>
+                <span data-pos="3">2x</span>
+                <span data-pos="4">4x</span>
+            </div>
+        </div>
+```
+
+
+```ts
+    const zoomLevels = [0.25, 0.5, 1, 2, 4];
+    const zoomSlider = document.getElementById("zoom-slider") as HTMLInputElement;
+
+    zoomSlider.oninput = async () => {
+        const idx = parseInt(zoomSlider.value);
+        const zoom = zoomLevels[idx]!;
+        await this.tracks.setZoom(zoom, document.getElementById("g_tracks")!);
+    };
+
+```
+
+
+```js
+zoomSlider.oninput = () => {
+  zoomIndex = parseInt(zoomSlider.value, 10);
+  zoom = zoomLevels[zoomIndex];
+
+  rerenderWaveforms();
+  syncTimelineOverlay();
+  renderTimelineRuler();
+};
+```
+
+```html
+
+    <div class="timeline-ruler">
+        <canvas id="timeline-ruler-canvas"></canvas>
+    </div>
+
+
+    <div class="layout-root">
+        <div id="controls-column"></div>
+
+        <div id="timeline-area">
+            <div id="timeline-overlay">
+                <div id="playhead"></div>
+                <div id="record-range"></div>
+            </div>
+            <div id="timeline-column"></div>
+        </div>
+    </div>
+```
+
+
+
+#timeline-overlay {
+  position: absolute;
+  top: 32px; /* height of timeline-ruler */
+  left: 0;
+  pointer-events: none;
+}
+.controls-header-spacer {
+  height: 32px;       /* must match ruler height */
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+}

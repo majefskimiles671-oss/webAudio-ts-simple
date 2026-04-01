@@ -169,6 +169,9 @@
             transition: width 0.1s linear;
         }
 
+
+
+
         /* Layout */
 
         .layout-root {
@@ -184,6 +187,7 @@
             background: var(--bg-app);
             overflow-y: hidden;
             overflow-x: hidden;
+            padding-top: 32px;
         }
 
         .control-row {
@@ -262,6 +266,30 @@
 
         /* Timeline */
 
+        .timeline-ruler {
+            height: 32px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+
+        #timeline-ruler-canvas {
+            height: 100%;
+            width: 100%;
+            display: block;
+        }
+
+
+        #timeline-inner {
+            position: relative;
+            width: max-content;
+        }
+
+
         #timeline-area {
             position: relative;
             overflow-x: auto;
@@ -272,10 +300,16 @@
 
         #timeline-overlay {
             position: absolute;
-            top: 0;
+            top: 32px;
+            /* height of timeline-ruler */
             left: 0;
             pointer-events: none;
             z-index: 1;
+        }
+
+        .timeline-row {
+            padding: 0px;
+            box-sizing: border-box;
         }
 
         #playhead {
@@ -303,10 +337,7 @@
         }
 
 
-        .timeline-row {
-            padding: 0px;
-            box-sizing: border-box;
-        }
+
 
         .row-inner {
             padding: 8px;
@@ -578,17 +609,42 @@
         <div class="meter" id="meter">
             <div class="meter-bar" id="meterBar"></div>
         </div>
+
+        <div class="zoom-container">
+            <input id="zoom-slider" type="range" min="0" max="4" step="1" value="2" />
+
+            <div class="zoom-labels">
+                <span data-pos="0">0.25x</span>
+                <span data-pos="1">0.5x</span>
+                <span data-pos="2">1x</span>
+                <span data-pos="3">2x</span>
+                <span data-pos="4">4x</span>
+            </div>
+        </div>
     </div>
+
 
     <div class="layout-root">
         <div id="controls-column"></div>
 
         <div id="timeline-area">
-            <div id="timeline-overlay">
-                <div id="playhead"></div>
-                <div id="record-range"></div>
+            <div id="timeline-inner">
+
+                <!-- TIMELINE RULER NOW LIVES INSIDE SCROLLING SPACE -->
+                <div class="timeline-ruler">
+                    <canvas id="timeline-ruler-canvas"></canvas>
+                </div>
+
+                <!-- OVERLAY (PLAYHEAD + RECORD RANGE) -->
+                <div id="timeline-overlay">
+                    <div id="playhead"></div>
+                    <div id="record-range"></div>
+                </div>
+
+                <!-- TRACK CONTENT -->
+                <div id="timeline-column"></div>
+
             </div>
-            <div id="timeline-column"></div>
         </div>
     </div>
 
@@ -641,29 +697,20 @@
         // ==========================
         // CONSTANTS
         // ==========================
-        //#region CONSTANTS
-        /**
-         * Constant values
-         **/
-        const PPS = 100;
+        const BASE_PPS = 100;
         const SCROLL_THRESHOLD = 120;
 
-        //#endregion
+
         // ==========================
         // DOM REFERENCES
         // ==========================
-        //#region DOM REFERENCES
-        /**
-                 * Put all DOM queries at the top.
-                 * Nothing else allowed here.
-                 * If you ever need a new DOM element later, it goes here, not inline in logic.
-                 * This alone reduces mental context switching a lot.
-                 **/
         const controlsCol = document.getElementById("controls-column");
         const timelineCol = document.getElementById("timeline-column");
         const timelineArea = document.getElementById("timeline-area");
+        const timelineInner = document.getElementById("timeline-inner");
         const timelineColumn = document.getElementById("timeline-column");
         const timelineOverlay = document.getElementById("timeline-overlay");
+        const zoomSlider = document.getElementById("zoom-slider");
 
         // templates
         const controlTpl = document.getElementById("control-row-template");
@@ -686,26 +733,127 @@
         const debugTransportState = document.getElementById("debug-transport-state");
 
 
-        //#endregion
+        // ==========================
+        // ZOOM STATE
+        // ==========================
+        const zoomLevels = [0.25, 0.5, 1, 2, 4];
+        let zoomIndex = 2;           // default = 1x
+        let zoom = zoomLevels[zoomIndex];
+
+        // Timeline Ruler
+        const rulerCanvas = document.getElementById("timeline-ruler-canvas");
+        const rulerCtx = rulerCanvas.getContext("2d");
+
+
+        function secondsToPixels(seconds) {
+            return seconds * BASE_PPS * zoom;
+        }
+
+        function pixelsToSeconds(px) {
+            return px / (BASE_PPS * zoom);
+        }
+
+
+        function renderTimelineRuler() {
+
+            const contentWidth = timelineInner.scrollWidth;
+            const viewWidth = timelineArea.clientWidth;
+
+
+            const rulerHeight = 32;
+
+            rulerCanvas.style.height = `${rulerHeight}px`;
+            rulerCanvas.height = rulerHeight;
+
+
+            const height = rulerCanvas.height;
+
+            // Resize canvas for crisp rendering
+            rulerCanvas.width = contentWidth;
+            rulerCanvas.height = height;
+
+            rulerCtx.clearRect(0, 0, contentWidth, height);
+
+            const scrollLeft = timelineArea.scrollLeft;
+            const startSeconds = pixelsToSeconds(scrollLeft);
+            const endSeconds = pixelsToSeconds(scrollLeft + viewWidth);
+
+            // Choose tick spacing based on zoom
+            const majorStep = zoom <= 0.5 ? 4 :
+                zoom <= 1 ? 2 :
+                    zoom <= 2 ? 1 : 0.5;
+
+            const minorStep = majorStep / 4;
+
+            rulerCtx.fillStyle = "var(--text-muted)";
+            rulerCtx.font = "10px monospace";
+
+            for (
+                let t = Math.floor(startSeconds / minorStep) * minorStep;
+                t <= endSeconds;
+                t += minorStep
+            ) {
+                const x = secondsToPixels(t);// - scrollLeft;
+
+                if (Math.abs(t % majorStep) < 0.0001) {
+                    // Major tick
+                    rulerCtx.strokeStyle = "var(--text-main)";
+                    rulerCtx.beginPath();
+                    rulerCtx.moveTo(x, height);
+                    rulerCtx.lineTo(x, 8);
+                    rulerCtx.stroke();
+
+                    // Label
+                    rulerCtx.fillText(
+                        formatTime(t),
+                        x + 2,
+                        10
+                    );
+                } else {
+                    // Minor tick
+                    rulerCtx.strokeStyle = "var(--border-subtle)";
+                    rulerCtx.beginPath();
+                    rulerCtx.moveTo(x, height);
+                    rulerCtx.lineTo(x, height - 6);
+                    rulerCtx.stroke();
+                }
+            }
+
+            // DRAW PLAYHEAD LINE
+            if (getTransportState() !== "IDLE") {
+                // const playheadX =
+                //     getPlayheadX() - timelineArea.scrollLeft;
+                const playheadX = getPlayheadX();
+                rulerCtx.strokeStyle = "var(--accent-primary)";
+                rulerCtx.lineWidth = 1;
+
+                rulerCtx.beginPath();
+                rulerCtx.moveTo(playheadX + 0.5, 0);     // pixel snapping
+                rulerCtx.lineTo(playheadX + 0.5, height);
+                rulerCtx.stroke();
+            }
+
+        }
+
+
+        timelineArea.addEventListener("scroll", () => {
+            renderTimelineRuler();
+        });
+
+
+
         // ==========================
         // TRANSPORT STATE
         // ==========================
-        //#region
-        /**
-         * This section contains only variables, no functions.
-         * When you read this block, you should think:
-         * “This is the entire transport memory.”
-         **/
         let playing = false;
         let recording = false;
         let startTime = 0;
         let recordStartX = null;
 
-        //#endregion
+
         // ==========================
         // TRANSPORT HELPERS
         // ==========================
-        //#region
         /**
          * These helpers answer questions or calculations.
          * They do not mutate DOM.
@@ -760,11 +908,10 @@
             return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}.${t}`;
         }
 
-        //#endregion
+
         // ==========================
         // TRANSPORT UI DOM SYNC
         // ==========================
-        //#region
         /**
          * This is your UI truth layer.
          * Nothing in here:
@@ -791,11 +938,10 @@
 
         }
 
-        //#endregion
+
         // ==========================
         // ANIMATION LOOPS
         // ==========================
-        //#region
         /**
          * These are special. They:
          * run forever
@@ -812,7 +958,7 @@
             if (getTransportState() === "IDLE") return;
 
             const elapsed = (performance.now() - startTime) / 1000;
-            const x = elapsed * PPS;
+            const x = elapsed * BASE_PPS * zoom;
 
             playhead.style.transform = `translateX(${x}px)`;
 
@@ -832,6 +978,7 @@
             }
 
             timer.textContent = formatTime(elapsed);
+            renderTimelineRuler();
             requestAnimationFrame(updatePlayhead);
         }
 
@@ -848,11 +995,10 @@
             requestAnimationFrame(updateMeter);
         }
 
-        //#endregion
+
         // ==========================
         // SCROLL / GEOMETRY SYNC
         // ==========================
-        //#region
         /**
          * This governs shared vertical scrolling, which is orthogonal to transport.
          * Why here
@@ -861,7 +1007,6 @@
          * It’s about input routing + geometry
          * Later, if bugs appear here, your brain knows exactly where to look.
          **/
-
         // Sync scrollTop from timeline → controls
         // Add this once, after you define timelineArea and controlsCol:
         timelineArea.addEventListener("scroll", () => {
@@ -903,11 +1048,9 @@
         }
 
 
-        //#endregion
         // ==========================
         // TRACK & CONTROL INTERACTION
         // ==========================
-        //#region
         /* This is local UI behavior, not transport state. Why here
 
         These are not play/record state
@@ -931,7 +1074,6 @@
         });
 
         // solo buttons
-
         function setupSoloBtns() {
             const soloButtons = Array.from(
                 document.querySelectorAll(".solo-btn")
@@ -957,11 +1099,10 @@
             });
         }
 
-        //#endregion
+
         // ==========================
         // THEME / DEBUG / GLOBAL UI
         // ==========================
-        //#region
         /* Menu and Themes Logic 
         Global UI concern
         No effect on transport or tracks
@@ -984,14 +1125,34 @@
             }
         });
 
-        //#endregion
+
         // ==========================
         // TRACK CREATION
         // ==========================
-        //#region
         /**
          * When you read this block later, you know it does not affect transport state.
          **/
+
+        function computeWaveformWidth(seconds) {
+            return Math.floor(seconds * BASE_PPS * zoom);
+        }
+
+        function rerenderWaveforms() {
+            document.querySelectorAll(".timeline-row").forEach((row, i) => {
+                const canvas = row.querySelector(".waveform-canvas");
+                if (!canvas) return;
+
+                const durationSeconds = 10 + i * 5;
+                canvas.width = computeWaveformWidth(durationSeconds);
+
+                // Optional: redraw a fake waveform
+                const ctx = canvas.getContext("2d");
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#666";
+                ctx.fillRect(0, canvas.height / 2, canvas.width, 1);
+            });
+        }
+
         for (let i = 0; i < 8; i++) {
             /* ----- Controls Row ----- */
 
@@ -1029,8 +1190,8 @@
             const timelineRow = timelineFrag.querySelector(".timeline-row");
             const canvas = timelineFrag.querySelector(".waveform-canvas");
 
-            const canvasWidth = 300 + i * 200;
-            canvas.width = canvasWidth;
+            const trackDurationSeconds = 10 + i * 5;
+            canvas.width = computeWaveformWidth(trackDurationSeconds);
 
             timelineCol.appendChild(timelineFrag);
 
@@ -1043,11 +1204,26 @@
             ro.observe(timelineRow);
         }
 
-        //#endregion
+        // ==========================
+        // ZOOM HANDLER
+        // ==========================
+
+        zoomSlider.oninput = () => {
+            const centerTime = timelineArea.scrollLeft / (BASE_PPS * zoom);
+
+            zoomIndex = parseInt(zoomSlider.value, 10);
+            zoom = zoomLevels[zoomIndex];
+
+            rerenderWaveforms();
+            syncTimelineOverlay();
+            renderTimelineRuler();
+            timelineArea.scrollLeft = centerTime * BASE_PPS * zoom;
+        };
+
+
         // ==========================
         // TRANSPORT BUTTON HANDLERS
         // ==========================
-        //#region
         /**
          * This is the only place where transport state changes. 
          * Keep them boring and small.
@@ -1104,16 +1280,15 @@
             });
 
 
-        //#endregion
         // ==========================
         // INITIALIZATION
         // ==========================
-        //#region
         setupSoloBtns();
         updateMeter();
         syncTimelineOverlayWidth();
         syncTimelineOverlay();
-        //#endregion
+        renderTimelineRuler();
+
         // ==========================
         // END OF SCRIPT
         // ==========================
