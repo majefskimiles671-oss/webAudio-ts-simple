@@ -80,7 +80,7 @@
             gap: 8px;
         }
 
-        .transport-scenes button{
+        .transport-scenes button {
             /* width: 22px; */
             height: 22px;
             display: flex;
@@ -110,22 +110,54 @@
         }
 
         .transport-scene-clear {
-  margin-left: 6px;
-  padding: 4px 8px;
+            margin-left: 6px;
+            padding: 4px 8px;
 
-  background: transparent;
-  border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
 
-  color: var(--text-muted);
-  cursor: pointer;
-  opacity: 0.75;
-}
+            color: var(--text-muted);
+            cursor: pointer;
+            opacity: 0.75;
+        }
 
-.transport-scene-clear:hover {
-  opacity: 1;
-  color: var(--text-main);
-}
+        .transport-scene-clear:hover {
+            opacity: 1;
+            color: var(--text-main);
+        }
+
+        /* tempo and time signature */
+        .global-time {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 8px;
+
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+
+            font-size: 12px;
+        }
+
+        .tempo {
+            min-width: 56px;
+            text-align: right;
+            cursor: text;
+        }
+
+        .tempo .unit {
+            opacity: 0.6;
+        }
+
+        .timesig {
+            min-width: 32px;
+            text-align: center;
+            cursor: pointer;
+            font-variant-numeric: tabular-nums;
+        }
+
 
 
 
@@ -280,6 +312,14 @@
             margin-top: 6px;
             align-items: center;
         }
+
+
+
+
+        .track-controls .solo-btn {
+            margin-left: auto;
+        }
+
 
         .solo-btn {
             padding: 2px 6px;
@@ -1016,7 +1056,7 @@
             <button class="transport-scene">E</button>
 
             <button class="transport-scene-clear" aria-label="Clear global scene" title="Clear scene selection">
-               X
+                X
             </button>
 
         </div>
@@ -1051,6 +1091,17 @@
 
 
         <div class="timer" id="timer">00:00.0</div>
+
+
+        <div class="global-time">
+            <div class="tempo" contenteditable="true" spellcheck="false">
+                120<span class="unit"> BPM</span>
+            </div>
+            <div class="timesig">
+                4/4
+            </div>
+        </div>
+
 
         <div class="zoom-container">
             <div class="zoom-slider-wrap">
@@ -1107,11 +1158,11 @@
     <template id="control-row-template">
         <div class="control-row">
             <div class="row-inner">
-                <div class="track-title" contenteditable="true"></div>
                 <div class="track-controls">
+                    <div class="track-title" contenteditable="true"></div>
                     <button class="solo-btn">S</button>
-                    <input type="range" class="gain-slider" min="0" max="100" value="80" />
                 </div>
+                <input type="range" class="gain-slider" min="0" max="100" value="80" />
 
                 <div class="track-scenes">
                     <button class="track-scene">A</button>
@@ -1184,6 +1235,7 @@
         const zoomLevels = [0.25, 0.5, 1, 2, 4];
         let zoomIndex = 2;           // default = 1x
         let zoom = zoomLevels[zoomIndex];
+
 
         // Timeline Ruler
         const rulerCanvas = document.getElementById("timeline-ruler-canvas");
@@ -1386,8 +1438,14 @@
         // ----- Ruler State -----
         let rulerMode = "seconds"; // "seconds" | "bars"
 
-        // ----- Musical Grid -----
+        // ----- Global Musical State -----
+        let tempoBPM = 120;
+        let timeSignature = {
+            beats: 4,
+            noteValue: 4
+        };
 
+        // ----- Musical Grid -----
         let bpm = 120;         // beats per minute
         let beatsPerBar = 4;  // time signature numerator
 
@@ -1733,27 +1791,27 @@
         }
 
         const globalClearBtn =
-  document.querySelector(".transport-scene-clear");
+            document.querySelector(".transport-scene-clear");
 
-globalClearBtn.addEventListener("click", () => {
-  // 1. Clear UI state
-  document
-    .querySelectorAll(".transport-scene.active")
-    .forEach(btn => btn.classList.remove("active"));
+        globalClearBtn.addEventListener("click", () => {
+            // 1. Clear UI state
+            document
+                .querySelectorAll(".transport-scene.active")
+                .forEach(btn => btn.classList.remove("active"));
 
-  // 2. Clear core state
-//   activeGlobalScene = null;
+            // 2. Clear core state
+            //   activeGlobalScene = null;
 
-  // 3. Update track audibility
-//   updateSceneMask();
-});
+            // 3. Update track audibility
+            //   updateSceneMask();
+        });
 
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    globalClearBtn.click();
-  }
-});
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                globalClearBtn.click();
+            }
+        });
 
 
 
