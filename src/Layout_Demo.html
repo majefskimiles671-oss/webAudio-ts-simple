@@ -75,12 +75,12 @@
         }
 
 
-        #transport-toggles {
+        #transport-scenes {
             display: flex;
             gap: 8px;
         }
 
-        .transport-toggle {
+        .transport-scenes button{
             /* width: 22px; */
             height: 22px;
             display: flex;
@@ -93,10 +93,42 @@
             cursor: pointer;
         }
 
-        .transport-toggle.active {
+        /* .transport-scene.active {
             background: #ff3b30;
             color: var(--text-main);
+        } */
+
+
+        .transport-scene.active {
+            background: var(--accent-highlight);
+            color: black;
         }
+
+        /* need to implement the js  */
+        .track.not-in-scene {
+            opacity: 0.35;
+        }
+
+        .transport-scene-clear {
+  margin-left: 6px;
+  padding: 4px 8px;
+
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.transport-scene-clear:hover {
+  opacity: 1;
+  color: var(--text-main);
+}
+
+
+
 
         /* Metronome */
         .metronome-scan {
@@ -171,6 +203,7 @@
             border-radius: 3px;
             overflow: hidden;
             display: none;
+            margin-left: auto;
         }
 
         .meter.active {
@@ -269,23 +302,80 @@
             width: 100%;
         }
 
-        .track-toggles {
+
+        /* 
+        .track-scenes {
             display: flex;
             gap: 6px;
             margin-top: 6px;
         }
 
-        .toggle-btn {
-            width: 22px;
-            height: 16px;
-            padding: 0;
-            cursor: pointer;
+        .track-scene {
+            min-width: 18px;
+            height: 18px;
             border-radius: 3px;
+            font-size: 11px;
+            text-align: center;
+            line-height: 18px;
+            cursor: pointer;
+
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
         }
 
-        .toggle-btn.active {
-            background: var(--accent-highlight);
+        .track-scene.active {
+            background: var(--accent-primary);
+            color: black;
+            border-color: var(--accent-primary);
+        } */
+
+        .track-scenes {
+            display: flex;
+            gap: 6px;
+            align-items: center;
         }
+
+        .track-scene {
+            min-width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            font-size: 11px;
+            line-height: 18px;
+            text-align: center;
+
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .track-scene.active {
+            background: var(--accent-primary);
+            color: black;
+            border-color: var(--accent-primary);
+        }
+
+        /* ⨯ clear button */
+        .track-scene-clear {
+            margin-left: 4px;
+            font-size: 12px;
+            line-height: 18px;
+
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            opacity: 0.6;
+        }
+
+        .track-scene-clear:hover {
+            opacity: 1;
+            color: var(--text-main);
+        }
+
+
+
 
         /* Zoom slider */
 
@@ -915,15 +1005,20 @@
         </div>
     </div>
 
-    
+
     <div class="transport">
 
-        <div id="transport-toggles">
-            <button class="transport-toggle">A</button>
-            <button class="transport-toggle">B</button>
-            <button class="transport-toggle">C</button>
-            <button class="transport-toggle">D</button>
-            <button class="transport-toggle">E</button>
+        <div id="transport-scenes">
+            <button class="transport-scene">A</button>
+            <button class="transport-scene">B</button>
+            <button class="transport-scene">C</button>
+            <button class="transport-scene">D</button>
+            <button class="transport-scene">E</button>
+
+            <button class="transport-scene-clear" aria-label="Clear global scene" title="Clear scene selection">
+               X
+            </button>
+
         </div>
 
 
@@ -938,7 +1033,7 @@
         </button>
 
 
-        <button id="playRecordBtn" class="transport-toggle" aria-label="Play and Record">
+        <button id="playRecordBtn" class="transport-scene" aria-label="Play and Record">
 
             <svg width="24" height="14" viewBox="0 0 24 14" aria-hidden="true">
                 <polygon points="1,2 8,7 1,12" fill="currentColor" />
@@ -956,9 +1051,6 @@
 
 
         <div class="timer" id="timer">00:00.0</div>
-        <div class="meter" id="meter">
-            <div class="meter-bar" id="meterBar"></div>
-        </div>
 
         <div class="zoom-container">
             <div class="zoom-slider-wrap">
@@ -974,9 +1066,12 @@
             </div>
         </div>
 
+        <div class="meter" id="meter">
+            <div class="meter-bar" id="meterBar"></div>
+        </div>
     </div>
 
-    
+
     <div class="layout-root">
         <div id="controls-column">
             <div id="controls-column-spacer"></div>
@@ -1018,13 +1113,19 @@
                     <input type="range" class="gain-slider" min="0" max="100" value="80" />
                 </div>
 
-                <div class="track-toggles">
-                    <button class="toggle-btn">A</button>
-                    <button class="toggle-btn">B</button>
-                    <button class="toggle-btn">C</button>
-                    <button class="toggle-btn">D</button>
-                    <button class="toggle-btn">E</button>
+                <div class="track-scenes">
+                    <button class="track-scene">A</button>
+                    <button class="track-scene">B</button>
+                    <button class="track-scene">C</button>
+                    <button class="track-scene">D</button>
+                    <button class="track-scene">E</button>
+                    <button class="track-scene-clear" aria-label="Clear track scenes">
+                        clear
+                    </button>
                 </div>
+
+
+
 
             </div>
         </div>
@@ -1073,7 +1174,7 @@
         const recordRange =
             document.getElementById("record-range");
         const transportToggles =
-            document.querySelectorAll("#transport-toggles .transport-toggle");
+            document.querySelectorAll("#transport-scenes .transport-scene");
 
         // debug
         const debugTransportState = document.getElementById("debug-transport-state");
@@ -1631,6 +1732,31 @@
             });
         }
 
+        const globalClearBtn =
+  document.querySelector(".transport-scene-clear");
+
+globalClearBtn.addEventListener("click", () => {
+  // 1. Clear UI state
+  document
+    .querySelectorAll(".transport-scene.active")
+    .forEach(btn => btn.classList.remove("active"));
+
+  // 2. Clear core state
+//   activeGlobalScene = null;
+
+  // 3. Update track audibility
+//   updateSceneMask();
+});
+
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    globalClearBtn.click();
+  }
+});
+
+
+
 
         // ----- Theme / Debug / Global UI -----
         /* Menu and Themes Logic 
@@ -1723,11 +1849,23 @@
                 title.textContent = t === "" ? `Track ${i + 1}` : t;
             });
 
-            controlFrag.querySelectorAll(".toggle-btn").forEach(btn => {
+            controlFrag.querySelectorAll(".track-scene").forEach(btn => {
                 btn.addEventListener("click", () => {
                     btn.classList.toggle("active");
                 });
             });
+
+            //scenes
+
+            controlFrag
+                .querySelector(".track-scene-clear")
+                .addEventListener("click", (e) => {
+                    const row = e.currentTarget.closest(".control-row");
+
+                    row
+                        .querySelectorAll(".track-scene.active")
+                        .forEach(btn => btn.classList.remove("active"));
+                });
 
             controlsScrollCol.appendChild(controlFrag);
 

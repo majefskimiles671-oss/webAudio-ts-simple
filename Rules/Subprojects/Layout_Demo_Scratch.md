@@ -946,3 +946,12 @@ zoomSlider.oninput = () => {
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-panel);
 }
+
+---
+
+If you want next, I can:
+
+rewrite your existing transport exactly in this pattern
+show a factory‑function version (no classes)
+demonstrate how audio clock replaces RAF cleanly
+show how to unit‑test the core with fake UI callbacks
