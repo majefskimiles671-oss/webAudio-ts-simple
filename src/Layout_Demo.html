@@ -51,6 +51,25 @@
             color: var(--text-button);
         }
 
+        /* ----- Prevent Text Selection on Interactive UI ----- */
+        .marker-transport,
+        .menu-bar,
+        .transport,
+        #timeline-area,
+        .timeline-ruler,
+        #timeline-overlay,
+        button,
+        input[type="range"] {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+        }
+
+        .track-title,
+        .lyrics-editor {
+            user-select: text;
+        }
+
         /* Transport */
 
         .transport {
@@ -128,7 +147,7 @@
         }
 
         /* tempo and time signature */
-        .global-time {
+        /* .global-time {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -156,7 +175,92 @@
             text-align: center;
             cursor: pointer;
             font-variant-numeric: tabular-nums;
+        } */
+
+        .tempo {
+            padding: 5px;
         }
+
+        /* ----- Global Time ----- */
+
+        .global-time {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 4px 8px;
+        }
+
+        /* ----- Time Signature Dropdown ----- */
+
+        .timesig-wrapper {
+            position: relative;
+        }
+
+        .timesig-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text-main);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .timesig-btn:hover {
+            background: var(--bg-panel);
+        }
+
+        .timesig-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 4px;
+            padding: 4px;
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            z-index: 1000;
+
+
+  min-width: 36px;   /* try 64–80px depending on font */
+
+
+        }
+
+        .timesig-menu button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-main);
+            border-radius: 4px;
+        }
+
+        .timesig-menu button:hover {
+            background: var(--bg-surface);
+        }
+
+        /* Open state */
+        .timesig-wrapper.open .timesig-menu {
+            display: flex;
+        }
+
+        /* Prevent text selection */
+        .timesig-btn,
+        .timesig-menu {
+            user-select: none;
+        }
+
+
 
 
 
@@ -284,6 +388,129 @@
             padding: 0px;
             box-sizing: border-box;
         }
+
+
+        /* .timeline-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--accent-highlight);
+} */
+        /* .timeline-marker.selected {
+  background: var(--accent-primary);
+} */
+
+
+        #timeline-markers {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            /* markers re-enable events individually */
+        }
+
+        /* .timeline-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent-highlight);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.timeline-marker.selected {
+  background: var(--accent-primary);
+} */
+
+        .marker-time {
+            display: inline;
+        }
+
+
+
+        /* .timeline-marker-hit {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 12px;
+
+            cursor: pointer;
+            transform: translateX(-6px);
+
+        }
+
+
+        .timeline-marker-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+
+            background: var(--accent-highlight);
+            transform: translateX(-0.5px);
+        }
+
+        .timeline-marker-hit.selected .timeline-marker-line {
+            background: var(--accent-primary);
+        }
+
+
+        .timeline-marker-hit:hover .timeline-marker-line {
+            width: 12px;
+            background: var(--accent-primary);
+        }
+
+
+        .timeline-marker-hit {
+            cursor: ew-resize;
+        } */
+
+
+        #timeline-markers {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            /* markers override this */
+            z-index: 20;
+            /* MUST be above the canvas */
+        }
+
+        /* The wrapper — receives the clicks */
+        .timeline-marker-hit {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 14px;
+            /* BIG target */
+            transform: translateX(-7px);
+            pointer-events: auto;
+            /* OVERRIDES parent setting */
+            cursor: pointer;
+            background: rgba(255, 0, 0, 0);
+            /* TEMP DEBUG — will remove */
+        }
+
+        /* The actual visible line (tiny) */
+        .timeline-marker-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            transform: translateX(-1px);
+            background: var(--accent-highlight);
+        }
+
+        .timeline-marker-hit:hover .timeline-marker-line {
+            background: var(--accent-primary);
+            width: 3px;
+        }
+
+
+
+
 
         /* Track name */
 
@@ -1093,14 +1320,39 @@
         <div class="timer" id="timer">00:00.0</div>
 
 
-        <div class="global-time">
+        <!-- <div class="global-time">
             <div id="tempoDisplay" class="tempo" contenteditable="true" spellcheck="false">
                 120<span class="unit"> BPM</span>
             </div>
             <div id="timeSigDisplay" class="timesig">
                 4/4
             </div>
+        </div> -->
+
+        <div class="global-time">
+
+            <div class="tempo" id="tempoDisplay" contenteditable="true" spellcheck="false">
+                125
+            </div><span class="unit"> BPM</span>
+
+            <div class="timesig-wrapper">
+                <button id="timeSigBtn" class="timesig-btn" aria-haspopup="true" aria-expanded="false">
+                    4/4
+                </button>
+
+                <div id="timeSigMenu" class="timesig-menu">
+                    <button data-beats="4" data-note="4">4/4</button>
+                    <button data-beats="3" data-note="4">3/4</button>
+                    <button data-beats="2" data-note="4">2/4</button>
+                    <button data-beats="6" data-note="8">6/8</button>
+                    <button data-beats="12" data-note="8">12/8</button>
+                    <button data-beats="5" data-note="4">5/4</button>
+                    <button data-beats="7" data-note="8">7/8</button>
+                </div>
+            </div>
+
         </div>
+
 
 
         <div class="zoom-container">
@@ -1125,7 +1377,21 @@
 
     <div class="layout-root">
         <div id="controls-column">
-            <div id="controls-column-spacer"></div>
+            <div id="controls-column-spacer">
+
+                <div class="marker-transport">
+                    <button id="marker-first">|◀</button>
+                    <button id="marker-prev">◀</button>
+
+                    <div id="marker-time" class="marker-time">—</div>
+
+                    <button id="marker-next">▶</button>
+                    <button id="marker-last">▶|</button>
+
+                    <button id="marker-delete" disabled>⨯</button>
+                </div>
+
+            </div>
             <div id="controls-scroll-column"></div>
         </div>
 
@@ -1134,10 +1400,11 @@
             <div id="timeline-inner">
 
                 <!-- TIMELINE RULER NOW LIVES INSIDE SCROLLING SPACE -->
-                <div class="timeline-ruler">
+                <div id="timeline-ruler" class="timeline-ruler">
                     <div class="timeline-ruler-inner">
                         <canvas id="timeline-ruler-canvas"></canvas>
                         <div id="record-range"></div>
+                        <div id="timeline-markers"></div>
                     </div>
                 </div>
 
@@ -1195,12 +1462,12 @@
     <div id="debug-transport-state"></div>
 
     <script>
-        // ----- Constants -----
+        //  Constants -----
         const BASE_PPS = 100;
         const SCROLL_THRESHOLD = 120;
 
 
-        // ----- DOM References -----
+        //  DOM References -----
         const controlsCol = document.getElementById("controls-column");
         const controlsScrollCol = document.getElementById("controls-scroll-column");
         const timelineCol = document.getElementById("timeline-column");
@@ -1208,6 +1475,7 @@
         const timelineInner = document.getElementById("timeline-inner");
         const timelineColumn = document.getElementById("timeline-column");
         const timelineOverlay = document.getElementById("timeline-overlay");
+        const timelineRuler = document.getElementById("timeline-ruler");
         const zoomSlider = document.getElementById("zoom-slider");
 
         // templates
@@ -1231,7 +1499,7 @@
         const debugTransportState = document.getElementById("debug-transport-state");
 
 
-        // ----- Zoom State -----
+        //  Zoom State -----
         const zoomLevels = [0.25, 0.5, 1, 2, 4];
         let zoomIndex = 2;           // default = 1x
         let zoom = zoomLevels[zoomIndex];
@@ -1240,6 +1508,16 @@
         // Timeline Ruler
         const rulerCanvas = document.getElementById("timeline-ruler-canvas");
         const rulerCtx = rulerCanvas.getContext("2d");
+        // const markerDeleteBtn = document.getElementById("marker-delete");
+
+
+        // ----- Marker Transport Controls -----
+        const markerFirstBtn = document.getElementById("marker-first");
+        const markerPrevBtn = document.getElementById("marker-prev");
+        const markerNextBtn = document.getElementById("marker-next");
+        const markerLastBtn = document.getElementById("marker-last");
+        const markerDeleteBtn = document.getElementById("marker-delete");
+
 
 
         function secondsToPixels(seconds) {
@@ -1249,6 +1527,13 @@
         function pixelsToSeconds(px) {
             return px / (BASE_PPS * zoom);
         }
+
+
+        function renderTimelineLayer() {
+            renderTimelineRuler();
+            renderMarkers();
+        }
+
 
         function renderTimelineRuler() {
 
@@ -1398,7 +1683,7 @@
 
 
         timelineArea.addEventListener("scroll", () => {
-            renderTimelineRuler();
+            renderTimelineLayer();
         });
 
 
@@ -1435,10 +1720,124 @@
         }
 
 
-        // ----- Ruler State -----
+        //  Ruler State -----
         let rulerMode = "seconds"; // "seconds" | "bars"
 
-        // ----- Global Musical State -----
+
+        // ------------ Scrub State -----
+
+        let isScrubbing = false;
+        let scrubPrevTransportState = null; // "PLAY" | "IDLE
+
+
+        timelineArea.addEventListener("mousedown", (e) => {
+            if (recording) return; // scrubbing disabled while recording
+
+            // Ignore clicks on markers (they already stopped propagation)
+            isScrubbing = true;
+
+            scrubPrevTransportState = getTransportState();
+
+            // Temporarily stop transport
+            if (scrubPrevTransportState !== "IDLE") {
+                applyTransportChange({ play: false, record: false });
+            }
+
+            scrubToMouseEvent(e);
+        });
+
+
+        document.addEventListener("mousemove", (e) => {
+            if (!isScrubbing) return;
+
+            scrubToMouseEvent(e);
+        });
+
+
+        document.addEventListener("mouseup", () => {
+            if (!isScrubbing) return;
+
+            isScrubbing = false;
+
+            if (scrubPrevTransportState === "PLAY") {
+                applyTransportChange({ play: true, record: false });
+            }
+
+            scrubPrevTransportState = null;
+        });
+
+
+        // ----- Scrub Helpers -----
+        function scrubToMouseEvent(e) {
+            const innerRect = timelineInner.getBoundingClientRect();
+
+            // Convert viewport X → content X
+            const contentX =
+                (e.clientX - innerRect.left);// + timelineArea.scrollLeft;
+
+            const clampedX = Math.max(0, contentX);
+
+            // debugOverlayEventTarget(e);
+            // console.log({
+            //     clientX: e.clientX,
+            //     rectLeft: innerRect.left,
+            //     scrollLeft: timelineArea.scrollLeft,
+            //     contentX
+            // });
+
+
+            setPlayheadPositionPx(clampedX);
+        }
+
+        // ----- Debug Event Target Overlay -----
+        function debugOverlayEventTarget(e, duration = 400) {
+            const el = e.target;
+            if (!(el instanceof HTMLElement)) return;
+
+            const rect = el.getBoundingClientRect();
+            const overlay = document.createElement("div");
+
+            overlay.style.position = "fixed";
+            overlay.style.left = `${rect.left}px`;
+            overlay.style.top = `${rect.top}px`;
+            overlay.style.width = `${rect.width}px`;
+            overlay.style.height = `${rect.height}px`;
+            overlay.style.border = "2px solid red";
+            overlay.style.pointerEvents = "none";
+            overlay.style.zIndex = "99999";
+
+            document.body.appendChild(overlay);
+
+            setTimeout(() => overlay.remove(), duration);
+        }
+
+
+        // function scrubToMouseEvent(e) {
+
+        //     const rect = timelineInner.getBoundingClientRect();
+        //     const x = Math.max(0, e.clientX - rect.left + timelineArea.scrollLeft);
+
+        //     const time = pixelsToSeconds(x);
+        //     const px = secondsToPixels(time);
+
+        //     setPlayheadPositionPx(px);
+        // }
+
+        // let currentTimeSeconds = 0;
+        // ----- Playhead Helpers -----
+        function setPlayheadPositionPx(px) {
+            playhead.style.transform = `translateX(${px}px)`;
+            currentTimeSeconds = pixelsToSeconds(px);
+            timer.textContent = formatTime(currentTimeSeconds);
+            updateTimeDisplay(currentTimeSeconds);
+        }
+
+        function updateTimeDisplay(s) {
+            timer.textContent = formatTime(s);
+        }
+
+
+        //  Global Musical State -----
         let tempoBPM = 125;
         let timeSignature = {
             beats: 3,
@@ -1448,12 +1847,12 @@
 
         function renderTempo() {
             const el = document.getElementById("tempoDisplay");
-            el.innerHTML = `${tempoBPM}<span class="unit"> BPM</span>`;
+            el.innerHTML = `${tempoBPM}`;//<span class="unit"> BPM</span>`;
         }
 
         function renderTimeSignature() {
-            const el = document.getElementById("timeSigDisplay");
-            el.textContent =
+            // const el = document.getElementById("timeSigDisplay");
+            timeSigBtn.textContent =
                 `${timeSignature.beats}/${timeSignature.noteValue}`;
         }
 
@@ -1480,33 +1879,306 @@
         });
 
 
-        const timeSigEl = document.getElementById("timeSigDisplay");
+        // const timeSigEl = document.getElementById("timeSigDisplay");
 
-        const commonTimeSigs = [
-            { beats: 4, noteValue: 4 },
-            { beats: 3, noteValue: 4 },
-            { beats: 6, noteValue: 8 },
-            { beats: 5, noteValue: 4 }
-        ];
+        // const commonTimeSigs = [
+        //     { beats: 4, noteValue: 4 },
+        //     { beats: 3, noteValue: 4 },
+        //     { beats: 6, noteValue: 8 },
+        //     { beats: 5, noteValue: 4 }
+        // ];
 
-        timeSigEl.addEventListener("click", () => {
-            const idx = commonTimeSigs.findIndex(
-                ts =>
-                    ts.beats === timeSignature.beats &&
-                    ts.noteValue === timeSignature.noteValue
-            );
+        // timeSigEl.addEventListener("click", () => {
+        //     const idx = commonTimeSigs.findIndex(
+        //         ts =>
+        //             ts.beats === timeSignature.beats &&
+        //             ts.noteValue === timeSignature.noteValue
+        //     );
 
-            const next =
-                commonTimeSigs[(idx + 1) % commonTimeSigs.length];
+        //     const next =
+        //         commonTimeSigs[(idx + 1) % commonTimeSigs.length];
 
-            timeSignature = { ...next };
+        //     timeSignature = { ...next };
+        //     renderTimeSignature();
+        // });
+
+        // ----- Time Signature Dropdown -----
+        const timeSigBtn = document.getElementById("timeSigBtn");
+        const timeSigMenu = document.getElementById("timeSigMenu");
+        const timeSigWrapper = timeSigBtn.parentElement;
+
+        timeSigBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+
+            const open = timeSigWrapper.classList.toggle("open");
+            timeSigBtn.setAttribute("aria-expanded", String(open));
+        });
+
+        timeSigMenu.addEventListener("click", (e) => {
+            const btn = e.target.closest("button");
+            if (!btn) return;
+
+            const beats = Number(btn.dataset.beats);
+            const noteValue = Number(btn.dataset.note);
+
+            timeSignature = { beats, noteValue };
+
+            // timeSigBtn.textContent = `${beats}/${noteValue}`;
             renderTimeSignature();
+            timeSigWrapper.classList.remove("open");
+            timeSigBtn.setAttribute("aria-expanded", "false");
+        });
+
+        document.addEventListener("click", () => {
+            timeSigWrapper.classList.remove("open");
+            timeSigBtn.setAttribute("aria-expanded", "false");
         });
 
 
 
+        // ==========================
+        // MARKERS (STATE ONLY)
+        // ==========================
 
-        // ----- Musical Grid -----
+        let markers = []; // [{ id, time }]
+        let selectedMarkerId = null;
+        // let cancelMarker = false;
+
+        // ---- Marker Handlers ----
+        timelineRuler.addEventListener("click", (e) => {
+            // if (cancelMarker) {
+            //     cancelMarker = false;
+            //     return;
+            // }
+            const x = e.offsetX;
+            const time = pixelsToSeconds(x);
+
+            const marker = {
+                id: crypto.randomUUID(),
+                time
+            };
+
+            markers.push(marker);
+            markers.sort((a, b) => a.time - b.time);
+
+            selectedMarkerId = marker.id;
+
+            renderMarkers();
+            renderMarkerTransport();
+        });
+
+        // timelineRuler.addEventListener("mousemove", (e) => {
+        //     if (isScrubbing) {
+        //         cancelMarker = true;
+        //     }
+        // });
+
+        // ----- Marker Helpers -----
+        function getSelectedMarkerIndex() {
+            return markers.findIndex(m => m.id === selectedMarkerId);
+        }
+
+        // ----- Marker Selection -----
+        // function selectMarkerByIndex(index) {
+        //   if (!markers.length) return;
+
+        //   const clamped =
+        //     Math.max(0, Math.min(index, markers.length - 1));
+
+        //   let marker = markers[clamped];
+        //   selectedMarkerId = marker.id;
+
+        //   jumpPlayheadToTime(marker.time);
+
+        //   renderMarkers();
+        //   renderMarkerTransport();
+        // }
+
+        // ----- Marker Selection -----
+        function selectMarkerByIndex(index) {
+            if (!markers.length) return;
+
+            // Clamp index to valid range
+            const clamped = Math.max(0, Math.min(index, markers.length - 1));
+            const marker = markers[clamped];
+
+            // Update selected marker ID
+            selectedMarkerId = marker.id;
+
+            // Move playhead to marker time
+            jumpPlayheadToTime(marker.time);
+
+            // ----- Auto‑Scroll to Marker -----
+            const markerX = secondsToPixels(marker.time);
+            const viewWidth = timelineArea.clientWidth;
+
+            // Center the marker in the viewport
+            const targetScrollLeft = markerX - viewWidth / 2;
+            timelineArea.scrollLeft = Math.max(0, targetScrollLeft);
+
+            // ----- Re-render the marker layer -----
+            renderMarkers();
+
+            // ----- Re-render marker transport controls -----
+            renderMarkerTransport();
+        }
+
+
+
+        const markersLayer = document.getElementById("timeline-markers");
+
+        function renderMarkers() {
+            // Clear old marker DOM
+            markersLayer.innerHTML = "";
+
+            for (const marker of markers) {
+
+                const markerWrap = document.createElement("div");
+                markerWrap.className = "timeline-marker-hit";
+
+                const markerLine = document.createElement("div");
+                markerLine.className = "timeline-marker-line";
+
+                if (marker.id === selectedMarkerId) {
+                    markerLine.classList.add("selected");
+                    markerWrap.classList.add("selected");
+                }
+
+                markerWrap.appendChild(markerLine);
+
+                // position marker
+                const x = secondsToPixels(marker.time);
+                markerWrap.style.left = `${x}px`;
+
+                // ✅ CLICK → LOAD MARKER
+                markerWrap.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    selectedMarkerId = marker.id;
+                    renderMarkers();
+                    renderMarkerTransport();
+                });
+
+                // (drag comes later; keep click-only for now)
+                markersLayer.appendChild(markerWrap);
+
+            }
+        }
+
+
+
+        function renderMarkerTransport() {
+            const marker = markers.find(m => m.id === selectedMarkerId);
+            const timeEl = document.getElementById("marker-time");
+            const delBtn = document.getElementById("marker-delete");
+
+            if (!marker) {
+                timeEl.textContent = "—";
+                delBtn.disabled = true;
+                return;
+            }
+
+            timeEl.textContent = formatTime(marker.time);
+            delBtn.disabled = false;
+        }
+
+
+        // function selectMarkerByIndex(idx) {
+        //     if (!markers.length) return;
+        //     idx = Math.max(0, Math.min(markers.length - 1, idx));
+        //     selectedMarkerId = markers[idx].id;
+        //     renderMarkers();
+        //     renderMarkerTransport();
+        // }
+
+
+        // markerDeleteBtn.onclick = () => {
+        //     if (!selectedMarkerId) return;
+
+        //     markers = markers.filter(m => m.id !== selectedMarkerId);
+        //     selectedMarkerId = null;
+
+        //     renderMarkers();
+        //     renderMarkerTransport();
+        // };
+
+
+        // ----- Marker Deletion -----
+        markerDeleteBtn.addEventListener("click", () => {
+            const idx = getSelectedMarkerIndex();
+            if (idx === -1) return;
+
+            markers.splice(idx, 1);
+
+            if (markers.length === 0) {
+                selectedMarkerId = null;
+            } else {
+                selectMarkerByIndex(Math.min(idx, markers.length - 1));
+                return; // selectMarkerByIndex already re-rendered
+            }
+
+            renderMarkers();
+            renderMarkerTransport();
+        });
+
+
+
+        markerFirstBtn.addEventListener("click", () => {
+            if (!markers.length) return;
+            selectMarkerByIndex(0);
+        });
+
+
+        markerPrevBtn.addEventListener("click", () => {
+            const idx = getSelectedMarkerIndex();
+            if (idx <= 0) return;
+            selectMarkerByIndex(idx - 1);
+        });
+
+
+        markerNextBtn.addEventListener("click", () => {
+            const idx = getSelectedMarkerIndex();
+            if (idx === -1) return;
+            selectMarkerByIndex(idx + 1);
+        });
+
+
+
+        markerLastBtn.addEventListener("click", () => {
+            if (!markers.length) return;
+            selectMarkerByIndex(markers.length - 1);
+        });
+
+
+        // ----- Marker Transport Rendering -----
+        function renderMarkerTransport() {
+            const idx = getSelectedMarkerIndex();
+            const hasMarkers = markers.length > 0;
+
+            markerFirstBtn.disabled = !hasMarkers || idx === 0;
+            markerPrevBtn.disabled = !hasMarkers || idx <= 0;
+            markerNextBtn.disabled = !hasMarkers || idx === -1 || idx === markers.length - 1;
+            markerLastBtn.disabled = !hasMarkers || idx === markers.length - 1;
+            markerDeleteBtn.disabled = idx === -1;
+
+            const display = document.getElementById("marker-time");
+            if (idx === -1) {
+                display.textContent = "—";
+            } else {
+                display.textContent = formatTime(markers[idx].time);
+            }
+        }
+
+
+        // ----- Marker Navigation Helpers -----
+        function jumpPlayheadToTime(seconds) {
+            const px = secondsToPixels(seconds);
+            setPlayheadPositionPx(px);
+        }
+
+
+
+
+        //  Musical Grid -----
         let bpm = 120;         // beats per minute
         let beatsPerBar = 4;  // time signature numerator
 
@@ -1597,25 +2269,25 @@
         function toggleRulerMode() {
             rulerMode =
                 rulerMode === "seconds" ? "bars" : "seconds";
-            renderTimelineRuler();
+            renderTimelineLayer();
         }
 
         function setRulerMode(mode) {
 
             rulerMode = mode;
             // rulerMode === "seconds" ? "bars" : "seconds";
-            renderTimelineRuler();
+            renderTimelineLayer();
         }
 
 
-        // ----- Transport State -----
+        //  Transport State -----
         let playing = false;
         let recording = false;
         let startTime = 0;
         let recordStartX = null;
+        let playbackStartX = 0; // px offset where playback begins
 
-
-        // ----- Transport Helpers -----
+        //  Transport Helpers -----
         /**
          * These helpers answer questions or calculations.
          * They do not mutate DOM.
@@ -1657,7 +2329,10 @@
 
         function getPlayheadX() {
             const transform = playhead.style.transform;
-            if (!transform) return 0;
+            if (!transform) {
+                console.log("Returning 0 because !transform");
+                return 0;
+            }
 
             const match = transform.match(/translateX\(([-\d.]+)px\)/);
             return match ? parseFloat(match[1]) : 0;
@@ -1671,7 +2346,7 @@
         }
 
 
-        // ----- Transport UI DOM Sync -----
+        //  Transport UI DOM Sync -----
         /**
          * This is your UI truth layer.
          * Nothing in here:
@@ -1699,8 +2374,16 @@
         }
 
 
-        // ----- Transport Rendering -----
-        // ----- Animation Loops -----
+        //  Transport Transitions -----
+        function onTransportStart() {
+            playbackStartX = getPlayheadX(); // ← THIS is the fix
+            startTime = performance.now();
+            requestAnimationFrame(updatePlayhead);
+        }
+
+
+        //  Transport Rendering -----
+        //  Animation Loops -----
         /**
          * These are special. They:
          * run forever
@@ -1713,11 +2396,21 @@
          * no branching chaos
          * This dramatically lowers cognitive load.
          **/
+        // -------- Update Playhead ----
         function updatePlayhead() {
-            if (getTransportState() === "IDLE") return;
 
+            if (!playing) return;
             const elapsed = (performance.now() - startTime) / 1000;
-            const x = elapsed * BASE_PPS * zoom;
+            // const x = elapsed * BASE_PPS * zoom;
+            const deltaX =
+                elapsed * BASE_PPS * zoom;
+
+            const x =
+                playbackStartX + deltaX;
+
+            if (x < 2) {
+                console.log("setting playhead to 0");
+            }
 
             playhead.style.transform = `translateX(${x}px)`;
 
@@ -1733,12 +2426,13 @@
             }
 
             timer.textContent = formatTime(elapsed);
-            renderTimelineRuler();
+            renderTimelineLayer();
             renderMetronomeScan();
             requestAnimationFrame(updatePlayhead);
         }
 
         function resetPlayhead() {
+            console.log(`resetPlayhead from ${timelineArea.scrollLeft} to 0`);
             playhead.style.transform = "translateX(0px)";
             timelineArea.scrollLeft = 0;
             timer.textContent = "00:00.0";
@@ -1752,7 +2446,11 @@
         }
 
 
-        // ----- Scroll / Geometry Sync -----
+
+
+
+
+        //  Scroll / Geometry Sync -----
         /**
          * This governs shared vertical scrolling, which is orthogonal to transport.
          * Why here
@@ -1802,7 +2500,7 @@
         }
 
 
-        // ----- Track & Control Interaction -----
+        //  Track & Control Interaction -----
         /* This is local UI behavior, not transport state. Why here
 
         These are not play/record state
@@ -1877,7 +2575,7 @@
 
 
 
-        // ----- Theme / Debug / Global UI -----
+        //  Theme / Debug / Global UI -----
         /* Menu and Themes Logic 
         Global UI concern
         No effect on transport or tracks
@@ -1889,7 +2587,7 @@
         document.querySelectorAll("[data-theme]").forEach(el => {
             el.onclick = () => {
                 document.body.setAttribute("data-theme", el.dataset.theme);
-                renderTimelineRuler();
+                renderTimelineLayer();
             };
         });
 
@@ -1908,7 +2606,7 @@
             };
         });
 
-        // ----- Track Creation -----
+        //  Track Creation -----
         /**
          * When you read this block later, you know it does not affect transport state.
          **/
@@ -2007,7 +2705,7 @@
 
             ro.observe(timelineRow);
         }
-        // ----- Zoom Handler -----
+        //  Zoom Handler -----
         zoomSlider.oninput = () => {
             const centerTime = timelineArea.scrollLeft / (BASE_PPS * zoom);
 
@@ -2016,12 +2714,12 @@
 
             rerenderWaveforms();
             syncTimelineOverlay();
-            renderTimelineRuler();
+            renderTimelineLayer();
             timelineArea.scrollLeft = centerTime * BASE_PPS * zoom;
         };
 
 
-        // ----- Transport Button Handlers -----
+        //  Transport Button Handlers -----
         /**
          * This is the only place where transport state changes. 
          * Keep them boring and small.
@@ -2029,7 +2727,7 @@
          **/
 
 
-        let recordStartTime = null;
+        let recordStartTime = null; //? is that ok?
 
         function startRecordingRange() {
             recordStartTime = getPlayheadTime(); // seconds
@@ -2062,6 +2760,7 @@
             recordStartX = null;
         }
 
+        //  -----------Apply Transport Change ----
         function applyTransportChange({ play, record }) {
             const prevState = getTransportState();
             const wasRecording = recording;
@@ -2072,12 +2771,13 @@
             const nextState = getTransportState();
 
             if (prevState === "IDLE" && nextState !== "IDLE") {
-                startTime = performance.now();
-                updatePlayhead();
+                onTransportStart();
             }
 
             if (prevState !== "IDLE" && nextState === "IDLE") {
-                resetPlayhead();
+                // if (!isScrubbing) {
+                //     resetPlayhead();
+                // }
             }
 
             if (!wasRecording && recording) startRecordingRange();
@@ -2100,17 +2800,53 @@
             });
 
 
-        // ----- One‑time Initialization -----
+        // ----- Scrub Handlers -----
+        timelineArea.addEventListener("mousedown", (e) => {
+            if (recording) return;
+
+            isScrubbing = true;
+            scrubPrevTransportState = getTransportState();
+
+            if (scrubPrevTransportState !== "IDLE") {
+                applyTransportChange({ play: false, record: false });
+            }
+
+            scrubToMouseEvent(e);
+        });
+
+
+        document.addEventListener("mousemove", (e) => {
+            if (!isScrubbing) return;
+            scrubToMouseEvent(e);
+        });
+
+
+        document.addEventListener("mouseup", () => {
+            if (!isScrubbing) return;
+
+            isScrubbing = false;
+
+            if (scrubPrevTransportState === "PLAY") {
+                applyTransportChange({ play: true, record: false });
+            }
+
+            scrubPrevTransportState = null;
+        });
+
+
+
+
+        //  One‑time Initialization -----
         setupSoloBtns();
         updateMeter();
         syncTimelineOverlayWidth();
         syncTimelineOverlay();
-        renderTimelineRuler();
+        renderTimelineLayer();
         renderTempo();
         renderTimeSignature();
 
 
-        // ----- End of Script -----
+        //  End of Script -----
 
 
     </script>

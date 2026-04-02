@@ -955,3 +955,44 @@ rewrite your existing transport exactly in this pattern
 show a factory‑function version (no classes)
 demonstrate how audio clock replaces RAF cleanly
 show how to unit‑test the core with fake UI callbacks
+
+
+```js
+const markerWrap = document.createElement("div");
+markerWrap.className = "timeline-marker-hit";
+
+const markerLine = document.createElement("div");
+markerLine.className = "timeline-marker-line";
+
+markerWrap.appendChild(markerLine);
+
+// position horizontally
+markerWrap.style.left = `${x}px`;
+
+markersLayer.appendChild(markerWrap);
+```
+
+
+Next I want to add something unrelated to markers.  When I click the timeline (and !recording) I want the playhead to jump to that point in the timeline.
+
+
+
+```js
+// ----- Playhead Update -----
+function updatePlayhead() {
+  if (!playing) return;
+
+  const elapsed =
+    (performance.now() - startTime) / 1000;
+
+  const deltaX =
+    elapsed * BASE_PPS * zoom;
+
+  const x =
+    playbackStartX + deltaX;
+
+  playhead.style.transform = `translateX(${x}px)`;
+
+  requestAnimationFrame(updatePlayhead);
+}
+```
