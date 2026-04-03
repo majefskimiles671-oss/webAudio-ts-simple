@@ -1108,3 +1108,10 @@ Loops
 // ============================================================
 // Initialization -----
 // ============================================================
+
+
+
+---
+Broken:
+- playBtn shouldn't do anything if recording===true
+- need tempo setting to set the playhead speed
