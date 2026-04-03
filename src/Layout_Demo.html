@@ -1,3 +1,404 @@
+<!-- 
+## [Project Definition](/Rules/Project_Definition.md)
+
+- in-browser DAW that has UI similar to Ableton Live  or Reaper
+- can record from the laptop microphone
+- playback multiple tracks simultaneously
+- possibly allow playback through headphones while recording through the laptop microphone
+- save multitrack projects to local computer (maybe cloud storage later)
+- possibly add functionality for editing a single project by two or more people remotely.
+
+## Purpose
+
+- learning technologies that will help me stay current
+- possibly making a tool I can use personaly or share with others
+
+## Technologies
+
+- Chrome, Safari, Edge
+- HTML, CSS, Javascript all in one file
+
+## Philosophy
+
+- simple is better than complex
+- good architecture, but not so fancy that I can't understand it
+- features should be few, but they should be well-built
+
+## Notes
+
+ - this is just a demo app for learning, but I still want to do things "the right way"
+
+# Technical Stuff
+
+Absolutely. Below is a **clean, complete inventory of the controls you’ve implemented so far**, grouped by area, with **one‑line, behavior‑accurate descriptions**. This is written so it can drop straight into documentation.
+
+***
+
+## Global / Transport Controls
+
+*   **Play**  
+    Starts playback from the current playhead position.
+
+*   **Record**  
+    Arms recording and starts playback, writing audio from the current playhead position.
+
+*   **Play + Record**  
+    Convenience control that starts playback and recording together.
+
+*   **Timer Display**  
+    Shows the current playhead time in minutes, seconds, and tenths.
+
+*   **Meter**  
+    Displays input level during recording.
+
+***
+
+## Global Musical Context
+
+*   **Tempo (BPM)**  
+    Displays and edits the global tempo; stored as state only (no playback wiring yet).
+
+*   **Time Signature Dropdown**  
+    Selects the global time signature; defines the musical grid (state only).
+
+***
+
+## Zoom & Navigation
+
+*   **Zoom Slider**  
+    Scales the timeline horizontally around the current view center.
+
+*   **Zoom Labels (¼, ½, 1×, 2×, 4×)**  
+    Visual reference points for discrete zoom levels.
+
+***
+
+## Timeline & Ruler
+
+*   **Timeline Ruler**  
+    Displays time (and bars/beats later) and serves as the primary interaction surface for markers and scrubbing.
+
+*   **Timeline Overlay**  
+    Transparent interaction layer for playhead scrubbing and click‑to‑seek.
+
+*   **Playhead**  
+    Indicates the current playback position; moves continuously during playback or interactively during scrubbing.
+
+***
+
+## Scrubbing Interaction
+
+*   **Timeline Click (Idle)**  
+    Moves the playhead to the clicked position without starting playback.
+
+*   **Timeline Drag (Scrub)**  
+    Temporarily pauses playback and repositions the playhead in real time while dragging.
+
+*   **Scrub Release**  
+    Restores the previous transport state (play or idle) without resetting the playhead.
+
+***
+
+## Markers (Global)
+
+*   **Create Marker**  
+    Click the timeline ruler to create a marker at that time.
+
+*   **Marker (Ruler)**  
+    Vertical time reference that can be selected and dragged to a new position.
+
+*   **Marker Selection**  
+    Clicking a marker selects it and loads it into the marker transport.
+
+***
+
+## Marker Transport Controls
+
+*   **First Marker**  
+    Selects the first marker and jumps the playhead to it.
+
+*   **Previous Marker**  
+    Selects the previous marker and jumps the playhead to it.
+
+*   **Next Marker**  
+    Selects the next marker and jumps the playhead to it.
+
+*   **Last Marker**  
+    Selects the last marker and jumps the playhead to it.
+
+*   **Marker Time Display**  
+    Shows the time of the currently selected marker.
+
+*   **Delete Marker**  
+    Deletes the selected marker without moving the playhead.
+
+***
+
+## Track Controls (Per Track)
+
+*   **Track Name**  
+    Editable label identifying the track.
+
+*   **Solo (S)**  
+    Auditions the track by muting all others.
+
+*   **Gain Slider**  
+    Adjusts the track’s playback level.
+
+***
+
+## Track Scenes (Per Track)
+
+*   **Scene Membership Buttons (A–E)**  
+    Indicate which global scenes the track belongs to.
+
+*   **Clear Track Scenes (⨯)**  
+    Removes the track from all scenes without affecting playback.
+
+***
+
+## Global Scenes
+
+*   **Global Scene Select (A–E)**  
+    Activates a scene, making only member tracks audible.
+
+*   **Clear Global Scene (⨯)**  
+    Deactivates scene filtering so all tracks are audible.
+
+***
+
+## Menus
+
+*   **File Menu**  
+    Placeholder for project‑level actions (new, open, save).
+
+*   **Settings Menu**  
+    Controls theme selection and ruler mode.
+
+***
+
+## Summary Sentence (Optional, Useful)
+
+> The UI is composed of transport controls, a time‑based timeline with scrubbing and markers, global musical context (tempo and meter), per‑track performance controls, and scene‑based arrangement tools, all driven by state and rendered as projections.
+
+If you want next, I can:
+
+*   map each control to its authoritative JS function
+*   flag which controls mutate state vs projection
+*   or help you collapse this into a “User Guide” version
+
+---
+
+# JavaScript Organization Scheme
+
+### 1. **State Layer (Truth)**
+
+This is where **what is true** lives.
+
+Characteristics:
+
+*   Plain variables or plain objects
+*   Semantic units only
+*   No DOM access
+*   No rendering
+*   No side effects
+
+Examples from your app:
+
+*   `currentTimeSeconds`
+*   `markers[]`
+*   `selectedMarkerId`
+*   `tempoBPM`
+*   `timeSignature`
+*   `zoom`
+*   transport flags (`playing`, `recording`)
+*   scrub flags (`isScrubbing`, `scrubPrevTransportState`)
+
+**Rule**
+
+> State never knows how it is rendered.
+
+***
+
+### 2. **Projection / Rendering Layer (View)**
+
+This layer answers **“given the current state, what should the UI look like?”**
+
+Characteristics:
+
+*   Reads state
+*   Writes DOM
+*   Idempotent
+*   Safe to call at any time
+*   No state mutation
+
+Examples:
+
+*   `renderTimelineRuler()`
+*   `renderMarkers()`
+*   `renderMarkerTransport()`
+*   `renderTimelineLayer()`
+*   `setPlayheadPositionPx()`
+
+**Rule**
+
+> Rendering functions must not change state — ever.
+
+This is why zoom, scrubbing, and marker fixes kept working once state was right.
+
+***
+
+### 3. **Controller / Authority Functions (Decisions)**
+
+This layer answers **“what does this action mean?”**
+
+Characteristics:
+
+*   Mutates state
+*   Calls render functions
+*   Centralized
+*   One authority per concept
+
+Examples:
+
+*   `applyTransportChange()`
+*   `onTransportStart()`
+*   `selectMarkerByIndex()`
+*   marker deletion logic
+*   zoom handler logic (state updates only)
+
+**Rule**
+
+> If a behavior matters, it must have exactly one authoritative function.
+
+This is why:
+
+*   marker selection works
+*   deletion doesn’t move the playhead
+*   scrubbing restores state correctly
+
+***
+
+### 4. **Event Handlers (Intent)**
+
+This layer answers **“the user did something”**, nothing more.
+
+Characteristics:
+
+*   Very small
+*   No logic
+*   No math
+*   No rendering
+*   No state inspection beyond trivial guards
+
+Examples:
+
+*   button `onclick`
+*   slider `oninput`
+*   `mousedown` / `mousemove` / `mouseup`
+*   marker click listeners
+
+Typical handler shape:
+
+```js
+button.onclick = () => {
+  someAuthoritativeFunction();
+};
+```
+
+**Rule**
+
+> Event handlers do not decide. They delegate.
+
+***
+
+### 5. **Temporary Interaction Overrides (Modes)**
+
+These are **not states of the app**, but short‑lived behaviors.
+
+Examples:
+
+*   scrubbing
+*   marker dragging
+*   future: loop range drag, selection drag
+
+Characteristics:
+
+*   Snapshot state
+*   Override behavior
+*   Restore state exactly
+*   Never stored in transport state
+
+**Rule**
+
+> Temporary interaction ≠ application state.
+
+This distinction prevented your scrubbing logic from exploding the transport state machine.
+
+***
+
+## How Data Flows (The Mental Model)
+
+**One‑way truth, two‑way interaction**
+
+    User Input
+       ↓
+    Event Handler (intent only)
+       ↓
+    Authority Function (mutates state)
+       ↓
+    Render Functions (project state)
+
+Nothing skips a layer.
+
+***
+
+## Why This Scheme Worked for You
+
+This organization is why you were able to fix:
+
+*   playhead resets
+*   zoom/playhead desync
+*   scrubbing restore bugs
+*   marker navigation edge cases
+*   deletion side effects
+
+…without rewriting everything.
+
+Each bug lived in **exactly one layer**, so each fix did too.
+
+***
+
+## Litmus Test (Use This When Adding Code)
+
+Ask yourself:
+
+1.  Is this answering **what is true**? → State
+2.  Is this answering **what it should look like**? → Render
+3.  Is this answering **what an action means**? → Authority
+4.  Is this just **reacting to an event**? → Handler
+5.  Is this **temporary and reversible**? → Interaction override
+
+If a function mixes answers, it’s in the wrong place.
+
+***
+
+## One‑Sentence Summary
+
+> **State defines truth.  
+> Authorities define meaning.  
+> Rendering defines appearance.  
+> Event handlers just connect them.**
+
+That is the organization scheme you’re already following — now it’s explicit.
+
+If you want next, I can:
+
+*   map your existing functions into this scheme explicitly
+*   help you name files/modules when you split this later
+*   audit for any remaining layer violations
+
+-->
 <!DOCTYPE html>
 <html lang="en">
 
