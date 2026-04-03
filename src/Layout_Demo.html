@@ -30,552 +30,21 @@
 
 ## Rules
 
-Rule — UI elements never own persistent or behavioral truth.
-CSS classes may only reflect state, never define it,
-once persistence, playback, or undo is planned.
+Rule - Add comments before code snippets in this format:
+// Groupings - Feature Area - Usage Type -----
 
-Rule - Add comments before code snippets in this format with the Area and Type replaced with the correct values:
-//  ----- Area Type -----
-
-Example Values for Area include: control names, feature names, "Track", "Global", "Animation, etc.
-Example Values for Type include: "Handlers", "State", "Selection", "DOM sync", "Creation", "Loops", etc.
-
-Each value can be multiple words and is not limited by these examples.
-
-No git patches
-No unlabeled snippets
-No mixed responsibilities inside a block
-Headers chosen so snippets can be copied directly into your rules file
-
-## Canonical Area / Type Vocabulary
-
-This vocabulary is **authoritative** for this project.  
-Its purpose is to:
-- keep architecture legible over time
-- make intent obvious when skimming code
-- prevent accidental layer violations
-- allow snippets to be copied directly into rules/docs
-
-You may extend it later, but **do not rename existing entries lightly**.
-
-Rule — Both DOM references and constants must declare an Area.
-“Global” is not an Area; use “App” or the owning domain.
-
-Ordering Convention (Strongly Recommended)
-Inside a major section:
-
-Constants
-DOM References
-State
-Helpers
-Authority
-Rendering / Projection
-Handlers
-Loops
+### Groupings
+- Shared DOM References
+- State (Truth Layer)
+- Helpers (Pure Computation Layer)
+- Authority (Meaning Layer)
+- Projection/Rendering (View Layer)
+- DOM Sync (Synchronization Layer)
+- Event Handlers (Intent Layer)
+- Initialization
 
 ---
 
-## Areas (What part of the system?)
-
-Areas describe **domain ownership**.  
-Every piece of code must clearly belong to exactly one Area.
-
-### Core Areas (Foundational)
-- **App**  
-  Cross‑cutting bootstrapping, initialization, and glue code.
-- **State**  
-  Canonical application truth (non‑DOM, serializable).
-- **Persistence**  
-  Save/load, serialization, versioning, storage adapters.
-- **Undo**  
-  State history, snapshots, redo/undo mechanics.
-
-### Transport & Time
-- **Transport**  
-  Play, stop, record, state machine, transitions.
-- **Playhead**  
-  Position, movement, centering, view logic.
-- **Timeline**  
-  Scrollable time surface, geometry, interaction layer.
-- **Ruler**  
-  Seconds/bars ruler, tick generation, drawing.
-- **Scrub**  
-  Temporary transport override for mouse‑driven seeking.
-- **Zoom**  
-  Horizontal scaling and time‑to‑pixel mapping.
-
-### Musical Context
-- **Tempo**  
-  BPM display/editing and state.
-- **Time Signature**  
-  Meter selection and representation.
-- **Metronome**  
-  Visual or audible beat indication.
-
-### Tracks
-- **Track**  
-  Track identity, name, existence.
-- **Track Controls**  
-  Solo, gain, mute, per‑track UI.
-- **Track Scenes**  
-  Scene membership per track.
-- **Waveform**  
-  Track visual content and canvas rendering.
-- **Lyrics**  
-  Track‑attached lyrical or textual data (future).
-
-### Scenes
-- **Global Scene**  
-  Scene selection/filtering across tracks.
-- **Scene Projection**  
-  How scene state affects UI or behavior.
-
-### Markers
-- **Marker**  
-  Marker state, creation, deletion.
-- **Marker Transport**  
-  Navigation controls for markers.
-
-### UI / Chrome
-- **UI**  
-  Generic UI behavior not tied to a domain.
-- **Menu**  
-  Menus, popovers, settings UI.
-- **Theme**  
-  Theme switching, CSS variables.
-- **Debug**  
-  Debug overlays, diagnostics.
-
-### Interaction / Presentation
-- **Animation**  
-  requestAnimationFrame loops and time‑based visuals.
-- **Layout**  
-  Column sizing, row sync, resize observers.
-- **Scroll Sync**  
-  Coupled scrolling between regions.
-
----
-
-## Types (What role does this code play?)
-
-Types describe **responsibility**.  
-They enforce your existing architecture rules.
-
-### Truth & Meaning
-- **State**  
-  Plain data, no DOM, no behavior.
-- **Authority**  
-  Decides what an action *means*; mutates state.
-- **Selection**  
-  Chooses which entity is active/selected.
-
-### Rendering & Projection
-- **Projection**  
-  Maps state → visual meaning (may add/remove classes).
-- **Rendering**  
-  Draws pixels or DOM from state (idempotent).
-- **DOM Sync**  
-  Keeps DOM aligned with known state.
-
-### Input
-- **Handlers**  
-  Event listeners; intent only, no logic.
-- **Creation**  
-  DOM creation or template instantiation.
-
-### Motion & Continuity
-- **Loops**  
-  Continuous animation / update loops.
-- **Helpers**  
-  Pure calculations, queries, formatting.
-
-### Temporary Modes
-- **Interaction Override**  
-  Short‑lived modes (scrub, drag, hover preview).
-  Must snapshot and restore state.
-
-### Other
-- **Constants**
-- **DOM References**
-
----
-
-## Mandatory Usage Rules
-
-1. **Every snippet gets exactly one header**
-   ```js
-   // ----- Track Scenes Authority -----
-
-
-# Technical Stuff
-
-Below is a **clean, complete inventory of the controls you’ve implemented so far**, grouped by area, with **one‑line, behavior‑accurate descriptions**.
-
-***
-
-## Global / Transport Controls
-
-*   **Play**  
-    Starts playback from the current playhead position.
-
-*   **Record**  
-    Arms recording and starts playback, writing audio from the current playhead position.
-
-*   **Play + Record**  
-    Convenience control that starts playback and recording together.
-
-*   **Timer Display**  
-    Shows the current playhead time in minutes, seconds, and tenths.
-
-*   **Meter**  
-    Displays input level during recording.
-
-***
-
-## Global Musical Context
-
-*   **Tempo (BPM)**  
-    Displays and edits the global tempo; stored as state only (no playback wiring yet).
-
-*   **Time Signature Dropdown**  
-    Selects the global time signature; defines the musical grid (state only).
-
-***
-
-## Zoom & Navigation
-
-*   **Zoom Slider**  
-    Scales the timeline horizontally around the current view center.
-
-*   **Zoom Labels (¼, ½, 1×, 2×, 4×)**  
-    Visual reference points for discrete zoom levels.
-
-***
-
-## Timeline & Ruler
-
-*   **Timeline Ruler**  
-    Displays time (and bars/beats later) and serves as the primary interaction surface for markers and scrubbing.
-
-*   **Timeline Overlay**  
-    Transparent interaction layer for playhead scrubbing and click‑to‑seek.
-
-*   **Playhead**  
-    Indicates the current playback position; moves continuously during playback or interactively during scrubbing.
-
-***
-
-## Scrubbing Interaction
-
-*   **Timeline Click (Idle)**  
-    Moves the playhead to the clicked position without starting playback.
-
-*   **Timeline Drag (Scrub)**  
-    Temporarily pauses playback and repositions the playhead in real time while dragging.
-
-*   **Scrub Release**  
-    Restores the previous transport state (play or idle) without resetting the playhead.
-
-***
-
-## Markers (Global)
-
-*   **Create Marker**  
-    Click the timeline ruler to create a marker at that time.
-
-*   **Marker (Ruler)**  
-    Vertical time reference that can be selected and dragged to a new position.
-
-*   **Marker Selection**  
-    Clicking a marker selects it and loads it into the marker transport.
-
-***
-
-## Marker Transport Controls
-
-*   **First Marker**  
-    Selects the first marker and jumps the playhead to it.
-
-*   **Previous Marker**  
-    Selects the previous marker and jumps the playhead to it.
-
-*   **Next Marker**  
-    Selects the next marker and jumps the playhead to it.
-
-*   **Last Marker**  
-    Selects the last marker and jumps the playhead to it.
-
-*   **Marker Time Display**  
-    Shows the time of the currently selected marker.
-
-*   **Delete Marker**  
-    Deletes the selected marker without moving the playhead.
-
-***
-
-## Track Controls (Per Track)
-
-*   **Track Name**  
-    Editable label identifying the track.
-
-*   **Solo (S)**  
-    Auditions the track by muting all others.
-
-*   **Gain Slider**  
-    Adjusts the track’s playback level.
-
-***
-
-## Track Scenes (Per Track)
-
-*   **Scene Membership Buttons (A–E)**  
-    Indicate which global scenes the track belongs to.
-
-*   **Clear Track Scenes (⨯)**  
-    Removes the track from all scenes without affecting playback.
-
-***
-
-## Global Scenes
-
-*   **Global Scene Select (A–E)**  
-    Activates a scene, making only member tracks audible.
-
-*   **Clear Global Scene (⨯)**  
-    Deactivates scene filtering so all tracks are audible.
-
-***
-
-## Menus
-
-*   **File Menu**  
-    Placeholder for project‑level actions (new, open, save).
-
-*   **Settings Menu**  
-    Controls theme selection and ruler mode.
-
-***
-
-## Summary Sentence (Optional, Useful)
-
-> The UI is composed of transport controls, a time‑based timeline with scrubbing and markers, global musical context (tempo and meter), per‑track performance controls, and scene‑based arrangement tools, all driven by state and rendered as projections.
-
-If you want next, I can:
-
-*   map each control to its authoritative JS function
-*   flag which controls mutate state vs projection
-*   or help you collapse this into a “User Guide” version
-
----
-
-# JavaScript Organization Scheme
-
-### 1. **State Layer (Truth)**
-
-This is where **what is true** lives.
-
-Characteristics:
-
-*   Plain variables or plain objects
-*   Semantic units only
-*   No DOM access
-*   No rendering
-*   No side effects
-
-Examples from your app:
-
-*   `currentTimeSeconds`
-*   `markers[]`
-*   `selectedMarkerId`
-*   `tempoBPM`
-*   `timeSignature`
-*   `zoom`
-*   transport flags (`playing`, `recording`)
-*   scrub flags (`isScrubbing`, `scrubPrevTransportState`)
-
-**Rule**
-
-> State never knows how it is rendered.
-
-***
-
-### 2. **Projection / Rendering Layer (View)**
-
-This layer answers **“given the current state, what should the UI look like?”**
-
-Characteristics:
-
-*   Reads state
-*   Writes DOM
-*   Idempotent
-*   Safe to call at any time
-*   No state mutation
-
-Examples:
-
-*   `renderTimelineRuler()`
-*   `renderMarkers()`
-*   `renderMarkerTransport()`
-*   `renderTimelineLayer()`
-*   `setPlayheadPositionPx()`
-
-**Rule**
-
-> Rendering functions must not change state — ever.
-
-This is why zoom, scrubbing, and marker fixes kept working once state was right.
-
-***
-
-### 3. **Controller / Authority Functions (Decisions)**
-
-This layer answers **“what does this action mean?”**
-
-Characteristics:
-
-*   Mutates state
-*   Calls render functions
-*   Centralized
-*   One authority per concept
-
-Examples:
-
-*   `applyTransportChange()`
-*   `onTransportStart()`
-*   `selectMarkerByIndex()`
-*   marker deletion logic
-*   zoom handler logic (state updates only)
-
-**Rule**
-
-> If a behavior matters, it must have exactly one authoritative function.
-
-This is why:
-
-*   marker selection works
-*   deletion doesn’t move the playhead
-*   scrubbing restores state correctly
-
-***
-
-### 4. **Event Handlers (Intent)**
-
-This layer answers **“the user did something”**, nothing more.
-
-Characteristics:
-
-*   Very small
-*   No logic
-*   No math
-*   No rendering
-*   No state inspection beyond trivial guards
-
-Examples:
-
-*   button `onclick`
-*   slider `oninput`
-*   `mousedown` / `mousemove` / `mouseup`
-*   marker click listeners
-
-Typical handler shape:
-
-```js
-button.onclick = () => {
-  someAuthoritativeFunction();
-};
-```
-
-**Rule**
-
-> Event handlers do not decide. They delegate.
-
-***
-
-### 5. **Temporary Interaction Overrides (Modes)**
-
-These are **not states of the app**, but short‑lived behaviors.
-
-Examples:
-
-*   scrubbing
-*   marker dragging
-*   future: loop range drag, selection drag
-
-Characteristics:
-
-*   Snapshot state
-*   Override behavior
-*   Restore state exactly
-*   Never stored in transport state
-
-**Rule**
-
-> Temporary interaction ≠ application state.
-
-This distinction prevented your scrubbing logic from exploding the transport state machine.
-
-***
-
-## How Data Flows (The Mental Model)
-
-**One‑way truth, two‑way interaction**
-
-    User Input
-       ↓
-    Event Handler (intent only)
-       ↓
-    Authority Function (mutates state)
-       ↓
-    Render Functions (project state)
-
-Nothing skips a layer.
-
-***
-
-## Why This Scheme Worked for You
-
-This organization is why you were able to fix:
-
-*   playhead resets
-*   zoom/playhead desync
-*   scrubbing restore bugs
-*   marker navigation edge cases
-*   deletion side effects
-
-…without rewriting everything.
-
-Each bug lived in **exactly one layer**, so each fix did too.
-
-***
-
-## Litmus Test (Use This When Adding Code)
-
-Ask yourself:
-
-1.  Is this answering **what is true**? → State
-2.  Is this answering **what it should look like**? → Render
-3.  Is this answering **what an action means**? → Authority
-4.  Is this just **reacting to an event**? → Handler
-5.  Is this **temporary and reversible**? → Interaction override
-
-If a function mixes answers, it’s in the wrong place.
-
-***
-
-## One‑Sentence Summary
-
-> **State defines truth.  
-> Authorities define meaning.  
-> Rendering defines appearance.  
-> Event handlers just connect them.**
-
-That is the organization scheme you’re already following — now it’s explicit.
-
-If you want next, I can:
-
-*   map your existing functions into this scheme explicitly
-*   help you name files/modules when you split this later
-*   audit for any remaining layer violations
 
 -->
 <!DOCTYPE html>
@@ -613,7 +82,6 @@ If you want next, I can:
             padding: 0;
             height: 100%;
             background: #111;
-            /* color: #eee; */
             font-family: system-ui, sans-serif;
             overflow: hidden;
         }
@@ -650,7 +118,7 @@ If you want next, I can:
             user-select: text;
         }
 
-        /* Transport */
+        /* Main Transport */
 
         .transport {
             height: 48px;
@@ -692,12 +160,6 @@ If you want next, I can:
             cursor: pointer;
         }
 
-        /* .transport-scene.active {
-            background: #ff3b30;
-            color: var(--text-main);
-        } */
-
-
         .transport-scene.active {
             background: var(--accent-highlight);
             color: black;
@@ -726,40 +188,37 @@ If you want next, I can:
             color: var(--text-main);
         }
 
-        /* tempo and time signature */
-        /* .global-time {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 0 8px;
-
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: 4px;
-
-            font-size: 12px;
+        .record-btn.recording {
+            background: #ff3b30;
+            color: var(--text-main);
         }
 
-        .tempo {
-            min-width: 56px;
-            text-align: right;
-            cursor: text;
+
+        #playBtn.active {
+            background: var(--accent-primary);
+            color: var(--text-main);
         }
 
-        .tempo .unit {
-            opacity: 0.6;
-        }
 
-        .timesig {
-            min-width: 32px;
-            text-align: center;
-            cursor: pointer;
-            font-variant-numeric: tabular-nums;
-        } */
-
-        .tempo {
+        #playRecordBtn {
+            border-radius: 6px 10px 10px 6px;
             padding: 5px;
         }
+
+        #playRecordBtn.active {
+            box-shadow:
+                inset 0 0 0 2px rgba(0, 0, 0, 0.35);
+
+            background: linear-gradient(90deg,
+                    var(--accent-primary) 0%,
+                    var(--accent-primary) 30%,
+                    color-mix(in oklab, var(--accent-primary), var(--accent-danger)) 50%,
+                    var(--accent-danger) 70%,
+                    var(--accent-danger) 100%);
+
+        }
+
+
 
         /* ----- Global Time ----- */
 
@@ -802,17 +261,11 @@ If you want next, I can:
             display: none;
             flex-direction: column;
             gap: 2px;
-
             background: var(--bg-panel);
             border: 1px solid var(--border-subtle);
             border-radius: 6px;
             z-index: 1000;
-
-
             min-width: 36px;
-            /* try 64–80px depending on font */
-
-
         }
 
         .timesig-menu button {
@@ -841,9 +294,9 @@ If you want next, I can:
             user-select: none;
         }
 
-
-
-
+        .tempo {
+            padding: 5px;
+        }
 
 
 
@@ -873,35 +326,9 @@ If you want next, I can:
             background: var(--accent-primary);
         }
 
-        .record-btn.recording {
-            background: #ff3b30;
-            color: var(--text-main);
-        }
 
 
-        #playBtn.active {
-            background: var(--accent-primary);
-            color: var(--text-main);
-        }
 
-
-        #playRecordBtn {
-            border-radius: 6px 10px 10px 6px;
-            padding: 5px;
-        }
-
-        #playRecordBtn.active {
-            box-shadow:
-                inset 0 0 0 2px rgba(0, 0, 0, 0.35);
-
-            background: linear-gradient(90deg,
-                    var(--accent-primary) 0%,
-                    var(--accent-primary) 30%,
-                    color-mix(in oklab, var(--accent-primary), var(--accent-danger)) 50%,
-                    var(--accent-danger) 70%,
-                    var(--accent-danger) 100%);
-
-        }
 
 
         /* Timer */
@@ -971,29 +398,17 @@ If you want next, I can:
         }
 
 
-        /* .timeline-marker {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--accent-highlight);
-} */
-        /* .timeline-marker.selected {
-  background: var(--accent-primary);
-} */
-
+        /* Timeline Markers */
 
         #timeline-markers {
             position: absolute;
             inset: 0;
             pointer-events: none;
-            /* markers re-enable events individually */
         }
 
         .marker-time {
             display: inline;
         }
-
 
         #timeline-markers {
             position: absolute;
@@ -1070,13 +485,9 @@ If you want next, I can:
             align-items: center;
         }
 
-
-
-
         .track-controls .solo-btn {
             margin-left: auto;
         }
-
 
         .solo-btn {
             padding: 2px 6px;
@@ -1314,9 +725,14 @@ If you want next, I can:
             opacity: 0.85;
         }
 
+        /* Inside timeline-row and control-row */
         .row-inner {
             padding: 8px;
         }
+
+
+
+        /* Waverform */
 
         .waveform {
             display: inline-block;
@@ -1954,64 +1370,72 @@ If you want next, I can:
 
     <div id="debug-transport-state"></div>
 
+
+
     <script>
-        //  Constants -----
+
+        // ============================================================
+        // Code Awaiting Organization -----
+        // ============================================================
+
+
+
+
+
+        // ============================================================
+        // Shared DOM Referneces -----
+        // ============================================================
+
+        const controlsScrollCol = document.getElementById("controls-scroll-column");
+        const timelineArea = document.getElementById("timeline-area");
+        const timelineInner = document.getElementById("timeline-inner");
+
+        // ============================================================
+        // State (Truth Layer) -----
+        // ============================================================
+
+        //  Constants 
         const BASE_PPS = 100;
         const SCROLL_THRESHOLD = 120;
 
-
-        //  DOM References -----
-        const controlsCol = document.getElementById("controls-column");
-        const controlsScrollCol = document.getElementById("controls-scroll-column");
-        const timelineCol = document.getElementById("timeline-column");
-        const timelineArea = document.getElementById("timeline-area");
-        const timelineInner = document.getElementById("timeline-inner");
-        const timelineColumn = document.getElementById("timeline-column");
-        const timelineOverlay = document.getElementById("timeline-overlay");
-        const timelineRuler = document.getElementById("timeline-ruler");
-        const zoomSlider = document.getElementById("zoom-slider");
-
-        // templates
-        const controlTpl = document.getElementById("control-row-template");
-        const timelineTpl = document.getElementById("timeline-row-template");
-
-        // transport
-        const playBtn = document.getElementById("playBtn");
-        const playRecordBtn = document.getElementById("playRecordBtn");
-        const recordBtn = document.getElementById("recordBtn");
-        const playhead = document.getElementById("playhead");
-        const timer = document.getElementById("timer");
-        const meter = document.getElementById("meter");
-        const meterBar = document.getElementById("meterBar");
-        const recordRange =
-            document.getElementById("record-range");
-        const transportToggles =
-            document.querySelectorAll("#transport-scenes .transport-scene");
-
-        // debug
-        const debugTransportState = document.getElementById("debug-transport-state");
-
-
-        //  Zoom State -----
+        //  Zoom State 
         const zoomLevels = [0.25, 0.5, 1, 2, 4];
         let zoomIndex = 2;           // default = 1x
         let zoom = zoomLevels[zoomIndex];
 
+        let currentTimeSeconds = 0;
+        let recordStartTime = null;
 
-        // Timeline Ruler
-        const rulerCanvas = document.getElementById("timeline-ruler-canvas");
-        const rulerCtx = rulerCanvas.getContext("2d");
-        // const markerDeleteBtn = document.getElementById("marker-delete");
+        //  Global Musical State 
+        let tempoBPM = 125;
+        let timeSignature = {
+            beats: 3,
+            noteValue: 4
+        };
 
+        let markers = [{ id: 0, time: 0 }]; // [{ id, time }]
+        let selectedMarkerId = null;
 
-        // ----- Marker Transport Controls -----
-        const markerFirstBtn = document.getElementById("marker-first");
-        const markerPrevBtn = document.getElementById("marker-prev");
-        const markerNextBtn = document.getElementById("marker-next");
-        const markerLastBtn = document.getElementById("marker-last");
-        const markerDeleteBtn = document.getElementById("marker-delete");
+        //  Musical Grid 
+        let bpm = 120;         // beats per minute
+        let beatsPerBar = 4;  // time signature numerator
 
+        //  Transport State 
+        let playing = false;
+        let recording = false;
+        let startTime = 0;
+        let recordStartX = null;
+        let playbackStartX = 0; // px offset where playback begins
 
+        // ============================================================
+        // Helpers (Pure Computation Layer) -----
+        // ============================================================
+
+        // ----- Marker Navigation Helpers 
+        function jumpPlayheadToTime(seconds) {
+            const px = secondsToPixels(seconds);
+            setPlayheadPositionPx(px);
+        }
 
         function secondsToPixels(seconds) {
             return seconds * BASE_PPS * zoom;
@@ -2021,12 +1445,266 @@ If you want next, I can:
             return px / (BASE_PPS * zoom);
         }
 
+        // ----- Marker Helpers 
+        function getSelectedMarkerIndex() {
+            return markers.findIndex(m => m.id === selectedMarkerId);
+        }
+
+        function secondsPerBeat() {
+            return 60 / bpm;
+        }
+
+        function secondsPerBar() {
+            return secondsPerBeat() * beatsPerBar;
+        }
+
+
+        function getRulerTicks(startSeconds, endSeconds) {
+            if (rulerMode === "seconds") {
+                return getSecondTicks(startSeconds, endSeconds);
+            }
+            if (rulerMode === "bars") {
+                return getBarTicks(startSeconds, endSeconds);
+            }
+        }
+
+
+        function getSecondTicks(startSeconds, endSeconds) {
+            const majorStep =
+                zoom <= 0.5 ? 4 :
+                    zoom <= 1 ? 2 :
+                        zoom <= 2 ? 1 : 0.5;
+
+            const minorStep = majorStep / 4;
+            const ticks = [];
+
+            for (
+                let t = Math.floor(startSeconds / minorStep) * minorStep;
+                t <= endSeconds;
+                t += minorStep
+            ) {
+                ticks.push({
+                    time: t,
+                    major: Math.abs(t % majorStep) < 0.0001,
+                    label: Math.abs(t % majorStep) < 0.0001
+                        ? formatTime(t)
+                        : null
+                });
+            }
+
+            return ticks;
+        }
+
+        function getBarTicks(startSeconds, endSeconds) {
+            const barLength = secondsPerBar();
+            const beatLength = secondsPerBeat();
+            const ticks = [];
+
+            const startBar =
+                Math.floor(startSeconds / barLength);
+
+            let t = startBar * barLength;
+
+            while (t <= endSeconds) {
+                // Major bar tick
+                ticks.push({
+                    time: t,
+                    major: true,
+                    label: `Bar ${startBar + 1}`
+                });
+
+                // Beat ticks
+                for (let b = 1; b < beatsPerBar; b++) {
+                    const bt = t + b * beatLength;
+                    if (bt >= startSeconds && bt <= endSeconds) {
+                        ticks.push({
+                            time: bt,
+                            major: false,
+                            label: null
+                        });
+                    }
+                }
+
+                t += barLength;
+            }
+
+            return ticks;
+        }
+
+        function isTransportMoving() {
+            return getTransportState() !== "IDLE";
+        }
+
+        // tiny state machine
+        // Use getTransportState() to explain behavior, not to control everything.
+        /** 
+         * State mutations change flags.
+         * Transition detection decides behavior.
+         **/
+        function getTransportState() {
+            if (playing && recording) return "PLAY_RECORD";
+            if (playing) return "PLAY";
+            if (recording) return "RECORD";
+            return "IDLE";
+        }
+
+        function getPlayheadX() {
+            const transform = playhead.style.transform;
+            if (!transform) {
+                console.log("Returning 0 because !transform");
+                return 0;
+            }
+
+            const match = transform.match(/translateX\(([-\d.]+)px\)/);
+            return match ? parseFloat(match[1]) : 0;
+        }
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            const t = Math.floor((s * 10) % 10);
+            return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}.${t}`;
+        }
+
+        function computeWaveformWidth(seconds) {
+            return Math.floor(seconds * BASE_PPS * zoom);
+        }
+
+        // ----- Playhead View Helpers 
+        function ensurePlayheadInViewCentered() {
+            const playheadX = secondsToPixels(currentTimeSeconds);
+            const viewLeft = timelineArea.scrollLeft;
+            const viewRight = viewLeft + timelineArea.clientWidth;
+
+            // // Offscreen to the left OR right → center it
+            // if (playheadX < viewLeft || playheadX > viewRight) {
+            //     timelineArea.scrollLeft =
+            //         Math.max(0, playheadX - timelineArea.clientWidth / 2);
+            // }
+
+
+            const MARGIN = 40;
+            if (
+                playheadX < viewLeft + MARGIN ||
+                playheadX > viewRight - MARGIN
+            ) {
+                timelineArea.scrollLeft =
+                    Math.max(0, playheadX - timelineArea.clientWidth / 2);
+            }
+
+        }
+
+        // ============================================================
+        // Authority (Meaning Layer) -----
+        // ============================================================
+
+        function setRulerMode(mode) {
+            rulerMode = mode;
+            renderTimelineLayer();
+        }
+
+        // ----- Marker Selection 
+        function selectMarkerByIndex(index) {
+            if (!markers.length) return;
+
+            // Clamp index to valid range
+            const clamped = Math.max(0, Math.min(index, markers.length - 1));
+            const marker = markers[clamped];
+
+            // Update selected marker ID
+            selectedMarkerId = marker.id;
+
+            // Move playhead to marker time
+            jumpPlayheadToTime(marker.time);
+
+            // ----- Auto‑Scroll to Marker 
+            const markerX = secondsToPixels(marker.time);
+            const viewWidth = timelineArea.clientWidth;
+
+            // Center the marker in the viewport
+            const targetScrollLeft = markerX - viewWidth / 2;
+            timelineArea.scrollLeft = Math.max(0, targetScrollLeft);
+
+            // ----- Re-render the marker layer 
+            renderMarkers();
+
+            // ----- Re-render marker transport controls 
+            renderMarkerTransport();
+        }
+
+        //  -----------Apply Transport Change 
+        function applyTransportChange({ play, record }) {
+            const prevState = getTransportState();
+            const wasRecording = recording;
+
+            playing = play;
+            recording = record;
+
+            const nextState = getTransportState();
+
+            if (prevState === "IDLE" && nextState !== "IDLE") {
+                onTransportStart();
+            }
+
+            if (prevState !== "IDLE" && nextState === "IDLE") {
+                // if (!isScrubbing) {
+                //     resetPlayhead();
+                // }
+            }
+
+            if (!wasRecording && recording) startRecordingRange();
+            if (wasRecording && !recording) clearRecordingRange();
+
+            syncTransportUI();
+        }
+
+        // ============================================================
+        // Projection / Rendering (View Layer -----
+        // ============================================================
+
+        // Recording range
+        const recordRange =
+            document.getElementById("record-range");
+
+        function startRecordingRange() {
+            recordStartTime = getPlayheadTime(); // seconds
+            recordRange.style.display = "block";
+            recordRange.style.width = "0px";
+        }
+
+
+        function getPlayheadTime() {
+            const x = getPlayheadX();
+            return pixelsToSeconds(x);
+        }
+
+
+        function updateRecordRange() {
+            if (recordStartTime === null) return;
+
+            const currentTime = getPlayheadTime();
+
+            const startX = secondsToPixels(recordStartTime);
+            const endX = secondsToPixels(currentTime);
+
+            recordRange.style.left = `${startX}px`;
+            recordRange.style.width = `${Math.max(0, endX - startX)}px`;
+        }
+
+
+        function clearRecordingRange() {
+            recordRange.style.display = "none";
+            recordStartX = null;
+        }
+
+        // Timeline Ruler
+        const rulerCanvas = document.getElementById("timeline-ruler-canvas");
+        const rulerCtx = rulerCanvas.getContext("2d");
 
         function renderTimelineLayer() {
             renderTimelineRuler();
             renderMarkers();
         }
-
 
         function renderTimelineRuler() {
 
@@ -2175,9 +1853,7 @@ If you want next, I can:
         }
 
 
-        timelineArea.addEventListener("scroll", () => {
-            renderTimelineLayer();
-        });
+
 
 
         function renderMetronomeScan() {
@@ -2212,12 +1888,275 @@ If you want next, I can:
             line.style.transform = `translateX(${x}px)`;
         }
 
+        // ----- Debug Event Target Overlay 
+        function debugOverlayEventTarget(e, duration = 400) {
+            const el = e.target;
+            if (!(el instanceof HTMLElement)) return;
 
-        //  Ruler State -----
+            const rect = el.getBoundingClientRect();
+            const overlay = document.createElement("div");
+
+            overlay.style.position = "fixed";
+            overlay.style.left = `${rect.left}px`;
+            overlay.style.top = `${rect.top}px`;
+            overlay.style.width = `${rect.width}px`;
+            overlay.style.height = `${rect.height}px`;
+            overlay.style.border = "2px solid red";
+            overlay.style.pointerEvents = "none";
+            overlay.style.zIndex = "99999";
+
+            document.body.appendChild(overlay);
+
+            setTimeout(() => overlay.remove(), duration);
+        }
+
+        // ----- Playhead Helpers 
+        function setPlayheadPositionPx(px) {
+            playhead.style.transform = `translateX(${px}px)`;
+            currentTimeSeconds = pixelsToSeconds(px);
+            timer.textContent = formatTime(currentTimeSeconds);
+            updateTimeDisplay(currentTimeSeconds);
+        }
+
+        function updateTimeDisplay(s) {
+            timer.textContent = formatTime(s);
+        }
+
+        function renderTempo() {
+            const el = document.getElementById("tempoDisplay");
+            el.innerHTML = `${tempoBPM}`;
+        }
+
+        function renderTimeSignature() {
+            timeSigBtn.textContent =
+                `${timeSignature.beats}/${timeSignature.noteValue}`;
+        }
+
+        const markersLayer = document.getElementById("timeline-markers");
+
+        function renderMarkers() {
+            // Clear old marker DOM
+            markersLayer.innerHTML = "";
+
+            for (const marker of markers) {
+
+                const markerWrap = document.createElement("div");
+                markerWrap.className = "timeline-marker-hit";
+
+                const markerLine = document.createElement("div");
+                markerLine.className = "timeline-marker-line";
+
+                if (marker.id === selectedMarkerId) {
+                    markerLine.classList.add("selected");
+                    markerWrap.classList.add("selected");
+                }
+
+                markerWrap.appendChild(markerLine);
+
+                // position marker
+                const x = secondsToPixels(marker.time);
+                markerWrap.style.left = `${x}px`;
+
+                // ✅ CLICK → LOAD MARKER
+                markerWrap.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    selectedMarkerId = marker.id;
+                    renderMarkers();
+                    renderMarkerTransport();
+                });
+
+                // (drag comes later; keep click-only for now)
+                markersLayer.appendChild(markerWrap);
+
+            }
+        }
+
+        // ----- Marker Transport Rendering
+        // ----- Marker Transport Controls 
+        const markerFirstBtn = document.getElementById("marker-first");
+        const markerPrevBtn = document.getElementById("marker-prev");
+        const markerNextBtn = document.getElementById("marker-next");
+        const markerLastBtn = document.getElementById("marker-last");
+        const markerDeleteBtn = document.getElementById("marker-delete");
+
+        function renderMarkerTransport() {
+            const idx = getSelectedMarkerIndex();
+            const hasMarkers = markers.length > 0;
+
+            markerFirstBtn.disabled = !hasMarkers || idx === 0;
+            markerPrevBtn.disabled = !hasMarkers || idx <= 0;
+            markerNextBtn.disabled = !hasMarkers || idx === -1 || idx === markers.length - 1;
+            markerLastBtn.disabled = !hasMarkers || idx === markers.length - 1;
+            markerDeleteBtn.disabled = idx === -1;
+
+            const display = document.getElementById("marker-time");
+            if (idx === -1) {
+                display.textContent = "—";
+            } else {
+                display.textContent = formatTime(markers[idx].time);
+            }
+        }
+
+        function rerenderWaveforms() {
+            /**
+             * Make sure that every time you draw a waveform you do this first:
+             * canvas.height = TRACK_HEIGHT;          // e.g. 80
+             * canvas.style.height = `${TRACK_HEIGHT}px`;
+             **/
+            document.querySelectorAll(".timeline-row").forEach((row, i) => {
+                const canvas = row.querySelector(".waveform-canvas");
+                if (!canvas) return;
+
+                const durationSeconds = 10 + i * 5;
+                const waveformWidth = computeWaveformWidth(durationSeconds);
+
+                const TRACK_HEIGHT = 80;
+                canvas.width = waveformWidth;
+                canvas.height = TRACK_HEIGHT;
+
+                // Optional: redraw a fake waveform
+
+
+                const ctx = canvas.getContext("2d");
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // ctx.fillStyle = "#666";
+                // ctx.fillRect(0, canvas.height / 2, canvas.width, 1);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+        }
+
+        // ============================================================
+        // DOM Sync (Synchronization Layer) -----
+        // ============================================================
+
+        // transport
+        const playBtn = document.getElementById("playBtn");
+        const playRecordBtn = document.getElementById("playRecordBtn");
+        const recordBtn = document.getElementById("recordBtn");
+        const playhead = document.getElementById("playhead");
+        const timer = document.getElementById("timer");
+        const meter = document.getElementById("meter");
+        const meterBar = document.getElementById("meterBar");
+
+        // debug
+        const debugTransportState = document.getElementById("debug-transport-state");
+
+        // ----- Scrub Helpers 
+        function scrubToMouseEvent(e) {
+            const innerRect = timelineInner.getBoundingClientRect();
+
+            // Convert viewport X → content X
+            const contentX =
+                (e.clientX - innerRect.left);// + timelineArea.scrollLeft;
+
+            const clampedX = Math.max(0, contentX);
+
+            setPlayheadPositionPx(clampedX);
+        }
+
+        function syncTransportUI() {
+            const state = getTransportState();
+
+            playBtn.classList.toggle("active", state === "PLAY" || state === "PLAY_RECORD");
+            recordBtn.classList.toggle("recording", state === "RECORD" || state === "PLAY_RECORD");
+            playRecordBtn.classList.toggle("active", state === "PLAY_RECORD");
+            meter.classList.toggle("active", state === "RECORD" || state === "PLAY_RECORD");
+
+
+            // DEBUG OVERLAY
+            if (document.body.classList.contains("debug")) {
+                debugTransportState.textContent =
+                    `Transport: ${state}`;
+            }
+
+        }
+
+        //  Scroll / Geometry Sync 
+        /**
+         * This governs shared vertical scrolling, which is orthogonal to transport.
+         * Why here
+         * It’s not transport logic
+         * It’s not UI rendering
+         * It’s about input routing + geometry
+         * Later, if bugs appear here, your brain knows exactly where to look.
+         **/
+
+
+
+        function syncTimelineOverlay() {
+            const timelineColumn = document.getElementById("timeline-column");
+            const timelineOverlay = document.getElementById("timeline-overlay");
+
+            if (!timelineColumn || !timelineOverlay) return;
+
+            timelineOverlay.style.width =
+                `${timelineColumn.scrollWidth}px`;
+
+            timelineOverlay.style.height =
+                `${timelineColumn.scrollHeight}px`;
+        }
+
+        const timelineColumn = document.getElementById("timeline-column");
+        const timelineOverlay = document.getElementById("timeline-overlay");
+
+        function syncTimelineOverlayWidth() {
+            timelineOverlay.style.width =
+                `${timelineColumn.scrollWidth}px`;
+        }
+
+        // ============================================================
+        // Event Handlers (Intent Layer)  -----
+        // ============================================================
+
+        // solo buttons
+        function setupSoloBtns() {
+            const soloButtons = Array.from(
+                document.querySelectorAll(".solo-btn")
+            );
+            soloButtons.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const isActive = btn.classList.contains("active");
+
+                    // Reset all
+                    soloButtons.forEach(b => {
+                        b.classList.remove("active");
+                        b.disabled = false;
+                    });
+
+                    // If clicked button was not active, activate it and disable others
+                    if (!isActive) {
+                        btn.classList.add("active");
+                        soloButtons.forEach(b => {
+                            if (b !== btn) b.disabled = true;
+                        });
+                    }
+                });
+            });
+        }
+
+        document.querySelectorAll("[data-theme]").forEach(el => {
+            el.onclick = () => {
+                document.body.setAttribute("data-theme", el.dataset.theme);
+                renderTimelineLayer();
+            };
+        });
+
+        document.querySelectorAll("[data-ruler]").forEach(el => {
+            el.onclick = () => {
+                const mode = el.getAttribute("data-ruler");
+                setRulerMode(mode);
+            };
+        });
+
+        timelineArea.addEventListener("scroll", () => {
+            renderTimelineLayer();
+        });
+
+        //  Ruler State 
         let rulerMode = "seconds"; // "seconds" | "bars"
 
 
-        // ------------ Scrub State -----
+        // ------------ Scrub State
 
         let isScrubbing = false;
         let scrubPrevTransportState = null; // "PLAY" | "IDLE
@@ -2259,77 +2198,6 @@ If you want next, I can:
             scrubPrevTransportState = null;
         });
 
-
-        // ----- Scrub Helpers -----
-        function scrubToMouseEvent(e) {
-            const innerRect = timelineInner.getBoundingClientRect();
-
-            // Convert viewport X → content X
-            const contentX =
-                (e.clientX - innerRect.left);// + timelineArea.scrollLeft;
-
-            const clampedX = Math.max(0, contentX);
-
-            setPlayheadPositionPx(clampedX);
-        }
-
-        // ----- Debug Event Target Overlay -----
-        function debugOverlayEventTarget(e, duration = 400) {
-            const el = e.target;
-            if (!(el instanceof HTMLElement)) return;
-
-            const rect = el.getBoundingClientRect();
-            const overlay = document.createElement("div");
-
-            overlay.style.position = "fixed";
-            overlay.style.left = `${rect.left}px`;
-            overlay.style.top = `${rect.top}px`;
-            overlay.style.width = `${rect.width}px`;
-            overlay.style.height = `${rect.height}px`;
-            overlay.style.border = "2px solid red";
-            overlay.style.pointerEvents = "none";
-            overlay.style.zIndex = "99999";
-
-            document.body.appendChild(overlay);
-
-            setTimeout(() => overlay.remove(), duration);
-        }
-
-
-        let currentTimeSeconds = 0;
-        // ----- Playhead Helpers -----
-        function setPlayheadPositionPx(px) {
-            playhead.style.transform = `translateX(${px}px)`;
-            currentTimeSeconds = pixelsToSeconds(px);
-            timer.textContent = formatTime(currentTimeSeconds);
-            updateTimeDisplay(currentTimeSeconds);
-        }
-
-        function updateTimeDisplay(s) {
-            timer.textContent = formatTime(s);
-        }
-
-
-        //  Global Musical State -----
-        let tempoBPM = 125;
-        let timeSignature = {
-            beats: 3,
-            noteValue: 4
-        };
-
-
-        function renderTempo() {
-            const el = document.getElementById("tempoDisplay");
-            el.innerHTML = `${tempoBPM}`;//<span class="unit"> BPM</span>`;
-        }
-
-        function renderTimeSignature() {
-            // const el = document.getElementById("timeSigDisplay");
-            timeSigBtn.textContent =
-                `${timeSignature.beats}/${timeSignature.noteValue}`;
-        }
-
-
         const tempoEl = document.getElementById("tempoDisplay");
 
         tempoEl.addEventListener("keydown", (e) => {
@@ -2351,9 +2219,7 @@ If you want next, I can:
             renderTempo();
         });
 
-
-
-        // ----- Time Signature Dropdown -----
+        // ----- Time Signature Dropdown 
         const timeSigBtn = document.getElementById("timeSigBtn");
         const timeSigMenu = document.getElementById("timeSigMenu");
         const timeSigWrapper = timeSigBtn.parentElement;
@@ -2385,22 +2251,11 @@ If you want next, I can:
             timeSigBtn.setAttribute("aria-expanded", "false");
         });
 
+        const timelineRuler = document.getElementById("timeline-ruler");
 
-
-        // ==========================
-        // MARKERS (STATE ONLY)
-        // ==========================
-
-        let markers = [{ id:0, time:0 }]; // [{ id, time }]
-        let selectedMarkerId = null;
-        // let cancelMarker = false;
-
-        // ---- Marker Handlers ----
+        // ---- Marker Handlers 
         timelineRuler.addEventListener("click", (e) => {
-            // if (cancelMarker) {
-            //     cancelMarker = false;
-            //     return;
-            // }
+
             const x = e.offsetX;
             const time = pixelsToSeconds(x);
 
@@ -2418,102 +2273,7 @@ If you want next, I can:
             renderMarkerTransport();
         });
 
-
-        // ----- Marker Helpers -----
-        function getSelectedMarkerIndex() {
-            return markers.findIndex(m => m.id === selectedMarkerId);
-        }
-
-        // ----- Marker Selection -----
-        function selectMarkerByIndex(index) {
-            if (!markers.length) return;
-
-            // Clamp index to valid range
-            const clamped = Math.max(0, Math.min(index, markers.length - 1));
-            const marker = markers[clamped];
-
-            // Update selected marker ID
-            selectedMarkerId = marker.id;
-
-            // Move playhead to marker time
-            jumpPlayheadToTime(marker.time);
-
-            // ----- Auto‑Scroll to Marker -----
-            const markerX = secondsToPixels(marker.time);
-            const viewWidth = timelineArea.clientWidth;
-
-            // Center the marker in the viewport
-            const targetScrollLeft = markerX - viewWidth / 2;
-            timelineArea.scrollLeft = Math.max(0, targetScrollLeft);
-
-            // ----- Re-render the marker layer -----
-            renderMarkers();
-
-            // ----- Re-render marker transport controls -----
-            renderMarkerTransport();
-        }
-
-
-
-        const markersLayer = document.getElementById("timeline-markers");
-
-        function renderMarkers() {
-            // Clear old marker DOM
-            markersLayer.innerHTML = "";
-
-            for (const marker of markers) {
-
-                const markerWrap = document.createElement("div");
-                markerWrap.className = "timeline-marker-hit";
-
-                const markerLine = document.createElement("div");
-                markerLine.className = "timeline-marker-line";
-
-                if (marker.id === selectedMarkerId) {
-                    markerLine.classList.add("selected");
-                    markerWrap.classList.add("selected");
-                }
-
-                markerWrap.appendChild(markerLine);
-
-                // position marker
-                const x = secondsToPixels(marker.time);
-                markerWrap.style.left = `${x}px`;
-
-                // ✅ CLICK → LOAD MARKER
-                markerWrap.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    selectedMarkerId = marker.id;
-                    renderMarkers();
-                    renderMarkerTransport();
-                });
-
-                // (drag comes later; keep click-only for now)
-                markersLayer.appendChild(markerWrap);
-
-            }
-        }
-
-
-
-        function renderMarkerTransport() {
-            const marker = markers.find(m => m.id === selectedMarkerId);
-            const timeEl = document.getElementById("marker-time");
-            const delBtn = document.getElementById("marker-delete");
-
-            if (!marker) {
-                timeEl.textContent = "—";
-                delBtn.disabled = true;
-                return;
-            }
-
-            timeEl.textContent = formatTime(marker.time);
-            delBtn.disabled = false;
-        }
-
-
-
-        // ----- Marker Deletion -----
+        // ----- Marker Deletion 
         markerDeleteBtn.addEventListener("click", () => {
             const idx = getSelectedMarkerIndex();
             if (idx === -1) return;
@@ -2557,233 +2317,145 @@ If you want next, I can:
             selectMarkerByIndex(markers.length - 1);
         });
 
+        // Sync scrollTop from timeline → controls
+        // Add this once, after you define timelineArea and controlsCol:
+        timelineArea.addEventListener("scroll", () => {
+            controlsScrollCol.scrollTop = timelineArea.scrollTop;
 
-        // ----- Marker Transport Rendering -----
-        function renderMarkerTransport() {
-            const idx = getSelectedMarkerIndex();
-            const hasMarkers = markers.length > 0;
-
-            markerFirstBtn.disabled = !hasMarkers || idx === 0;
-            markerPrevBtn.disabled = !hasMarkers || idx <= 0;
-            markerNextBtn.disabled = !hasMarkers || idx === -1 || idx === markers.length - 1;
-            markerLastBtn.disabled = !hasMarkers || idx === markers.length - 1;
-            markerDeleteBtn.disabled = idx === -1;
-
-            const display = document.getElementById("marker-time");
-            if (idx === -1) {
-                display.textContent = "—";
-            } else {
-                display.textContent = formatTime(markers[idx].time);
-            }
-        }
-
-
-        // ----- Marker Navigation Helpers -----
-        function jumpPlayheadToTime(seconds) {
-            const px = secondsToPixels(seconds);
-            setPlayheadPositionPx(px);
-        }
-
-
-
-
-        //  Musical Grid -----
-        let bpm = 120;         // beats per minute
-        let beatsPerBar = 4;  // time signature numerator
-
-
-        function secondsPerBeat() {
-            return 60 / bpm;
-        }
-
-        function secondsPerBar() {
-            return secondsPerBeat() * beatsPerBar;
-        }
-
-
-        function getRulerTicks(startSeconds, endSeconds) {
-            if (rulerMode === "seconds") {
-                return getSecondTicks(startSeconds, endSeconds);
-            }
-            if (rulerMode === "bars") {
-                return getBarTicks(startSeconds, endSeconds);
-            }
-        }
-
-
-        function getSecondTicks(startSeconds, endSeconds) {
-            const majorStep =
-                zoom <= 0.5 ? 4 :
-                    zoom <= 1 ? 2 :
-                        zoom <= 2 ? 1 : 0.5;
-
-            const minorStep = majorStep / 4;
-            const ticks = [];
-
-            for (
-                let t = Math.floor(startSeconds / minorStep) * minorStep;
-                t <= endSeconds;
-                t += minorStep
-            ) {
-                ticks.push({
-                    time: t,
-                    major: Math.abs(t % majorStep) < 0.0001,
-                    label: Math.abs(t % majorStep) < 0.0001
-                        ? formatTime(t)
-                        : null
-                });
-            }
-
-            return ticks;
-        }
-
-
-        function getBarTicks(startSeconds, endSeconds) {
-            const barLength = secondsPerBar();
-            const beatLength = secondsPerBeat();
-            const ticks = [];
-
-            const startBar =
-                Math.floor(startSeconds / barLength);
-
-            let t = startBar * barLength;
-
-            while (t <= endSeconds) {
-                // Major bar tick
-                ticks.push({
-                    time: t,
-                    major: true,
-                    label: `Bar ${startBar + 1}`
-                });
-
-                // Beat ticks
-                for (let b = 1; b < beatsPerBar; b++) {
-                    const bt = t + b * beatLength;
-                    if (bt >= startSeconds && bt <= endSeconds) {
-                        ticks.push({
-                            time: bt,
-                            major: false,
-                            label: null
-                        });
-                    }
-                }
-
-                t += barLength;
-            }
-
-            return ticks;
-        }
-
-
-        function toggleRulerMode() {
-            rulerMode =
-                rulerMode === "seconds" ? "bars" : "seconds";
-            renderTimelineLayer();
-        }
-
-        function setRulerMode(mode) {
-
-            rulerMode = mode;
-            // rulerMode === "seconds" ? "bars" : "seconds";
-            renderTimelineLayer();
-        }
-
-
-        //  Transport State -----
-        let playing = false;
-        let recording = false;
-        let startTime = 0;
-        let recordStartX = null;
-        let playbackStartX = 0; // px offset where playback begins
-
-        //  Transport Helpers -----
-        /**
-         * These helpers answer questions or calculations.
-         * They do not mutate DOM.
-         * You are not required to use these everywhere yet.
-         * Their existence alone stabilizes the mental model.
-         * 
-         * This is pure logic. No DOM mutation.
-         * This is a query, not an effect
-         * Multiple future features will use this (record ranges, scrubbing, punch‑in)
-         * Deterministic
-         * Stateless
-         * Used by animation loop
-         * 
-         * State machines are for branching decisions, not for mutations.
-
-            So:
-
-            getTransportState() → decision logic
-            button handlers → state changes
-            animation/UI sync → rendering
-
-         **/
-        function isTransportMoving() {
-            return getTransportState() !== "IDLE";
-        }
-
-        // tiny state machine
-        // Use getTransportState() to explain behavior, not to control everything.
-        /** 
-         * State mutations change flags.
-         * Transition detection decides behavior.
-         **/
-        function getTransportState() {
-            if (playing && recording) return "PLAY_RECORD";
-            if (playing) return "PLAY";
-            if (recording) return "RECORD";
-            return "IDLE";
-        }
-
-        function getPlayheadX() {
-            const transform = playhead.style.transform;
-            if (!transform) {
-                console.log("Returning 0 because !transform");
-                return 0;
-            }
-
-            const match = transform.match(/translateX\(([-\d.]+)px\)/);
-            return match ? parseFloat(match[1]) : 0;
-        }
-
-        function formatTime(s) {
-            const m = Math.floor(s / 60);
-            const sec = Math.floor(s % 60);
-            const t = Math.floor((s * 10) % 10);
-            return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}.${t}`;
-        }
-
-
-        //  Transport UI DOM Sync -----
-        /**
-         * This is your UI truth layer.
-         * Nothing in here:
-         * toggles state
-         * decides behavior
-         * starts timers
-         * It only reflects current state.
-         * If something looks wrong visually, the bug is here, not in button handlers.
-         **/
-        function syncTransportUI() {
-            const state = getTransportState();
-
-            playBtn.classList.toggle("active", state === "PLAY" || state === "PLAY_RECORD");
-            recordBtn.classList.toggle("recording", state === "RECORD" || state === "PLAY_RECORD");
-            playRecordBtn.classList.toggle("active", state === "PLAY_RECORD");
-            meter.classList.toggle("active", state === "RECORD" || state === "PLAY_RECORD");
-
-
-            // DEBUG OVERLAY
+            // debug output
             if (document.body.classList.contains("debug")) {
-                debugTransportState.textContent =
-                    `Transport: ${state}`;
+                controlsScrollCol.dataset.scroll =
+                    controlsScrollCol.scrollTop;
+                timelineArea.dataset.scroll =
+                    timelineArea.scrollTop;
+            }
+        });
+
+        // add this js once
+        controlsScrollCol.addEventListener("wheel", (e) => {
+            timelineArea.scrollTop += e.deltaY;
+            e.preventDefault();
+        }, { passive: false });
+
+        const transportToggles =
+            document.querySelectorAll("#transport-scenes .transport-scene");
+
+        // linked toggle behavior
+        transportToggles.forEach(btn => {
+            btn.addEventListener("click", () => {
+                transportToggles.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+            });
+        });
+
+        const globalClearBtn =
+            document.querySelector(".transport-scene-clear");
+
+        globalClearBtn.addEventListener("click", () => {
+            // 1. Clear UI state
+            document
+                .querySelectorAll(".transport-scene.active")
+                .forEach(btn => btn.classList.remove("active"));
+
+            // 2. Clear core state
+            //   activeGlobalScene = null;
+
+            // 3. Update track audibility
+            //   updateSceneMask();
+        });
+
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                globalClearBtn.click();
+            }
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "d") {
+                document.body.classList.toggle("debug");
+            }
+        });
+
+        const zoomSlider = document.getElementById("zoom-slider");
+
+        zoomSlider.oninput = () => {
+            // ----- Preserve Center Time 
+            const centerTime =
+                timelineArea.scrollLeft / (BASE_PPS * zoom);
+
+            // ----- Update Zoom 
+            zoomIndex = parseInt(zoomSlider.value, 10);
+            zoom = zoomLevels[zoomIndex];
+
+            // ----- Re-render Timeline 
+            rerenderWaveforms();
+            syncTimelineOverlay();
+            renderTimelineLayer();
+
+            // ----- Restore Center Scroll 
+            timelineArea.scrollLeft =
+                centerTime * BASE_PPS * zoom;
+
+            // ----- Re-project Playhead if Transport is Idle 
+            if (getTransportState() === "IDLE") {
+                const px = secondsToPixels(currentTimeSeconds);
+                setPlayheadPositionPx(px);
+            }
+            ensurePlayheadInViewCentered();
+        };
+
+        playBtn.onclick = () =>
+            applyTransportChange({ play: !playing, record: recording });
+
+        recordBtn.onclick = () =>
+            applyTransportChange({ play: playing, record: !recording });
+
+        playRecordBtn.onclick = () =>
+            applyTransportChange({
+                play: getTransportState() !== "PLAY_RECORD",
+                record: getTransportState() !== "PLAY_RECORD"
+            });
+
+
+        // ----- Scrub Handlers 
+        timelineArea.addEventListener("mousedown", (e) => {
+            if (recording) return;
+
+            isScrubbing = true;
+            scrubPrevTransportState = getTransportState();
+
+            if (scrubPrevTransportState !== "IDLE") {
+                applyTransportChange({ play: false, record: false });
             }
 
-        }
+            scrubToMouseEvent(e);
+        });
 
 
-        //  Transport Transitions -----
+        document.addEventListener("mousemove", (e) => {
+            if (!isScrubbing) return;
+            scrubToMouseEvent(e);
+        });
+
+
+        document.addEventListener("mouseup", () => {
+            if (!isScrubbing) return;
+
+            isScrubbing = false;
+
+            if (scrubPrevTransportState === "PLAY") {
+                applyTransportChange({ play: true, record: false });
+            }
+
+            scrubPrevTransportState = null;
+        });
+
+        // ============================================================
+        // Loops -----
+        // ============================================================
+
+        //  Transport Transitions 
         function onTransportStart() {
             playbackStartX = getPlayheadX(); // ← THIS is the fix
             startTime = performance.now();
@@ -2791,21 +2463,7 @@ If you want next, I can:
         }
 
 
-        //  Transport Rendering -----
-        //  Animation Loops -----
-        /**
-         * These are special. They:
-         * run forever
-         * draw based on state
-         * never change state
-         * 
-         * Notice:
-         * no buttons
-         * no toggles
-         * no branching chaos
-         * This dramatically lowers cognitive load.
-         **/
-        // -------- Update Playhead ----
+        // -------- Update Playhead 
         function updatePlayhead() {
 
             if (!playing) return;
@@ -2840,13 +2498,6 @@ If you want next, I can:
             requestAnimationFrame(updatePlayhead);
         }
 
-        function resetPlayhead() {
-            console.log(`resetPlayhead from ${timelineArea.scrollLeft} to 0`);
-            playhead.style.transform = "translateX(0px)";
-            timelineArea.scrollLeft = 0;
-            timer.textContent = "00:00.0";
-        }
-
         function updateMeter() {
             if (recording) {
                 meterBar.style.width = `${20 + Math.random() * 80}%`;
@@ -2854,207 +2505,14 @@ If you want next, I can:
             requestAnimationFrame(updateMeter);
         }
 
+        // ============================================================
+        // Initialization -----
+        // ============================================================
 
-
-
-
-
-        //  Scroll / Geometry Sync -----
-        /**
-         * This governs shared vertical scrolling, which is orthogonal to transport.
-         * Why here
-         * It’s not transport logic
-         * It’s not UI rendering
-         * It’s about input routing + geometry
-         * Later, if bugs appear here, your brain knows exactly where to look.
-         **/
-        // Sync scrollTop from timeline → controls
-        // Add this once, after you define timelineArea and controlsCol:
-        timelineArea.addEventListener("scroll", () => {
-            controlsScrollCol.scrollTop = timelineArea.scrollTop;
-
-            // debug output
-            if (document.body.classList.contains("debug")) {
-                controlsScrollCol.dataset.scroll =
-                    controlsScrollCol.scrollTop;
-                timelineArea.dataset.scroll =
-                    timelineArea.scrollTop;
-            }
-        });
-
-        // add this js once
-        controlsScrollCol.addEventListener("wheel", (e) => {
-            timelineArea.scrollTop += e.deltaY;
-            e.preventDefault();
-        }, { passive: false });
-
-
-        function syncTimelineOverlay() {
-            const timelineColumn = document.getElementById("timeline-column");
-            const timelineOverlay = document.getElementById("timeline-overlay");
-
-            if (!timelineColumn || !timelineOverlay) return;
-
-            timelineOverlay.style.width =
-                `${timelineColumn.scrollWidth}px`;
-
-            timelineOverlay.style.height =
-                `${timelineColumn.scrollHeight}px`;
-        }
-
-
-        function syncTimelineOverlayWidth() {
-            timelineOverlay.style.width =
-                `${timelineColumn.scrollWidth}px`;
-        }
-
-
-        //  Track & Control Interaction -----
-        /* This is local UI behavior, not transport state. Why here
-
-        These are not play/record state
-        They are UI‑only mode selectors
-        Later could move to their own helper 
-
-        track‑local control behavior.
-
-        Why here
-
-        Operates on tracks
-        Has its own micro‑state
-        Should never bleed into transport concerns
-        */
-        // linked toggle behavior
-        transportToggles.forEach(btn => {
-            btn.addEventListener("click", () => {
-                transportToggles.forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-            });
-        });
-
-        // solo buttons
-        function setupSoloBtns() {
-            const soloButtons = Array.from(
-                document.querySelectorAll(".solo-btn")
-            );
-            soloButtons.forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const isActive = btn.classList.contains("active");
-
-                    // Reset all
-                    soloButtons.forEach(b => {
-                        b.classList.remove("active");
-                        b.disabled = false;
-                    });
-
-                    // If clicked button was not active, activate it and disable others
-                    if (!isActive) {
-                        btn.classList.add("active");
-                        soloButtons.forEach(b => {
-                            if (b !== btn) b.disabled = true;
-                        });
-                    }
-                });
-            });
-        }
-
-        const globalClearBtn =
-            document.querySelector(".transport-scene-clear");
-
-        globalClearBtn.addEventListener("click", () => {
-            // 1. Clear UI state
-            document
-                .querySelectorAll(".transport-scene.active")
-                .forEach(btn => btn.classList.remove("active"));
-
-            // 2. Clear core state
-            //   activeGlobalScene = null;
-
-            // 3. Update track audibility
-            //   updateSceneMask();
-        });
-
-
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
-                globalClearBtn.click();
-            }
-        });
-
-
-
-
-        //  Theme / Debug / Global UI -----
-        /* Menu and Themes Logic 
-        Global UI concern
-        No effect on transport or tracks
-
-        Global tool
-        Orthogonal to everything else
-        */
-
-        document.querySelectorAll("[data-theme]").forEach(el => {
-            el.onclick = () => {
-                document.body.setAttribute("data-theme", el.dataset.theme);
-                renderTimelineLayer();
-            };
-        });
-
-        document.body.setAttribute("data-theme", "light");
-
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "d") {
-                document.body.classList.toggle("debug");
-            }
-        });
-
-        document.querySelectorAll("[data-ruler]").forEach(el => {
-            el.onclick = () => {
-                const mode = el.getAttribute("data-ruler");
-                setRulerMode(mode);
-            };
-        });
-
-        //  Track Creation -----
-        /**
-         * When you read this block later, you know it does not affect transport state.
-         **/
-
-        function computeWaveformWidth(seconds) {
-            return Math.floor(seconds * BASE_PPS * zoom);
-        }
-
-        function rerenderWaveforms() {
-            /**
-             * Make sure that every time you draw a waveform you do this first:
-             * canvas.height = TRACK_HEIGHT;          // e.g. 80
-             * canvas.style.height = `${TRACK_HEIGHT}px`;
-             **/
-            document.querySelectorAll(".timeline-row").forEach((row, i) => {
-                const canvas = row.querySelector(".waveform-canvas");
-                if (!canvas) return;
-
-                const durationSeconds = 10 + i * 5;
-                const waveformWidth = computeWaveformWidth(durationSeconds);
-
-                const TRACK_HEIGHT = 80;
-                canvas.width = waveformWidth;
-                canvas.height = TRACK_HEIGHT;
-
-                // Optional: redraw a fake waveform
-
-
-                const ctx = canvas.getContext("2d");
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                // ctx.fillStyle = "#666";
-                // ctx.fillRect(0, canvas.height / 2, canvas.width, 1);
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            });
-        }
-
+        const timelineCol = document.getElementById("timeline-column");
         for (let i = 0; i < 8; i++) {
             /* ----- Controls Row ----- */
-
+            const controlTpl = document.getElementById("control-row-template");
             const controlFrag = controlTpl.content.cloneNode(true);
             const controlRow = controlFrag.querySelector(".control-row");
             const title = controlFrag.querySelector(".track-title");
@@ -3097,6 +2555,7 @@ If you want next, I can:
 
             /* ----- Timeline Row ----- */
 
+            const timelineTpl = document.getElementById("timeline-row-template");
             const timelineFrag = timelineTpl.content.cloneNode(true);
             const timelineRow = timelineFrag.querySelector(".timeline-row");
             const canvas = timelineFrag.querySelector(".waveform-canvas");
@@ -3115,177 +2574,7 @@ If you want next, I can:
             ro.observe(timelineRow);
         }
 
-
-        zoomSlider.oninput = () => {
-            // ----- Preserve Center Time -----
-            const centerTime =
-                timelineArea.scrollLeft / (BASE_PPS * zoom);
-
-            // ----- Update Zoom -----
-            zoomIndex = parseInt(zoomSlider.value, 10);
-            zoom = zoomLevels[zoomIndex];
-
-            // ----- Re-render Timeline -----
-            rerenderWaveforms();
-            syncTimelineOverlay();
-            renderTimelineLayer();
-
-            // ----- Restore Center Scroll -----
-            timelineArea.scrollLeft =
-                centerTime * BASE_PPS * zoom;
-
-            // ----- Re-project Playhead if Transport is Idle -----
-            if (getTransportState() === "IDLE") {
-                const px = secondsToPixels(currentTimeSeconds);
-                setPlayheadPositionPx(px);
-            }
-            ensurePlayheadInViewCentered();
-        };
-
-        // ----- Playhead View Helpers -----
-        function ensurePlayheadInViewCentered() {
-            const playheadX = secondsToPixels(currentTimeSeconds);
-            const viewLeft = timelineArea.scrollLeft;
-            const viewRight = viewLeft + timelineArea.clientWidth;
-
-            // // Offscreen to the left OR right → center it
-            // if (playheadX < viewLeft || playheadX > viewRight) {
-            //     timelineArea.scrollLeft =
-            //         Math.max(0, playheadX - timelineArea.clientWidth / 2);
-            // }
-
-
-            const MARGIN = 40;
-            if (
-                playheadX < viewLeft + MARGIN ||
-                playheadX > viewRight - MARGIN
-            ) {
-                timelineArea.scrollLeft =
-                    Math.max(0, playheadX - timelineArea.clientWidth / 2);
-            }
-
-        }
-
-
-
-        //  Transport Button Handlers -----
-        /**
-         * This is the only place where transport state changes. 
-         * Keep them boring and small.
-         * This is where future complexity will live — now it’s clearly contained.
-         **/
-
-
-        let recordStartTime = null; //? is that ok?
-
-        function startRecordingRange() {
-            recordStartTime = getPlayheadTime(); // seconds
-            recordRange.style.display = "block";
-            recordRange.style.width = "0px";
-        }
-
-
-        function getPlayheadTime() {
-            const x = getPlayheadX();
-            return pixelsToSeconds(x);
-        }
-
-
-        function updateRecordRange() {
-            if (recordStartTime === null) return;
-
-            const currentTime = getPlayheadTime();
-
-            const startX = secondsToPixels(recordStartTime);
-            const endX = secondsToPixels(currentTime);
-
-            recordRange.style.left = `${startX}px`;
-            recordRange.style.width = `${Math.max(0, endX - startX)}px`;
-        }
-
-
-        function clearRecordingRange() {
-            recordRange.style.display = "none";
-            recordStartX = null;
-        }
-
-        //  -----------Apply Transport Change ----
-        function applyTransportChange({ play, record }) {
-            const prevState = getTransportState();
-            const wasRecording = recording;
-
-            playing = play;
-            recording = record;
-
-            const nextState = getTransportState();
-
-            if (prevState === "IDLE" && nextState !== "IDLE") {
-                onTransportStart();
-            }
-
-            if (prevState !== "IDLE" && nextState === "IDLE") {
-                // if (!isScrubbing) {
-                //     resetPlayhead();
-                // }
-            }
-
-            if (!wasRecording && recording) startRecordingRange();
-            if (wasRecording && !recording) clearRecordingRange();
-
-            syncTransportUI();
-        }
-
-
-        playBtn.onclick = () =>
-            applyTransportChange({ play: !playing, record: recording });
-
-        recordBtn.onclick = () =>
-            applyTransportChange({ play: playing, record: !recording });
-
-        playRecordBtn.onclick = () =>
-            applyTransportChange({
-                play: getTransportState() !== "PLAY_RECORD",
-                record: getTransportState() !== "PLAY_RECORD"
-            });
-
-
-        // ----- Scrub Handlers -----
-        timelineArea.addEventListener("mousedown", (e) => {
-            if (recording) return;
-
-            isScrubbing = true;
-            scrubPrevTransportState = getTransportState();
-
-            if (scrubPrevTransportState !== "IDLE") {
-                applyTransportChange({ play: false, record: false });
-            }
-
-            scrubToMouseEvent(e);
-        });
-
-
-        document.addEventListener("mousemove", (e) => {
-            if (!isScrubbing) return;
-            scrubToMouseEvent(e);
-        });
-
-
-        document.addEventListener("mouseup", () => {
-            if (!isScrubbing) return;
-
-            isScrubbing = false;
-
-            if (scrubPrevTransportState === "PLAY") {
-                applyTransportChange({ play: true, record: false });
-            }
-
-            scrubPrevTransportState = null;
-        });
-
-
-
-
-        //  One‑time Initialization -----
+        document.body.setAttribute("data-theme", "light");
         setupSoloBtns();
         updateMeter();
         syncTimelineOverlayWidth();
@@ -3293,10 +2582,6 @@ If you want next, I can:
         renderTimelineLayer();
         renderTempo();
         renderTimeSignature();
-
-
-        //  End of Script -----
-
 
     </script>
 
