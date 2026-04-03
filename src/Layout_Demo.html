@@ -511,7 +511,7 @@
 
         .timeline-marker-line.selected {
             /* background-color: var(--accent-primary); */
-            box-shadow: #FFF 0 -1px 4px, #ff0 0 -2px 10px, #ff8000 0 -10px 20px, red 0 -18px 40px, 5px 5px 15px 5px rgba(0,0,0,0);
+            box-shadow: #FFF 0 -1px 4px, #ff0 0 -2px 10px, #ff8000 0 -10px 20px, red 0 -18px 40px, 5px 5px 15px 5px rgba(0, 0, 0, 0);
         }
 
 
@@ -1830,7 +1830,7 @@
         //     setPlayheadPositionPx(px);
         // }
 
-        // let currentTimeSeconds = 0;
+        let currentTimeSeconds = 0;
         // ----- Playhead Helpers -----
         function setPlayheadPositionPx(px) {
             playhead.style.transform = `translateX(${px}px)`;
@@ -1947,7 +1947,7 @@
         // MARKERS (STATE ONLY)
         // ==========================
 
-        let markers = []; // [{ id, time }]
+        let markers = [{ id:0, time:0 }]; // [{ id, time }]
         let selectedMarkerId = null;
         // let cancelMarker = false;
 
@@ -2433,8 +2433,8 @@
             timer.textContent = formatTime(elapsed);
             renderTimelineLayer();
             renderMetronomeScan();
-    requestAnimationFrame(updatePlayhead);
-}
+            requestAnimationFrame(updatePlayhead);
+        }
 
         function resetPlayhead() {
             console.log(`resetPlayhead from ${timelineArea.scrollLeft} to 0`);
@@ -2711,17 +2711,68 @@
             ro.observe(timelineRow);
         }
         //  Zoom Handler -----
-        zoomSlider.oninput = () => {
-            const centerTime = timelineArea.scrollLeft / (BASE_PPS * zoom);
+        // zoomSlider.oninput = () => {
+        //     const centerTime = timelineArea.scrollLeft / (BASE_PPS * zoom);
 
+        //     zoomIndex = parseInt(zoomSlider.value, 10);
+        //     zoom = zoomLevels[zoomIndex];
+
+        //     rerenderWaveforms();
+        //     syncTimelineOverlay();
+        //     renderTimelineLayer();
+        //     timelineArea.scrollLeft = centerTime * BASE_PPS * zoom;
+        // };
+
+        zoomSlider.oninput = () => {
+            // ----- Preserve Center Time -----
+            const centerTime =
+                timelineArea.scrollLeft / (BASE_PPS * zoom);
+
+            // ----- Update Zoom -----
             zoomIndex = parseInt(zoomSlider.value, 10);
             zoom = zoomLevels[zoomIndex];
 
+            // ----- Re-render Timeline -----
             rerenderWaveforms();
             syncTimelineOverlay();
             renderTimelineLayer();
-            timelineArea.scrollLeft = centerTime * BASE_PPS * zoom;
+
+            // ----- Restore Center Scroll -----
+            timelineArea.scrollLeft =
+                centerTime * BASE_PPS * zoom;
+
+            // ----- Re-project Playhead if Transport is Idle -----
+            if (getTransportState() === "IDLE") {
+                const px = secondsToPixels(currentTimeSeconds);
+                setPlayheadPositionPx(px);
+            }
+            ensurePlayheadInViewCentered();
         };
+
+        // ----- Playhead View Helpers -----
+        function ensurePlayheadInViewCentered() {
+            const playheadX = secondsToPixels(currentTimeSeconds);
+            const viewLeft = timelineArea.scrollLeft;
+            const viewRight = viewLeft + timelineArea.clientWidth;
+
+            // // Offscreen to the left OR right → center it
+            // if (playheadX < viewLeft || playheadX > viewRight) {
+            //     timelineArea.scrollLeft =
+            //         Math.max(0, playheadX - timelineArea.clientWidth / 2);
+            // }
+
+
+            const MARGIN = 40;
+            if (
+                playheadX < viewLeft + MARGIN ||
+                playheadX > viewRight - MARGIN
+            ) {
+                timelineArea.scrollLeft =
+                    Math.max(0, playheadX - timelineArea.clientWidth / 2);
+            }
+
+        }
+
 
 
         //  Transport Button Handlers -----

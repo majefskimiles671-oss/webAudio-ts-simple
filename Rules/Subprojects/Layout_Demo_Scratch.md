@@ -996,3 +996,55 @@ function updatePlayhead() {
   requestAnimationFrame(updatePlayhead);
 }
 ```
+
+```js
+// ----- Marker Deletion -----
+markerDeleteBtn.addEventListener("click", () => {
+    const idx = getSelectedMarkerIndex();
+    if (idx === -1) return;
+
+    // Remove the marker
+    markers.splice(idx, 1);
+
+    // Clear selection explicitly
+    selectedMarkerId = null;
+
+    // Re-render without selecting another marker
+    renderMarkers();
+    renderMarkerTransport();
+});
+```
+
+todo:
+tempo edit needs to trigger a redraw of the timeline ruler
+time signature edit needs to update and redraw the metronome scanner
+need a button to return playhead to 00
+menu item to delete all markers
+menu item to clear all scene memebership
+if you click the marker time display, it will move the playhead to that marker
+menu item that saves 
+
+maybe:
+marker display time should be editable and/or have bar/beat mode
+if you mouse down on the marker time display, the cursor turns to ew-resize and you can make small changes there(the marker needs to rerender as the value changes)
+
+ideas
+sharing local storage between tabs
+### other tabs could have other apps that do their own thing with the data
+ - if so, another app could deal with where the audio files could be used in a "Song Mode"
+ - another app could create electonic tracks(can take in mixdown tracks from other tabs)
+ - still another app could combine the electronic tracks and the mixdowns and make clips out of them
+  - state changes could be weird between them?
+  - BareTrack+BombTrack -> versioned mixdowns -> Combiner(just brings the mixdowns together for preview/library purposes) -> takes ownership of mixdowns it is using?
+ - furthermore, BareTrack could be the location where original recordings live
+ - there should be a mixdown ability so all or some of the recorded tracks could be used as if they were one
+  - mixdown all nonempty scenes(they)
+   - In Combine, it can do the mixdowns it needs(BareTrack project has scenes each having the member tracks with durations)
+   - Combine project has many clips that it chops and moves. Each clip refers to a single BareTrackProject.Scene
+   - That's enough info to render the mixdown in Combine, so you don't need to mixdown in BareTrack
+    - I think even for "preview" usage in BombTrack, the mixdown track could be created on demand.
+    - however, "on-demand" might not be good because the base project might not be in a finished state.
+     - or certain scenes will not be "ready" or "good".  If mixdowns are push only, then any mixdowns are available are meant to be used.
+     - it would be good if for each scene you would know if it is being used.  
+      - how about saving a list of projects that may be using the scene. BareTrack can go check if it is currently used(if you doubt)
+       - of course the Combine should add and remove its project from the scene data without fail.
