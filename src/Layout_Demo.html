@@ -58,6 +58,21 @@ Its purpose is to:
 
 You may extend it later, but **do not rename existing entries lightly**.
 
+Rule — Both DOM references and constants must declare an Area.
+“Global” is not an Area; use “App” or the owning domain.
+
+Ordering Convention (Strongly Recommended)
+Inside a major section:
+
+Constants
+DOM References
+State
+Helpers
+Authority
+Rendering / Projection
+Handlers
+Loops
+
 ---
 
 ## Areas (What part of the system?)
@@ -178,6 +193,10 @@ They enforce your existing architecture rules.
 - **Interaction Override**  
   Short‑lived modes (scrub, drag, hover preview).
   Must snapshot and restore state.
+
+### Other
+- **Constants**
+- **DOM References**
 
 ---
 

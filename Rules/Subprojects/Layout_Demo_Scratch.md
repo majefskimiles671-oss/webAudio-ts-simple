@@ -1049,3 +1049,30 @@ sharing local storage between tabs
      - it would be good if for each scene you would know if it is being used.  
       - how about saving a list of projects that may be using the scene. BareTrack can go check if it is currently used(if you doubt)
        - of course the Combine should add and remove its project from the scene data without fail.
+
+
+Rule - Constants belong to the Area they conceptually influence, with Type = Constants
+If a constant affects multiple areas, it belongs to App Constants.
+
+Rule — DOM elements are references, never truth.
+DOM access is forbidden in State and Authority layers.
+
+
+Rule — Constants are immutable and semantic.
+If it changes during runtime, it is not a constant.
+
+
+Rule — Both DOM references and constants must declare an Area.
+“Global” is not an Area; use “App” or the owning domain.
+
+Ordering Convention (Strongly Recommended)
+Inside a major section:
+
+Constants
+DOM References
+State
+Helpers
+Authority
+Rendering / Projection
+Handlers
+Loops
