@@ -34,6 +34,160 @@ Rule — UI elements never own persistent or behavioral truth.
 CSS classes may only reflect state, never define it,
 once persistence, playback, or undo is planned.
 
+Rule - Add comments before code snippets in this format with the Area and Type replaced with the correct values:
+//  ----- Area Type -----
+
+Example Values for Area include: control names, feature names, "Track", "Global", "Animation, etc.
+Example Values for Type include: "Handlers", "State", "Selection", "DOM sync", "Creation", "Loops", etc.
+
+Each value can be multiple words and is not limited by these examples.
+
+No git patches
+No unlabeled snippets
+No mixed responsibilities inside a block
+Headers chosen so snippets can be copied directly into your rules file
+
+## Canonical Area / Type Vocabulary
+
+This vocabulary is **authoritative** for this project.  
+Its purpose is to:
+- keep architecture legible over time
+- make intent obvious when skimming code
+- prevent accidental layer violations
+- allow snippets to be copied directly into rules/docs
+
+You may extend it later, but **do not rename existing entries lightly**.
+
+---
+
+## Areas (What part of the system?)
+
+Areas describe **domain ownership**.  
+Every piece of code must clearly belong to exactly one Area.
+
+### Core Areas (Foundational)
+- **App**  
+  Cross‑cutting bootstrapping, initialization, and glue code.
+- **State**  
+  Canonical application truth (non‑DOM, serializable).
+- **Persistence**  
+  Save/load, serialization, versioning, storage adapters.
+- **Undo**  
+  State history, snapshots, redo/undo mechanics.
+
+### Transport & Time
+- **Transport**  
+  Play, stop, record, state machine, transitions.
+- **Playhead**  
+  Position, movement, centering, view logic.
+- **Timeline**  
+  Scrollable time surface, geometry, interaction layer.
+- **Ruler**  
+  Seconds/bars ruler, tick generation, drawing.
+- **Scrub**  
+  Temporary transport override for mouse‑driven seeking.
+- **Zoom**  
+  Horizontal scaling and time‑to‑pixel mapping.
+
+### Musical Context
+- **Tempo**  
+  BPM display/editing and state.
+- **Time Signature**  
+  Meter selection and representation.
+- **Metronome**  
+  Visual or audible beat indication.
+
+### Tracks
+- **Track**  
+  Track identity, name, existence.
+- **Track Controls**  
+  Solo, gain, mute, per‑track UI.
+- **Track Scenes**  
+  Scene membership per track.
+- **Waveform**  
+  Track visual content and canvas rendering.
+- **Lyrics**  
+  Track‑attached lyrical or textual data (future).
+
+### Scenes
+- **Global Scene**  
+  Scene selection/filtering across tracks.
+- **Scene Projection**  
+  How scene state affects UI or behavior.
+
+### Markers
+- **Marker**  
+  Marker state, creation, deletion.
+- **Marker Transport**  
+  Navigation controls for markers.
+
+### UI / Chrome
+- **UI**  
+  Generic UI behavior not tied to a domain.
+- **Menu**  
+  Menus, popovers, settings UI.
+- **Theme**  
+  Theme switching, CSS variables.
+- **Debug**  
+  Debug overlays, diagnostics.
+
+### Interaction / Presentation
+- **Animation**  
+  requestAnimationFrame loops and time‑based visuals.
+- **Layout**  
+  Column sizing, row sync, resize observers.
+- **Scroll Sync**  
+  Coupled scrolling between regions.
+
+---
+
+## Types (What role does this code play?)
+
+Types describe **responsibility**.  
+They enforce your existing architecture rules.
+
+### Truth & Meaning
+- **State**  
+  Plain data, no DOM, no behavior.
+- **Authority**  
+  Decides what an action *means*; mutates state.
+- **Selection**  
+  Chooses which entity is active/selected.
+
+### Rendering & Projection
+- **Projection**  
+  Maps state → visual meaning (may add/remove classes).
+- **Rendering**  
+  Draws pixels or DOM from state (idempotent).
+- **DOM Sync**  
+  Keeps DOM aligned with known state.
+
+### Input
+- **Handlers**  
+  Event listeners; intent only, no logic.
+- **Creation**  
+  DOM creation or template instantiation.
+
+### Motion & Continuity
+- **Loops**  
+  Continuous animation / update loops.
+- **Helpers**  
+  Pure calculations, queries, formatting.
+
+### Temporary Modes
+- **Interaction Override**  
+  Short‑lived modes (scrub, drag, hover preview).
+  Must snapshot and restore state.
+
+---
+
+## Mandatory Usage Rules
+
+1. **Every snippet gets exactly one header**
+   ```js
+   // ----- Track Scenes Authority -----
+
+
 # Technical Stuff
 
 Below is a **clean, complete inventory of the controls you’ve implemented so far**, grouped by area, with **one‑line, behavior‑accurate descriptions**.
@@ -817,63 +971,9 @@ If you want next, I can:
             /* markers re-enable events individually */
         }
 
-        /* .timeline-marker {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--accent-highlight);
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.timeline-marker.selected {
-  background: var(--accent-primary);
-} */
-
         .marker-time {
             display: inline;
         }
-
-
-
-        /* .timeline-marker-hit {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 12px;
-
-            cursor: pointer;
-            transform: translateX(-6px);
-
-        }
-
-
-        .timeline-marker-line {
-            position: absolute;
-            left: 50%;
-            top: 0;
-            bottom: 0;
-            width: 1px;
-
-            background: var(--accent-highlight);
-            transform: translateX(-0.5px);
-        }
-
-        .timeline-marker-hit.selected .timeline-marker-line {
-            background: var(--accent-primary);
-        }
-
-
-        .timeline-marker-hit:hover .timeline-marker-line {
-            width: 12px;
-            background: var(--accent-primary);
-        }
-
-
-        .timeline-marker-hit {
-            cursor: ew-resize;
-        } */
 
 
         #timeline-markers {
@@ -920,9 +1020,6 @@ If you want next, I can:
             /* background-color: var(--accent-primary); */
             box-shadow: #FFF 0 -1px 4px, #ff0 0 -2px 10px, #ff8000 0 -10px 20px, red 0 -18px 40px, 5px 5px 15px 5px rgba(0, 0, 0, 0);
         }
-
-
-
 
 
 
@@ -982,34 +1079,6 @@ If you want next, I can:
         .gain-slider {
             width: 100%;
         }
-
-
-        /* 
-        .track-scenes {
-            display: flex;
-            gap: 6px;
-            margin-top: 6px;
-        }
-
-        .track-scene {
-            min-width: 18px;
-            height: 18px;
-            border-radius: 3px;
-            font-size: 11px;
-            text-align: center;
-            line-height: 18px;
-            cursor: pointer;
-
-            background: transparent;
-            border: 1px solid var(--border-subtle);
-            color: var(--text-muted);
-        }
-
-        .track-scene.active {
-            background: var(--accent-primary);
-            color: black;
-            border-color: var(--accent-primary);
-        } */
 
         .track-scenes {
             display: flex;
@@ -1734,15 +1803,6 @@ If you want next, I can:
         <div class="timer" id="timer">00:00.0</div>
 
 
-        <!-- <div class="global-time">
-            <div id="tempoDisplay" class="tempo" contenteditable="true" spellcheck="false">
-                120<span class="unit"> BPM</span>
-            </div>
-            <div id="timeSigDisplay" class="timesig">
-                4/4
-            </div>
-        </div> -->
-
         <div class="global-time">
 
             <div class="tempo" id="tempoDisplay" contenteditable="true" spellcheck="false">
@@ -2191,15 +2251,6 @@ If you want next, I can:
 
             const clampedX = Math.max(0, contentX);
 
-            // debugOverlayEventTarget(e);
-            // console.log({
-            //     clientX: e.clientX,
-            //     rectLeft: innerRect.left,
-            //     scrollLeft: timelineArea.scrollLeft,
-            //     contentX
-            // });
-
-
             setPlayheadPositionPx(clampedX);
         }
 
@@ -2225,17 +2276,6 @@ If you want next, I can:
             setTimeout(() => overlay.remove(), duration);
         }
 
-
-        // function scrubToMouseEvent(e) {
-
-        //     const rect = timelineInner.getBoundingClientRect();
-        //     const x = Math.max(0, e.clientX - rect.left + timelineArea.scrollLeft);
-
-        //     const time = pixelsToSeconds(x);
-        //     const px = secondsToPixels(time);
-
-        //     setPlayheadPositionPx(px);
-        // }
 
         let currentTimeSeconds = 0;
         // ----- Playhead Helpers -----
@@ -2293,28 +2333,6 @@ If you want next, I can:
         });
 
 
-        // const timeSigEl = document.getElementById("timeSigDisplay");
-
-        // const commonTimeSigs = [
-        //     { beats: 4, noteValue: 4 },
-        //     { beats: 3, noteValue: 4 },
-        //     { beats: 6, noteValue: 8 },
-        //     { beats: 5, noteValue: 4 }
-        // ];
-
-        // timeSigEl.addEventListener("click", () => {
-        //     const idx = commonTimeSigs.findIndex(
-        //         ts =>
-        //             ts.beats === timeSignature.beats &&
-        //             ts.noteValue === timeSignature.noteValue
-        //     );
-
-        //     const next =
-        //         commonTimeSigs[(idx + 1) % commonTimeSigs.length];
-
-        //     timeSignature = { ...next };
-        //     renderTimeSignature();
-        // });
 
         // ----- Time Signature Dropdown -----
         const timeSigBtn = document.getElementById("timeSigBtn");
@@ -2381,32 +2399,11 @@ If you want next, I can:
             renderMarkerTransport();
         });
 
-        // timelineRuler.addEventListener("mousemove", (e) => {
-        //     if (isScrubbing) {
-        //         cancelMarker = true;
-        //     }
-        // });
 
         // ----- Marker Helpers -----
         function getSelectedMarkerIndex() {
             return markers.findIndex(m => m.id === selectedMarkerId);
         }
-
-        // ----- Marker Selection -----
-        // function selectMarkerByIndex(index) {
-        //   if (!markers.length) return;
-
-        //   const clamped =
-        //     Math.max(0, Math.min(index, markers.length - 1));
-
-        //   let marker = markers[clamped];
-        //   selectedMarkerId = marker.id;
-
-        //   jumpPlayheadToTime(marker.time);
-
-        //   renderMarkers();
-        //   renderMarkerTransport();
-        // }
 
         // ----- Marker Selection -----
         function selectMarkerByIndex(index) {
@@ -2495,25 +2492,6 @@ If you want next, I can:
             delBtn.disabled = false;
         }
 
-
-        // function selectMarkerByIndex(idx) {
-        //     if (!markers.length) return;
-        //     idx = Math.max(0, Math.min(markers.length - 1, idx));
-        //     selectedMarkerId = markers[idx].id;
-        //     renderMarkers();
-        //     renderMarkerTransport();
-        // }
-
-
-        // markerDeleteBtn.onclick = () => {
-        //     if (!selectedMarkerId) return;
-
-        //     markers = markers.filter(m => m.id !== selectedMarkerId);
-        //     selectedMarkerId = null;
-
-        //     renderMarkers();
-        //     renderMarkerTransport();
-        // };
 
 
         // ----- Marker Deletion -----
@@ -3117,18 +3095,7 @@ If you want next, I can:
 
             ro.observe(timelineRow);
         }
-        //  Zoom Handler -----
-        // zoomSlider.oninput = () => {
-        //     const centerTime = timelineArea.scrollLeft / (BASE_PPS * zoom);
 
-        //     zoomIndex = parseInt(zoomSlider.value, 10);
-        //     zoom = zoomLevels[zoomIndex];
-
-        //     rerenderWaveforms();
-        //     syncTimelineOverlay();
-        //     renderTimelineLayer();
-        //     timelineArea.scrollLeft = centerTime * BASE_PPS * zoom;
-        // };
 
         zoomSlider.oninput = () => {
             // ----- Preserve Center Time -----

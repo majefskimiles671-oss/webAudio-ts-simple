@@ -1023,6 +1023,7 @@ menu item to delete all markers
 menu item to clear all scene memebership
 if you click the marker time display, it will move the playhead to that marker
 menu item that saves 
+"Mark" button that creates immediate marker while playing/recording so it doesn't affect playhead position
 
 maybe:
 marker display time should be editable and/or have bar/beat mode
