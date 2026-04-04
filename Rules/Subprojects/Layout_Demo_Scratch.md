@@ -1115,3 +1115,4 @@ Loops
 Broken:
 - playBtn shouldn't do anything if recording===true
 - need tempo setting to set the playhead speed
+- need to put seconds per beat and seconds per bar as state that only updates when necessary
