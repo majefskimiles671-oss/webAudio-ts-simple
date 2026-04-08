@@ -322,6 +322,12 @@ function applyTransportChange({ play, record }) {
   const prevState = getTransportState();
   const wasRecording = recording;
 
+
+  // ⛔ Guard: do not allow Play to stop playback while recording
+  if (wasRecording && play === false && record === true) {
+    return;
+  }
+
   playing = play;
   recording = record;
 
