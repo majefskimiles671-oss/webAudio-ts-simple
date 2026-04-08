@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>fs_bridge_demo</title>
+  </head>
+
+  <body>
+    <h1>FS Bridge Demo</h1>
+
+    <button id="writeBtn">Write File</button>
+
+    <script>
+      document.getElementById("writeBtn").addEventListener("click", async () => {
+        const res = await fetch("/write-test-file", {
+          method: "POST",
+        });
+
+        if (res.ok) {
+          alert("File written!");
+        } else {
+          alert("Error writing file");
+        }
+      });
+    </script>
+  </body>
+</html>
