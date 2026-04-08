@@ -1,30 +1,38 @@
-
-// src/server.ts
-// curl -X POST http://localhost:3000/write-test-file
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { writeTestFile } from "./write_file.js";
+import { writeFileFromBrowser } from "./write_file.js";
 
 const app = express();
 const PORT = 3000;
 
-// Needed because __dirname doesn't exist in ESM
+// Required because __dirname doesn't exist in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Serve static files
+// Serve static frontend
+app.use(express.static(path.join(__dirname, "public")));
+
+// IMPORTANT: allow raw binary uploads
 app.use(
-  express.static(
-    path.join(__dirname, "public")
-  )
+  express.raw({
+    type: "application/octet-stream",
+    limit: "50mb",
+  })
 );
 
-// Endpoint that triggers the write
-app.post("/write-test-file", async (_req, res) => {
+// Endpoint that accepts OPFS bytes
+app.post("/save-from-opfs", async (req, res) => {
   try {
-    await writeTestFile();
-    res.json({ ok: true });
+    const filename =
+      (req.query.name as string) ??
+      `opfs-${Date.now()}.bin`;
+
+    const data = new Uint8Array(req.body);
+
+    await writeFileFromBrowser(filename, data);
+
+    res.json({ ok: true, filename });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false });

@@ -1,27 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
+    <link rel="icon" href="data:,">
     <title>fs_bridge_demo</title>
-  </head>
-
-  <body>
-    <h1>FS Bridge Demo</h1>
-
-    <button id="writeBtn">Write File</button>
-
-    <script>
-      document.getElementById("writeBtn").addEventListener("click", async () => {
-        const res = await fetch("/write-test-file", {
-          method: "POST",
-        });
-
-        if (res.ok) {
-          alert("File written!");
-        } else {
-          alert("Error writing file");
+    <style>
+        button {
+            margin-right: 8px;
+            margin-bottom: 8px;
         }
-      });
+
+        pre {
+            background: #111;
+            color: #0f0;
+            padding: 10px;
+            max-height: 300px;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>OPFS → fs bridge demo</h1>
+
+    <button id="writeOpfs">Write OPFS File</button>
+    <button id="sendOpfs">Send to Backend</button>
+    <button id="dumpOpfs">Dump OPFS Contents</button>
+    <button id="deleteOpfs">Delete OPFS Contents</button>
+
+    <pre id="output">(OPFS dump will appear here)</pre>
+
+    <!-- Browser logic -->
+    <script type="module" src="/browser.js"></script>
+
+    <!-- OPFS dump/delete logic ONLY -->
+    <script type="module">
+        const output = document.getElementById("output");
+
+        function log(line) {
+            output.textContent += line + "\n";
+        }
+
+        async function dumpDirectory(dir, indent = "") {
+            for await (const entry of dir.values()) {
+                if (entry.kind === "file") {
+                    const file = await entry.getFile();
+                    log(
+                        `${indent}📄 ${entry.name} (${file.size} bytes, modified ${new Date(
+                            file.lastModified
+                        ).toISOString()})`
+                    );
+                } else if (entry.kind === "directory") {
+                    log(`${indent}📁 ${entry.name}/`);
+                    await dumpDirectory(entry, indent + "  ");
+                }
+            }
+        }
+
+
+        async function deleteDirectory(dir) {
+            for await (const entry of dir.values()) {
+                if (entry.kind === "file") {
+                    // Delete file
+                    await dir.removeEntry(entry.name);
+                } else if (entry.kind === "directory") {
+                    // Recursively delete directory contents
+                    await deleteDirectory(entry);
+                    // Then delete the empty directory itself
+                    await dir.removeEntry(entry.name);
+                }
+            }
+        }
+        
+
+
+        document
+            .getElementById("dumpOpfs")
+            .addEventListener("click", async () => {
+                output.textContent = "";
+                const root = await navigator.storage.getDirectory();
+                log("OPFS contents:");
+                await dumpDirectory(root);
+            });
+
+        document
+            .getElementById("deleteOpfs")
+            .addEventListener("click", async () => {
+
+                const confirmed = confirm(
+                    "Delete ALL contents of OPFS? This cannot be undone."
+                );
+                if (!confirmed) return;
+
+                const root = await navigator.storage.getDirectory();
+                await deleteDirectory(root);
+
+                alert("OPFS contents deleted");
+
+            });
     </script>
-  </body>
+</body>
+
 </html>
