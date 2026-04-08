@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>BareTrack/AudioPad/WaveStack - FTP Demo</title>
+    <link rel="icon" href="data:,">
+    <!-- <link rel="stylesheet" href="styles.css"> -->
+</head>
+
+<body>
+
+    <div id="myDiv" class="someDiv">
+        <button id="aBtn">A Button</button>
+        <button id="anotherBtn">Another Button</button>
+    </div>
+
+
+<script>
+    const aBtn = document.getElementById("aBtn");
+    const anotherBtn = document.getElementById("anotherBtn");
+
+    aBtn.onclick = () => {
+        alert(`Hello from aBtn!`);
+    };
+
+    anotherBtn.onclick = () => {
+        alert(`Hello from anotherBtn!`);
+    };
+</script>
+<script type="module" src="../../../dist/demos_ts/ftp_demo/ftp_demo.js"></script>
+</body>
+
+</html>
