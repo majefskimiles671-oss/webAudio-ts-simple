@@ -1,4 +1,3 @@
-
 // document.addEventListener("DOMContentLoaded", async () => {
 //   console.log("hello from ts in fs bridge demo, writing a file");
 
@@ -11,29 +10,7 @@
 
 let opfsFileHandle: FileSystemFileHandle | null = null;
 
-// async function writeOpfsFile() {
-//   const root = await navigator.storage.getDirectory();
-
-//   const ideasDir = await root.getDirectoryHandle("ideas", {
-//     create: true,
-//   });
-
-//   opfsFileHandle = await ideasDir.getFileHandle("idea.txt", {
-//     create: true,
-//   });
-
-//   const writable = await opfsFileHandle.createWritable();
-//   await writable.write(
-//     "Hello from OPFS inside /ideas!\n" +
-//       new Date().toISOString() +
-//       "\n"
-//   );
-//   await writable.close();
-
-//   alert("Wrote OPFS file in /ideas");
-// }
-// ✅ Relative path only (no absolute paths!)
-  const relativePath = "ideas/session-001/idea.txt";
+const relativePath = "ideas/session-001/idea.txt";
 
 async function sendOpfsToBackend() {
   if (!opfsFileHandle) {
@@ -44,8 +21,6 @@ async function sendOpfsToBackend() {
   const file = await opfsFileHandle.getFile();
   const buffer = await file.arrayBuffer();
 
-  
-
   const res = await fetch(
     `/save-from-opfs?name=${encodeURIComponent(relativePath)}`,
     {
@@ -54,41 +29,15 @@ async function sendOpfsToBackend() {
         "Content-Type": "application/octet-stream",
       },
       body: buffer,
-    }
+    },
   );
 
   alert(res.ok ? "Saved to real filesystem!" : "Save failed");
 }
 
 
-// async function writeFileToOpfs(
-//   relativePath: string,
-//   contents: string | ArrayBuffer | Uint8Array
-// ): Promise<FileSystemFileHandle> {
-//   const root = await navigator.storage.getDirectory();
-
-//   const pathParts = relativePath.split("/");
-//   const fileName = pathParts.pop()!;
-//   const dirPath = pathParts.join("/");
-
-//   const dir = dirPath
-//     ? await ensureOpfsDirectory(root, dirPath)
-//     : root;
-
-//   const fileHandle = await dir.getFileHandle(fileName, {
-//     create: true,
-//   });
-
-//   const writable = await fileHandle.createWritable();
-//   await writable.write(contents.buffer.slice(0));
-//   await writable.close();
-
-//   return fileHandle;
-// }
-
-
 function normalizeForOpfsWrite(
-  data: string | ArrayBuffer | Uint8Array
+  data: string | ArrayBuffer | Uint8Array,
 ): string | ArrayBuffer {
   if (typeof data === "string") {
     return data;
@@ -107,45 +56,30 @@ function normalizeForOpfsWrite(
   throw new Error("Unsupported data type for OPFS write");
 }
 
-
 async function writeFileToOpfs(
   relativePath: string,
-  contents: string | ArrayBuffer | Uint8Array
-): Promise<FileSystemFileHandle> {
+  data: string | ArrayBuffer | Uint8Array,
+): Promise<void> {
   const root = await navigator.storage.getDirectory();
 
   const parts = relativePath.split("/");
-  const fileName = parts.pop()!;
+  const filename = parts.pop()!;
   const dirPath = parts.join("/");
 
-  const dir = dirPath
-    ? await ensureOpfsDirectory(root, dirPath)
-    : root;
+  const dir = dirPath ? await ensureOpfsDirectory(root, dirPath) : root;
 
-  const fileHandle = await dir.getFileHandle(fileName, { create: true });
+  const fileHandle = await dir.getFileHandle(filename, {
+    create: true,
+  });
+
   const writable = await fileHandle.createWritable();
-
-  if (typeof contents === "string") {
-    // ✅ string is allowed
-    await writable.write(contents);
-
-  } else if (contents instanceof Uint8Array) {
-    // ✅ normalize Uint8Array → ArrayBuffer
-    await writable.write(normalizeForOpfsWrite(contents));
-
-  } else {
-    // ✅ contents is ArrayBuffer here
-    await writable.write(contents);
-  }
-
+  await writable.write(normalizeForOpfsWrite(data));
   await writable.close();
-  return fileHandle;
 }
-
 
 async function ensureOpfsDirectory(
   root: FileSystemDirectoryHandle,
-  path: string
+  path: string,
 ): Promise<FileSystemDirectoryHandle> {
   const parts = path.split("/").filter(Boolean);
   let current = root;
@@ -159,19 +93,40 @@ async function ensureOpfsDirectory(
   return current;
 }
 
+async function loadFromBackendToOpfs() {
+  const relativePath = "ideas/heelo.txt";
 
-opfsFileHandle = await writeFileToOpfs(
-  relativePath,
-  "Hello from OPFS\n" + new Date().toISOString()
-);
-console.log(`file handle: ${opfsFileHandle}`);
+  const res = await fetch(
+    `/load-to-opfs?name=${encodeURIComponent(relativePath)}`,
+  );
 
+  if (!res.ok) {
+    alert("Failed to load file from backend");
+    return;
+  }
+
+  const buffer = await res.arrayBuffer();
+
+  await writeFileToOpfs(relativePath, buffer);
+
+  alert("File loaded into OPFS!");
+}
 
 document
   .getElementById("writeOpfs")!
-  .addEventListener("click", () => (writeFileToOpfs(relativePath, "Hello from OPFS button\n" + new Date().toISOString())));
+  .addEventListener("click", () =>
+    writeFileToOpfs(
+      relativePath,
+      "Hello from OPFS button\n" + new Date().toISOString(),
+    ),
+  );
 
 document
   .getElementById("sendOpfs")!
   .addEventListener("click", sendOpfsToBackend);
+
+
+document
+  .getElementById("loadFromBackend")!
+  .addEventListener("click", loadFromBackendToOpfs);
 

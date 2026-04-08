@@ -27,6 +27,7 @@
 
     <button id="writeOpfs">Write OPFS File</button>
     <button id="sendOpfs">Send to Backend</button>
+    <button id="loadFromBackend">Load from Backend</button>
     <button id="dumpOpfs">Dump OPFS Contents</button>
     <button id="deleteOpfs">Delete OPFS Contents</button>
 
@@ -35,30 +36,69 @@
     <!-- Browser logic -->
     <script type="module" src="/browser.js"></script>
 
-    <!-- OPFS dump/delete logic ONLY -->
     <script type="module">
-        const output = document.getElementById("output");
 
-        function log(line) {
-            output.textContent += line + "\n";
+        const MAX_TEXT_PREVIEW_BYTES = 4096; // 4 KB
+        const MAX_BINARY_PREVIEW_BYTES = 128;
+
+
+        function log(value) {
+            if (typeof value !== "string") {
+                throw new Error("log() received non-string value");
+            }
+            output.textContent += value + "\n";
         }
+
+
+        function looksLikeText(bytes) {
+            const decoder = new TextDecoder("utf-8", { fatal: false });
+            const text = decoder.decode(bytes);
+            return !text.includes("\uFFFD");
+        }
+
 
         async function dumpDirectory(dir, indent = "") {
             for await (const entry of dir.values()) {
-                if (entry.kind === "file") {
-                    const file = await entry.getFile();
-                    log(
-                        `${indent}📄 ${entry.name} (${file.size} bytes, modified ${new Date(
-                            file.lastModified
-                        ).toISOString()})`
-                    );
-                } else if (entry.kind === "directory") {
+                if (entry.kind === "directory") {
                     log(`${indent}📁 ${entry.name}/`);
                     await dumpDirectory(entry, indent + "  ");
+                    continue;
+                }
+
+                const file = await entry.getFile();
+
+                log(
+                    `${indent}📄 ${entry.name} (${file.size} bytes, modified ${new Date(
+                        file.lastModified
+                    ).toISOString()})`
+                );
+
+                try {
+                    const text = await file.text(); // ✅ safest way
+                    log(`${indent}  ── contents (text) ──`);
+                    log(
+                        text.length > 1000
+                            ? `${text.slice(0, 1000)}\n${indent}  … (truncated)`
+                            : text
+                    );
+                } catch {
+                    // Fallback for binary
+                    const buffer = await file.arrayBuffer();
+                    const bytes = new Uint8Array(buffer.slice(0, 128));
+                    const hex = Array.from(bytes, b =>
+                        b.toString(16).padStart(2, "0")
+                    ).join(" ");
+
+                    log(`${indent}  ── contents (binary preview) ──`);
+                    log(`${indent}  ${hex}`);
+                    if (file.size > 128) {
+                        log(`${indent}  … (${file.size} bytes total)`);
+                    }
                 }
             }
         }
 
+        const output = document.getElementById("output");
 
         async function deleteDirectory(dir) {
             for await (const entry of dir.values()) {
@@ -73,7 +113,7 @@
                 }
             }
         }
-        
+
 
 
         document

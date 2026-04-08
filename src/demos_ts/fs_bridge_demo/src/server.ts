@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { writeFileFromBrowser } from "./write_file.js";
+import { writeFileFromBrowser, readFileForBrowser } from "./write_file.js";
 
 const app = express();
 const PORT = 3000;
@@ -38,6 +38,23 @@ app.post("/save-from-opfs", async (req, res) => {
     res.status(500).json({ ok: false });
   }
 });
+
+
+app.get("/load-to-opfs", async (req, res) => {
+  try {
+    const relativePath = req.query.name as string;
+
+    const data = await readFileForBrowser(relativePath);
+
+    res.setHeader("Content-Type", "application/octet-stream");
+    // res.send(data);
+    res.send(Buffer.from(data));
+  } catch (err) {
+    console.error(err);
+    res.status(404).json({ ok: false, error: "File not found" });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
