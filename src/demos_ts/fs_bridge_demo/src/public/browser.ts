@@ -35,7 +35,6 @@ async function sendOpfsToBackend() {
   alert(res.ok ? "Saved to real filesystem!" : "Save failed");
 }
 
-
 function normalizeForOpfsWrite(
   data: string | ArrayBuffer | Uint8Array,
 ): string | ArrayBuffer {
@@ -59,7 +58,7 @@ function normalizeForOpfsWrite(
 async function writeFileToOpfs(
   relativePath: string,
   data: string | ArrayBuffer | Uint8Array,
-): Promise<void> {
+): Promise<FileSystemFileHandle> {
   const root = await navigator.storage.getDirectory();
 
   const parts = relativePath.split("/");
@@ -75,6 +74,8 @@ async function writeFileToOpfs(
   const writable = await fileHandle.createWritable();
   await writable.write(normalizeForOpfsWrite(data));
   await writable.close();
+
+  return fileHandle;
 }
 
 async function ensureOpfsDirectory(
@@ -114,19 +115,17 @@ async function loadFromBackendToOpfs() {
 
 document
   .getElementById("writeOpfs")!
-  .addEventListener("click", () =>
-    writeFileToOpfs(
+  .addEventListener("click", async () => {
+    opfsFileHandle = await writeFileToOpfs(
       relativePath,
       "Hello from OPFS button\n" + new Date().toISOString(),
-    ),
-  );
+    );
+  });
 
 document
   .getElementById("sendOpfs")!
   .addEventListener("click", sendOpfsToBackend);
 
-
 document
   .getElementById("loadFromBackend")!
   .addEventListener("click", loadFromBackendToOpfs);
-
