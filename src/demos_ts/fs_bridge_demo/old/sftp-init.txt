@@ -1,0 +1,14 @@
+# SFTP init file for demo project
+# Keeps local and remote PWDs in known folders
+#
+# Start sftp server with this command
+# sftp -b sftp-init.txt localhost
+#-------------------------------------------------
+
+# Set local working directory
+lcd ~/sftp-local
+lpwd
+
+# Set remote working directory
+cd /Users/miles.majefski/sftp-remote
+pwd

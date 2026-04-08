@@ -1,0 +1,38 @@
+// writeFileViaSftp.ts
+// npx ts-node writeFileViaSftp.ts
+import SftpClient from 'ssh2-sftp-client';
+
+const SFTP_ROOT = '/Users/miles.majefski/sftp-root';
+const REMOTE_FILE = `${SFTP_ROOT}/demo.txt`;
+
+async function writeFileViaSftp() {
+  const sftp = new SftpClient();
+
+  try {
+    await sftp.connect({
+      host: 'localhost',
+      port: 22,
+      username: 'miles.majefski',
+      // If you use SSH keys, you can omit password entirely
+      // password: 'your-password',
+    });
+
+    const contents = `Hello from TypeScript via SFTP!
+Timestamp: ${new Date().toISOString()}
+`;
+
+    // Ensure the directory exists (safe to call repeatedly)
+    await sftp.mkdir(SFTP_ROOT, true);
+
+    // Write file (Buffer or string both work)
+    await sftp.put(Buffer.from(contents, 'utf8'), REMOTE_FILE);
+
+    console.log('✅ File written via SFTP:', REMOTE_FILE);
+  } catch (err) {
+    console.error('❌ SFTP error:', err);
+  } finally {
+    await sftp.end();
+  }
+}
+
+writeFileViaSftp();
