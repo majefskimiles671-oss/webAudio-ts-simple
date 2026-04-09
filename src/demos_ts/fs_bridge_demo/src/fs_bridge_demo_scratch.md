@@ -67,4 +67,14 @@ they are still distinct roles in the protocol.
 
  ---
 
- 
+ OPFS ⇄ Bridge API ⇄ Backend Storage
+
+ Browser
+  ↓
+OPFS
+  ↓
+Node (authority)
+  ↓
+[ pluggable storage backend ]
+
+

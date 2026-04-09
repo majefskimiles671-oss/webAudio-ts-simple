@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>OPFS Bridge – Proper Demo</title>
+    <link rel="icon" href="data:,">
+  </head>
+  <body>
+    <button id="write">Write OPFS</button>
+    <button id="push">Push to Disk</button>
+    <button id="pull">Pull to OPFS</button>
+
+    <script type="module">
+      import {
+        writeOpfs,
+        readOpfs,
+        pushToBackend,
+        pullFromBackend
+      } from "./browser.js";
+
+      const path = "ideas/session-001/hello.txt";
+
+      write.onclick = async () => {
+        await writeOpfs(
+          path,
+          "Hello from OPFS\n" + new Date().toISOString()
+        );
+      };
+
+      push.onclick = async () => {
+        const data = await readOpfs(path);
+        await pushToBackend(path, data);
+      };
+
+      pull.onclick = async () => {
+        const data = await pullFromBackend(path);
+        await writeOpfs(path, data);
+      };
+
+
+// window.addEventListener("DOMContentLoaded", () => {
+//   debugPersist();
+// });
+
+    </script>
+  </body>
+</html>
