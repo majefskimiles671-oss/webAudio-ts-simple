@@ -1,47 +1,46 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>OPFS Bridge – Proper Demo</title>
-    <link rel="icon" href="data:,">
-  </head>
-  <body>
-    <button id="write">Write OPFS</button>
-    <button id="push">Push to Disk</button>
-    <button id="pull">Pull to OPFS</button>
 
-    <script type="module">
-      import {
-        writeOpfs,
-        readOpfs,
-        pushToBackend,
-        pullFromBackend
-      } from "./browser.js";
+<head>
+  <meta charset="utf-8" />
+  <title>OPFS Bridge – Proper Demo</title>
+  <link rel="icon" href="data:,">
+</head>
 
-      const path = "ideas/session-001/hello.txt";
+<body>
+  <button id="write">Write OPFS</button>
+  <button id="push">Push to Disk</button>
+  <button id="pull">Pull to OPFS</button>
 
-      write.onclick = async () => {
-        await writeOpfs(
-          path,
-          "Hello from OPFS\n" + new Date().toISOString()
-        );
-      };
+  <script type="module">
+    import {debugPersist} from "./browser.js";
+    import { DefaultOpfsBridge } from "./opfsBridge.js";
 
-      push.onclick = async () => {
-        const data = await readOpfs(path);
-        await pushToBackend(path, data);
-      };
+    const bridge = new DefaultOpfsBridge(true);
+    const path = "ideas/session-001/hello.txt";
 
-      pull.onclick = async () => {
-        const data = await pullFromBackend(path);
-        await writeOpfs(path, data);
-      };
+    write.onclick = async () => {
+      await bridge.write(
+        path,
+        "Hello from OPFS\n" + new Date().toISOString()
+      );
+    };
+
+    push.onclick = async () => {
+      await bridge.push(path);
+    };
+
+    pull.onclick = async () => {
+      await bridge.pull(path);
+    };
 
 
-// window.addEventListener("DOMContentLoaded", () => {
-//   debugPersist();
-// });
+    window.addEventListener("DOMContentLoaded", () => {
+      debugPersist();
+      console.log("helllo");
+    });
 
-    </script>
-  </body>
+  </script>
+</body>
+
 </html>

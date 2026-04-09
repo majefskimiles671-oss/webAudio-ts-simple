@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc && mkdir -p dist/public && cp -R src/public/* dist/public/",
+    "build": "tsc && mkdir -p dist/public && cp src/public/index.html dist/public/",
     "watch": "tsc --watch",
     "serve": "nodemon dist/server.js",
     "dev": "npm-run-all --parallel watch serve",
