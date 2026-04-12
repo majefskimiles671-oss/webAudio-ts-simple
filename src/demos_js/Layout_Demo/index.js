@@ -349,6 +349,11 @@ function applyTransportChange({ play, record }) {
   syncTransportUI();
 }
 
+function returnToBeginning() {
+  setPlayheadPositionPx(0);
+  timelineArea.scrollLeft = 0;
+}
+
 // ============================================================
 // Projection / Rendering (View Layer -----
 // ============================================================
@@ -690,6 +695,7 @@ function rerenderWaveforms() {
 // ============================================================
 
 // transport
+const returnToBeginningBtn = document.getElementById("returnToBeginningBtn");
 const playBtn = document.getElementById("playBtn");
 const playRecordBtn = document.getElementById("playRecordBtn");
 const recordBtn = document.getElementById("recordBtn");
@@ -729,6 +735,7 @@ function syncTransportUI() {
     "active",
     state === "RECORD" || state === "PLAY_RECORD",
   );
+  returnToBeginningBtn.disabled = isTransportMoving();
 
   // DEBUG OVERLAY
   if (document.body.classList.contains("debug")) {
@@ -1047,6 +1054,8 @@ zoomSlider.oninput = () => {
   }
   ensurePlayheadInViewCentered();
 };
+
+returnToBeginningBtn.onclick = () => returnToBeginning();
 
 playBtn.onclick = () =>
   applyTransportChange({ play: !playing, record: recording });
