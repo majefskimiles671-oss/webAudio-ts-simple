@@ -144,23 +144,6 @@
         }
 
 
-        #playRecordBtn {
-            border-radius: 6px 10px 10px 6px;
-            padding: 5px;
-        }
-
-        #playRecordBtn.active {
-            box-shadow:
-                inset 0 0 0 2px rgba(0, 0, 0, 0.35);
-
-            background: linear-gradient(90deg,
-                    var(--accent-primary) 0%,
-                    var(--accent-primary) 30%,
-                    color-mix(in oklab, var(--accent-primary), var(--accent-danger)) 50%,
-                    var(--accent-danger) 70%,
-                    var(--accent-danger) 100%);
-
-        }
 
 
 
@@ -450,6 +433,18 @@
             cursor: not-allowed;
         }
 
+        .delete-btn {
+            padding: 2px 6px;
+            cursor: pointer;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+        }
+
+        .delete-btn:hover {
+            color: var(--accent-danger);
+        }
+
         .gain-slider {
             width: 100%;
         }
@@ -674,18 +669,20 @@
             padding: 8px;
         }
 
-        /* Timeline rows have no horizontal padding so waveform margin-left maps 1:1 to pixel time */
+        /* Timeline rows: no horizontal padding, fixed height, positioning context for clips */
         .timeline-row .row-inner {
             padding: 8px 0;
+            position: relative;
+            height: 80px;
+            box-sizing: border-box;
         }
 
-
-
-        /* Waverform */
+        /* Waveform */
 
         .waveform {
-            display: inline-block;
-            height: 80px;
+            position: absolute;
+            top: 0;
+            bottom: 0;
             background-color: var(--bg-surface);
 
             background-image: repeating-linear-gradient(90deg,
@@ -698,6 +695,16 @@
         .waveform-canvas {
             display: block;
             height: 100%;
+        }
+
+        /* Recording Lane */
+
+        .recording-lane.control-row {
+            border-left: 3px solid var(--accent-danger);
+        }
+
+        .recording-lane.timeline-row {
+            border-left: 3px solid var(--accent-danger);
         }
 
 

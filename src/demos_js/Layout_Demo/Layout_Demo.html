@@ -121,16 +121,6 @@ Rule - Add comments before code snippets in this format:
         </button>
 
 
-        <button id="playRecordBtn" class="transport-scene" aria-label="Play and Record">
-
-            <svg width="24" height="14" viewBox="0 0 24 14" aria-hidden="true">
-                <polygon points="1,2 8,7 1,12" fill="currentColor" />
-                <circle cx="18.5" cy="7" r="4.5" fill="currentColor" />
-            </svg>
-
-        </button>
-
-
         <button id="recordBtn" class="record-btn" aria-label="Record">
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
                 <circle cx="7" cy="7" r="5" fill="currentColor" />
@@ -240,6 +230,7 @@ Rule - Add comments before code snippets in this format:
                 <div class="track-controls">
                     <div class="track-title" contenteditable="true"></div>
                     <button class="solo-btn">S</button>
+                    <button class="delete-btn" aria-label="Delete track">⨯</button>
                 </div>
                 <input type="range" class="gain-slider" min="0" max="100" value="80" />
 
@@ -263,11 +254,7 @@ Rule - Add comments before code snippets in this format:
 
     <template id="timeline-row-template">
         <div class="timeline-row">
-            <div class="row-inner">
-                <div class="waveform">
-                    <canvas class="waveform-canvas" height="80"></canvas>
-                </div>
-            </div>
+            <div class="row-inner"></div>
         </div>
     </template>
 

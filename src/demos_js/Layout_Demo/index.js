@@ -102,8 +102,9 @@ let currentTimeSeconds = 0;
 let rulerMode = "bars"; // "seconds" | "bars"
 
 let recordStartTime = null;
-let recordingTrackWaveform = null;
-let recordingTrackCanvas = null;
+let recordingTrackRow = null;
+let recordingLaneControlRow = null;
+let recordingLaneTimelineRow = null;
 
 //  Global Musical State
 let tempoBPM = 125;
@@ -332,8 +333,8 @@ function selectMarkerByIndex(index) {
 //  -----------Apply Transport Change
 function applyTransportChange({ play, record }) {
   const prevState = getTransportState();
+  const wasPlaying = playing;
   const wasRecording = recording;
-
 
   // ⛔ Guard: do not allow Play to stop playback while recording
   if (wasRecording && play === false && record === true) {
@@ -345,18 +346,16 @@ function applyTransportChange({ play, record }) {
 
   const nextState = getTransportState();
 
-  if (prevState === "IDLE" && nextState !== "IDLE") {
+  if (!wasPlaying && playing) {
     onTransportStart();
-  }
-
-  if (prevState !== "IDLE" && nextState === "IDLE") {
-    // if (!isScrubbing) {
-    //     resetPlayhead();
-    // }
   }
 
   if (!wasRecording && recording) { onRecordStart(); startRecordingRange(); }
   if (wasRecording && !recording) { onRecordStop(); clearRecordingRange(); }
+
+  if (prevState !== "IDLE" && nextState === "IDLE") {
+    promoteRecordingLane();
+  }
 
   syncTransportUI();
 }
@@ -367,7 +366,7 @@ function returnToBeginning() {
 }
 
 // ----- Track Management
-function createTrack(label, lengthSeconds, { prepend = false } = {}) {
+function createTrack(label, { prepend = false } = {}) {
   /* ----- Controls Row ----- */
   const controlTpl = document.getElementById("control-row-template");
   const controlFrag = controlTpl.content.cloneNode(true);
@@ -396,6 +395,14 @@ function createTrack(label, lengthSeconds, { prepend = false } = {}) {
       .forEach((btn) => btn.classList.remove("active"));
   });
 
+  const deleteBtn = controlFrag.querySelector(".delete-btn");
+  deleteBtn.addEventListener("click", () => {
+    const idx = Array.from(controlsScrollCol.children).indexOf(controlRow);
+    if (idx === -1) return;
+    controlRow.remove();
+    timelineCol.children[idx]?.remove();
+  });
+
   if (prepend) {
     controlsScrollCol.prepend(controlFrag);
   } else {
@@ -406,11 +413,6 @@ function createTrack(label, lengthSeconds, { prepend = false } = {}) {
   const timelineTpl = document.getElementById("timeline-row-template");
   const timelineFrag = timelineTpl.content.cloneNode(true);
   const timelineRow = timelineFrag.querySelector(".timeline-row");
-  const waveform = timelineFrag.querySelector(".waveform");
-  const canvas = timelineFrag.querySelector(".waveform-canvas");
-
-  canvas.dataset.durationSeconds = lengthSeconds;
-  canvas.width = computeWaveformWidth(lengthSeconds);
 
   if (prepend) {
     timelineCol.prepend(timelineFrag);
@@ -424,32 +426,66 @@ function createTrack(label, lengthSeconds, { prepend = false } = {}) {
   });
   ro.observe(timelineRow);
 
-  return { waveform, canvas };
+  return { controlRow, timelineRow };
 }
 
-function onRecordStart() {
+function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
+  const rowInner = timelineRow.querySelector(".row-inner");
+
+  const waveform = document.createElement("div");
+  waveform.className = "waveform";
+  waveform.dataset.startSeconds = startSeconds;
+
+  const canvas = document.createElement("canvas");
+  canvas.className = "waveform-canvas";
+  canvas.height = 80;
+  canvas.dataset.durationSeconds = durationSeconds;
+  canvas.width = computeWaveformWidth(durationSeconds);
+
+  waveform.style.left = `${secondsToPixels(startSeconds)}px`;
+  waveform.style.width = `${computeWaveformWidth(durationSeconds)}px`;
+
+  waveform.appendChild(canvas);
+  rowInner.appendChild(waveform);
+}
+
+function createRecordingLane() {
   trackCount += 1;
-  ({ waveform: recordingTrackWaveform, canvas: recordingTrackCanvas } =
-    createTrack(`Track ${trackCount}`, 0, { prepend: true }));
+  const { controlRow, timelineRow } = createTrack(`Track ${trackCount}`, { prepend: true });
+  controlRow.classList.add("recording-lane");
+  timelineRow.classList.add("recording-lane");
+  controlRow.querySelector(".delete-btn").style.display = "none";
+  recordingLaneControlRow = controlRow;
+  recordingLaneTimelineRow = timelineRow;
+}
+
+function promoteRecordingLane() {
+  if (!recordingLaneTimelineRow) return;
+  if (!recordingLaneTimelineRow.querySelector(".waveform")) return;
+
+  recordingLaneControlRow.classList.remove("recording-lane");
+  recordingLaneTimelineRow.classList.remove("recording-lane");
+  recordingLaneControlRow = null;
+  recordingLaneTimelineRow = null;
+
+  createRecordingLane();
   timelineArea.scrollTop = 0;
   controlsScrollCol.scrollTop = 0;
   syncTimelineOverlay();
 }
 
+function onRecordStart() {
+  recordingTrackRow = recordingLaneTimelineRow;
+}
+
 function onRecordStop() {
-  if (!recordingTrackWaveform || !recordingTrackCanvas) return;
+  if (!recordingTrackRow) return;
 
   const endTime = getPlayheadTime();
   const duration = Math.max(0, endTime - recordStartTime);
 
-  recordingTrackCanvas.dataset.durationSeconds = duration;
-  recordingTrackCanvas.width = computeWaveformWidth(duration);
-
-  recordingTrackWaveform.dataset.startSeconds = recordStartTime;
-  recordingTrackWaveform.style.marginLeft = `${secondsToPixels(recordStartTime)}px`;
-
-  recordingTrackWaveform = null;
-  recordingTrackCanvas = null;
+  addClipToTrack(recordingTrackRow, recordStartTime, duration);
+  recordingTrackRow = null;
 }
 
 // ============================================================
@@ -774,20 +810,17 @@ function rerenderWaveforms() {
    * canvas.height = TRACK_HEIGHT;          // e.g. 80
    * canvas.style.height = `${TRACK_HEIGHT}px`;
    **/
-  document.querySelectorAll(".timeline-row").forEach((row) => {
-    const waveform = row.querySelector(".waveform");
-    const canvas = row.querySelector(".waveform-canvas");
+  document.querySelectorAll(".waveform").forEach((waveform) => {
+    const canvas = waveform.querySelector(".waveform-canvas");
     if (!canvas) return;
 
+    const startSeconds = parseFloat(waveform.dataset.startSeconds);
     const durationSeconds = parseFloat(canvas.dataset.durationSeconds);
-    if (!isNaN(durationSeconds)) {
-      canvas.width = computeWaveformWidth(durationSeconds);
-    }
+    const width = computeWaveformWidth(durationSeconds);
 
-    if (waveform && waveform.dataset.startSeconds !== undefined) {
-      const startSeconds = parseFloat(waveform.dataset.startSeconds);
-      waveform.style.marginLeft = `${secondsToPixels(startSeconds)}px`;
-    }
+    canvas.width = width;
+    waveform.style.left = `${secondsToPixels(startSeconds)}px`;
+    waveform.style.width = `${width}px`;
 
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -801,7 +834,6 @@ function rerenderWaveforms() {
 // transport
 const returnToBeginningBtn = document.getElementById("returnToBeginningBtn");
 const playBtn = document.getElementById("playBtn");
-const playRecordBtn = document.getElementById("playRecordBtn");
 const recordBtn = document.getElementById("recordBtn");
 const playhead = document.getElementById("playhead");
 const timer = document.getElementById("timer");
@@ -834,7 +866,6 @@ function syncTransportUI() {
     "recording",
     state === "RECORD" || state === "PLAY_RECORD",
   );
-  playRecordBtn.classList.toggle("active", state === "PLAY_RECORD");
   meter.classList.toggle(
     "active",
     state === "RECORD" || state === "PLAY_RECORD",
@@ -1159,16 +1190,11 @@ zoomSlider.oninput = () => {
 returnToBeginningBtn.onclick = () => returnToBeginning();
 
 playBtn.onclick = () =>
-  applyTransportChange({ play: !playing, record: recording });
+  applyTransportChange({ play: !playing, record: playing ? false : recording });
 
 recordBtn.onclick = () =>
   applyTransportChange({ play: playing, record: !recording });
 
-playRecordBtn.onclick = () =>
-  applyTransportChange({
-    play: getTransportState() !== "PLAY_RECORD",
-    record: getTransportState() !== "PLAY_RECORD",
-  });
 
 // ----- Scrub Handlers
 timelineArea.addEventListener("mousedown", (e) => {
@@ -1252,8 +1278,9 @@ function updateMeter() {
 
 const timelineCol = document.getElementById("timeline-column");
 for (let i = 0; i < trackCount; i++) {
-  createTrack(`Track ${i + 1}`, 5 + i * 5, { prepend: true });
+  createTrack(`Track ${i + 1}`);
 }
+createRecordingLane();
 
 document.body.setAttribute("data-theme", "dark");
 setupSoloBtns();
