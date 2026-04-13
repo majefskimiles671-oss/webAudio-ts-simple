@@ -299,6 +299,7 @@ function setTimeSignature(beats, noteValue) {
   renderTimeSignature();
   renderTimelineLayer();
   renderMetronomeGrid();
+  syncTimelineMinWidth();
 }
 
 // ----- Marker Selection
@@ -908,6 +909,11 @@ function syncTimelineOverlayWidth() {
   timelineOverlay.style.width = `${timelineColumn.scrollWidth}px`;
 }
 
+function syncTimelineMinWidth() {
+  const minSeconds = 16 * secondsPerBar();
+  timelineInner.style.minWidth = `${secondsToPixels(minSeconds)}px`;
+}
+
 // ============================================================
 // Event Handlers (Intent Layer)  -----
 // ============================================================
@@ -1012,6 +1018,7 @@ tempoEl.addEventListener("blur", () => {
 
   bpm = tempoBPM;
   renderTempo();
+  syncTimelineMinWidth();
 });
 
 // ----- Time Signature Dropdown
@@ -1209,6 +1216,7 @@ zoomSlider.oninput = () => {
   // ----- Re-render Timeline
   rerenderWaveforms();
   syncTimelineOverlay();
+  syncTimelineMinWidth();
   renderTimelineLayer();
 
   // ----- Restore Center Scroll
@@ -1322,6 +1330,7 @@ setupSoloBtns();
 updateMeter();
 syncTimelineOverlayWidth();
 syncTimelineOverlay();
+syncTimelineMinWidth();
 renderTimelineLayer();
 renderTempo();
 renderTimeSignature();
