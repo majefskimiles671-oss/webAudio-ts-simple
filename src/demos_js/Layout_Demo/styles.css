@@ -294,7 +294,7 @@
         .layout-root {
             flex: 1;
             display: grid;
-            grid-template-columns: 220px 1fr;
+            grid-template-columns: 280px 1fr;
             overflow: hidden;
         }
 
@@ -335,6 +335,14 @@
 
         .marker-time {
             display: inline;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .marker-time:hover {
+            background: var(--bg-surface);
+            color: var(--accent-primary);
         }
 
         #timeline-markers {

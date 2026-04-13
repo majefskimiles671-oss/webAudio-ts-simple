@@ -780,6 +780,7 @@ function renderMarkers() {
 
 // ----- Marker Transport Rendering
 // ----- Marker Transport Controls
+const markerAddBtn = document.getElementById("marker-add");
 const markerFirstBtn = document.getElementById("marker-first");
 const markerPrevBtn = document.getElementById("marker-prev");
 const markerNextBtn = document.getElementById("marker-next");
@@ -1077,6 +1078,22 @@ markerDeleteBtn.addEventListener("click", () => {
   // Re-render without selecting another marker
   renderMarkers();
   renderMarkerTransport();
+});
+
+markerAddBtn.addEventListener("click", () => {
+  const time = currentTimeSeconds;
+  const marker = { id: crypto.randomUUID(), time };
+  markers.push(marker);
+  markers.sort((a, b) => a.time - b.time);
+  selectedMarkerId = marker.id;
+  renderMarkers();
+  renderMarkerTransport();
+});
+
+document.getElementById("marker-time").addEventListener("click", () => {
+  const idx = getSelectedMarkerIndex();
+  if (idx === -1) return;
+  selectMarkerByIndex(idx);
 });
 
 markerFirstBtn.addEventListener("click", () => {
