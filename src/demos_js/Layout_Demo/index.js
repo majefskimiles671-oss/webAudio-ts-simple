@@ -117,7 +117,7 @@ let selectedMarkerId = 0;
 let bpm = 120; // beats per minute
 let beatsPerBar = timeSignature.beats; // kept in sync with timeSignature.beats
 
-let trackCount = 8;
+let trackCount = 4;
 
 //  Transport State
 let playing = false;
@@ -365,7 +365,7 @@ function returnToBeginning() {
 }
 
 // ----- Track Management
-function createTrack(label, { prepend = false } = {}) {
+function createTrack(label, lengthSeconds, { prepend = false } = {}) {
   /* ----- Controls Row ----- */
   const controlTpl = document.getElementById("control-row-template");
   const controlFrag = controlTpl.content.cloneNode(true);
@@ -406,7 +406,7 @@ function createTrack(label, { prepend = false } = {}) {
   const timelineRow = timelineFrag.querySelector(".timeline-row");
   const canvas = timelineFrag.querySelector(".waveform-canvas");
 
-  canvas.width = 0;
+  canvas.width = computeWaveformWidth(lengthSeconds);
 
   if (prepend) {
     timelineCol.prepend(timelineFrag);
@@ -423,7 +423,7 @@ function createTrack(label, { prepend = false } = {}) {
 
 function onRecordStart() {
   trackCount += 1;
-  createTrack(`Track ${trackCount}`, { prepend: true });
+  createTrack(`Track ${trackCount}`, 0, { prepend: true });
   timelineArea.scrollTop = 0;
   controlsScrollCol.scrollTop = 0;
   syncTimelineOverlay();
@@ -1229,10 +1229,10 @@ function updateMeter() {
 
 const timelineCol = document.getElementById("timeline-column");
 for (let i = 0; i < trackCount; i++) {
-  createTrack(`Track ${i + 1}`);
+  createTrack(`Track ${i + 1}`, 10 + i * 5, { prepend: true });
 }
 
-document.body.setAttribute("data-theme", "light");
+document.body.setAttribute("data-theme", "studio");
 setupSoloBtns();
 updateMeter();
 syncTimelineOverlayWidth();

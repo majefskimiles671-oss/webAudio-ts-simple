@@ -17,3 +17,24 @@ Duplicate scrub handlers — mousedown/mousemove/mouseup listeners are registere
 updatePlayhead at line 1125 uses elapsed for the timer but currentTimeSeconds is never updated during playback — getPlayheadTime() reads the CSS transform, so it stays in sync, but currentTimeSeconds goes stale
 getBarTicks (line 188) and the inline bar tick loop inside renderTimelineRuler (line 450) are duplicated logic
 What would you like to work on?
+
+
+
+---
+Snapping for markers. [Menu option for toggling marker snapping]
+
+For some reason, hitting record then play doesn't start playing(please figure out if
+the play/record button is even needed or good).  Play button controls movement of
+playhead, record button controls whether recording happens when playing
+[Please figure out every use case and design accordingly!]
+
+Add delete button to each track(maybe want to add highlight selection of waveform div
+so each piece can be deleted[may need more UI to pop up in waveform div to allow this])
+
+When recording starts
+ - scroll to top of page
+ - add new timeline-row to timeline-column
+
+After recording[transitioning from recording to !recording]
+ - make new waveform div of correct width corresponding to the length of time of the recording
+ - place waveform div horizontally at the beginning point of recording 
