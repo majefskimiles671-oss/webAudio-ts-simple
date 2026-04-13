@@ -102,6 +102,8 @@ let currentTimeSeconds = 0;
 let rulerMode = "bars"; // "seconds" | "bars"
 
 let recordStartTime = null;
+let recordingTrackWaveform = null;
+let recordingTrackCanvas = null;
 
 //  Global Musical State
 let tempoBPM = 125;
@@ -354,7 +356,7 @@ function applyTransportChange({ play, record }) {
   }
 
   if (!wasRecording && recording) { onRecordStart(); startRecordingRange(); }
-  if (wasRecording && !recording) clearRecordingRange();
+  if (wasRecording && !recording) { onRecordStop(); clearRecordingRange(); }
 
   syncTransportUI();
 }
@@ -404,8 +406,10 @@ function createTrack(label, lengthSeconds, { prepend = false } = {}) {
   const timelineTpl = document.getElementById("timeline-row-template");
   const timelineFrag = timelineTpl.content.cloneNode(true);
   const timelineRow = timelineFrag.querySelector(".timeline-row");
+  const waveform = timelineFrag.querySelector(".waveform");
   const canvas = timelineFrag.querySelector(".waveform-canvas");
 
+  canvas.dataset.durationSeconds = lengthSeconds;
   canvas.width = computeWaveformWidth(lengthSeconds);
 
   if (prepend) {
@@ -419,14 +423,33 @@ function createTrack(label, lengthSeconds, { prepend = false } = {}) {
     controlRow.style.height = `${e.contentRect.height}px`;
   });
   ro.observe(timelineRow);
+
+  return { waveform, canvas };
 }
 
 function onRecordStart() {
   trackCount += 1;
-  createTrack(`Track ${trackCount}`, 0, { prepend: true });
+  ({ waveform: recordingTrackWaveform, canvas: recordingTrackCanvas } =
+    createTrack(`Track ${trackCount}`, 0, { prepend: true }));
   timelineArea.scrollTop = 0;
   controlsScrollCol.scrollTop = 0;
   syncTimelineOverlay();
+}
+
+function onRecordStop() {
+  if (!recordingTrackWaveform || !recordingTrackCanvas) return;
+
+  const endTime = getPlayheadTime();
+  const duration = Math.max(0, endTime - recordStartTime);
+
+  recordingTrackCanvas.dataset.durationSeconds = duration;
+  recordingTrackCanvas.width = computeWaveformWidth(duration);
+
+  recordingTrackWaveform.dataset.startSeconds = recordStartTime;
+  recordingTrackWaveform.style.marginLeft = `${secondsToPixels(recordStartTime)}px`;
+
+  recordingTrackWaveform = null;
+  recordingTrackCanvas = null;
 }
 
 // ============================================================
@@ -751,23 +774,22 @@ function rerenderWaveforms() {
    * canvas.height = TRACK_HEIGHT;          // e.g. 80
    * canvas.style.height = `${TRACK_HEIGHT}px`;
    **/
-  document.querySelectorAll(".timeline-row").forEach((row, i) => {
+  document.querySelectorAll(".timeline-row").forEach((row) => {
+    const waveform = row.querySelector(".waveform");
     const canvas = row.querySelector(".waveform-canvas");
     if (!canvas) return;
 
-    const durationSeconds = 10 + i * 5;
-    const waveformWidth = computeWaveformWidth(durationSeconds);
+    const durationSeconds = parseFloat(canvas.dataset.durationSeconds);
+    if (!isNaN(durationSeconds)) {
+      canvas.width = computeWaveformWidth(durationSeconds);
+    }
 
-    const TRACK_HEIGHT = 80;
-    canvas.width = waveformWidth;
-    canvas.height = TRACK_HEIGHT;
-
-    // Optional: redraw a fake waveform
+    if (waveform && waveform.dataset.startSeconds !== undefined) {
+      const startSeconds = parseFloat(waveform.dataset.startSeconds);
+      waveform.style.marginLeft = `${secondsToPixels(startSeconds)}px`;
+    }
 
     const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // ctx.fillStyle = "#666";
-    // ctx.fillRect(0, canvas.height / 2, canvas.width, 1);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   });
 }
@@ -1199,6 +1221,7 @@ function updatePlayhead() {
   const x = playbackStartX + deltaX;
 
   playhead.style.transform = `translateX(${x}px)`;
+  currentTimeSeconds = pixelsToSeconds(x);
 
   if (recording) {
     updateRecordRange();
@@ -1229,10 +1252,10 @@ function updateMeter() {
 
 const timelineCol = document.getElementById("timeline-column");
 for (let i = 0; i < trackCount; i++) {
-  createTrack(`Track ${i + 1}`, 10 + i * 5, { prepend: true });
+  createTrack(`Track ${i + 1}`, 5 + i * 5, { prepend: true });
 }
 
-document.body.setAttribute("data-theme", "studio");
+document.body.setAttribute("data-theme", "dark");
 setupSoloBtns();
 updateMeter();
 syncTimelineOverlayWidth();

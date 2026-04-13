@@ -35,6 +35,13 @@ When recording starts
  - scroll to top of page
  - add new timeline-row to timeline-column
 
+ 
+
 After recording[transitioning from recording to !recording]
- - make new waveform div of correct width corresponding to the length of time of the recording
- - place waveform div horizontally at the beginning point of recording 
+ - the empty track we just made at the top of the timeline-column will accept the UI change representing the recording the user just made.
+ - set the waveform-canvas.width to the proper width according to the duration of the recording
+ - place waveform UI horizontally at the beginning point of recording (I'm not sure which element should be moved, specifically. There may need to be css changes to the tracks) 
+
+ @src/demos_js/Layout_Demo/styles.css  
+ @src/demos_js/Layout_Demo/index.js
+ @src/demos_js/Layout_Demo/Layout_Demo.html

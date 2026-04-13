@@ -674,6 +674,11 @@
             padding: 8px;
         }
 
+        /* Timeline rows have no horizontal padding so waveform margin-left maps 1:1 to pixel time */
+        .timeline-row .row-inner {
+            padding: 8px 0;
+        }
+
 
 
         /* Waverform */
