@@ -115,7 +115,7 @@ let selectedMarkerId = 0;
 
 //  Musical Grid
 let bpm = 120; // beats per minute
-let beatsPerBar = 4; // time signature numerator
+let beatsPerBar = timeSignature.beats; // kept in sync with timeSignature.beats
 
 //  Transport State
 let playing = false;
@@ -286,6 +286,14 @@ function ensurePlayheadInViewCentered() {
 function setRulerMode(mode) {
   rulerMode = mode;
   renderTimelineLayer();
+}
+
+function setTimeSignature(beats, noteValue) {
+  timeSignature = { beats, noteValue };
+  beatsPerBar = beats;
+  renderTimeSignature();
+  renderTimelineLayer();
+  renderMetronomeGrid();
 }
 
 // ----- Marker Selection
@@ -525,6 +533,13 @@ function renderTimelineRuler() {
     rulerCtx.lineTo(playheadX + 0.5, height);
     rulerCtx.stroke();
   }
+}
+
+function renderMetronomeGrid() {
+  const scan = document.querySelector(".metronome-scan");
+  const width = scan.clientWidth;
+  const tickSpacing = width / beatsPerBar;
+  scan.style.backgroundImage = `repeating-linear-gradient(90deg, var(--text-button), var(--text-button) 2px, transparent 2px, transparent ${tickSpacing}px)`;
 }
 
 function renderMetronomeScan() {
@@ -896,10 +911,7 @@ timeSigMenu.addEventListener("click", (e) => {
   const beats = Number(btn.dataset.beats);
   const noteValue = Number(btn.dataset.note);
 
-  timeSignature = { beats, noteValue };
-
-  // timeSigBtn.textContent = `${beats}/${noteValue}`;
-  renderTimeSignature();
+  setTimeSignature(beats, noteValue);
   timeSigWrapper.classList.remove("open");
   timeSigBtn.setAttribute("aria-expanded", "false");
 });
@@ -1221,3 +1233,4 @@ syncTimelineOverlay();
 renderTimelineLayer();
 renderTempo();
 renderTimeSignature();
+renderMetronomeGrid();
