@@ -109,8 +109,8 @@
             color: black;
         }
 
-        /* need to implement the js  */
-        .track.not-in-scene {
+        .control-row.not-in-scene,
+        .timeline-row.not-in-scene {
             opacity: 0.35;
         }
 

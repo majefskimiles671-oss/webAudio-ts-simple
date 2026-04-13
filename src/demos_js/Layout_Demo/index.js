@@ -1144,27 +1144,44 @@ const transportToggles = document.querySelectorAll(
   "#transport-scenes .transport-scene",
 );
 
+function updateSceneMask() {
+  const activeBtn = document.querySelector("#transport-scenes .transport-scene.active");
+  const controlRows = Array.from(controlsScrollCol.children);
+  const timelineRows = Array.from(timelineCol.children);
+
+  controlRows.forEach((controlRow, i) => {
+    const timelineRow = timelineRows[i];
+    if (!activeBtn) {
+      controlRow.classList.remove("not-in-scene");
+      timelineRow?.classList.remove("not-in-scene");
+      return;
+    }
+
+    const sceneLetter = activeBtn.textContent.trim();
+    const trackHasScene = Array.from(controlRow.querySelectorAll(".track-scene.active"))
+      .some((btn) => btn.textContent.trim() === sceneLetter);
+
+    controlRow.classList.toggle("not-in-scene", !trackHasScene);
+    timelineRow?.classList.toggle("not-in-scene", !trackHasScene);
+  });
+}
+
 // linked toggle behavior
 transportToggles.forEach((btn) => {
   btn.addEventListener("click", () => {
+    const wasActive = btn.classList.contains("active");
     transportToggles.forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
+    if (!wasActive) btn.classList.add("active");
+    updateSceneMask();
   });
 });
 
 const globalClearBtn = document.querySelector(".transport-scene-clear");
 
 globalClearBtn.addEventListener("click", () => {
-  // 1. Clear UI state
-  document
-    .querySelectorAll(".transport-scene.active")
+  document.querySelectorAll("#transport-scenes .transport-scene.active")
     .forEach((btn) => btn.classList.remove("active"));
-
-  // 2. Clear core state
-  //   activeGlobalScene = null;
-
-  // 3. Update track audibility
-  //   updateSceneMask();
+  updateSceneMask();
 });
 
 document.addEventListener("keydown", (e) => {
