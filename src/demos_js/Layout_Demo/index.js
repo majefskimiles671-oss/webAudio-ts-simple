@@ -464,6 +464,7 @@ function promoteRecordingLane() {
   if (!recordingLaneTimelineRow.querySelector(".waveform")) return;
 
   recordingLaneControlRow.classList.remove("recording-lane");
+  recordingLaneControlRow.querySelector(".delete-btn").style.display = "";
   recordingLaneTimelineRow.classList.remove("recording-lane");
   recordingLaneControlRow = null;
   recordingLaneTimelineRow = null;
