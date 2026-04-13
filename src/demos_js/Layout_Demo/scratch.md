@@ -45,3 +45,9 @@ After recording[transitioning from recording to !recording]
  @src/demos_js/Layout_Demo/styles.css  
  @src/demos_js/Layout_Demo/index.js
  @src/demos_js/Layout_Demo/Layout_Demo.html
+
+ ---
+getSessionScore()        // 0–1 overall
+session.actionCounts     // breakdown by type
+session.curvatureSamples // how many mouse path samples collected
+---

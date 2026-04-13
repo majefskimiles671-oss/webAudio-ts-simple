@@ -969,6 +969,7 @@ timelineArea.addEventListener("mousedown", (e) => {
   if (recording) return; // scrubbing disabled while recording
 
   // Ignore clicks on markers (they already stopped propagation)
+  recordInteraction("scrub");
   isScrubbing = true;
 
   scrubPrevTransportState = getTransportState();
@@ -1009,6 +1010,7 @@ tempoEl.addEventListener("keydown", (e) => {
 });
 
 tempoEl.addEventListener("blur", () => {
+  recordInteraction("tempo");
   const raw = tempoEl.textContent.replace(/\D/g, "");
   const next = parseInt(raw, 10);
 
@@ -1088,6 +1090,7 @@ markerDeleteBtn.addEventListener("click", () => {
 });
 
 markerAddBtn.addEventListener("click", () => {
+  recordInteraction("marker");
   const time = currentTimeSeconds;
   const marker = { id: crypto.randomUUID(), time };
   markers.push(marker);
@@ -1206,6 +1209,7 @@ document.addEventListener("keydown", (e) => {
 const zoomSlider = document.getElementById("zoom-slider");
 
 zoomSlider.oninput = () => {
+  recordInteraction("zoom");
   // ----- Preserve Center Time
   const centerTime = timelineArea.scrollLeft / (BASE_PPS * zoom);
 
@@ -1232,17 +1236,22 @@ zoomSlider.oninput = () => {
 
 returnToBeginningBtn.onclick = () => returnToBeginning();
 
-playBtn.onclick = () =>
+playBtn.onclick = () => {
+  recordInteraction("transport");
   applyTransportChange({ play: !playing, record: playing ? false : recording });
+};
 
-recordBtn.onclick = () =>
+recordBtn.onclick = () => {
+  recordInteraction("transport");
   applyTransportChange({ play: playing, record: !recording });
+};
 
 
 // ----- Scrub Handlers
 timelineArea.addEventListener("mousedown", (e) => {
   if (recording) return;
 
+  recordInteraction("scrub");
   isScrubbing = true;
   scrubPrevTransportState = getTransportState();
 
@@ -1314,6 +1323,113 @@ function updateMeter() {
   }
   requestAnimationFrame(updateMeter);
 }
+
+// ============================================================
+// Session Score -----
+// ============================================================
+//
+// Passively accumulates signals during normal use to estimate
+// whether the session was driven by a human. Score is 0–1.
+// Never shown to the user. Queried at share time.
+//
+// Signals:
+//   curvature     — mouse path non-linearity (bots move in straight lines)
+//   timingVariance — irregularity between meaningful actions (bots are metronomic)
+//   actionCount   — breadth of meaningful interactions
+//   duration      — time elapsed since first interaction
+//
+
+const session = {
+  firstInteractionAt: null,
+  lastInteractionAt: null,
+  interactionTimings: [],   // ms between consecutive meaningful actions
+  actionCounts: {},         // { transport, scrub, zoom, tempo, marker, ... }
+  mousePath: [],            // { x, y } samples during moves
+  curvatureAccum: 0,        // accumulated deviation from straight-line motion
+  curvatureSamples: 0,
+};
+
+function recordInteraction(type) {
+  const now = performance.now();
+
+  if (!session.firstInteractionAt) session.firstInteractionAt = now;
+
+  if (session.lastInteractionAt !== null) {
+    const gap = now - session.lastInteractionAt;
+    // Ignore gaps over 30s (user walked away) — they don't help either side
+    if (gap < 30_000) session.interactionTimings.push(gap);
+  }
+
+  session.lastInteractionAt = now;
+  session.actionCounts[type] = (session.actionCounts[type] ?? 0) + 1;
+}
+
+function recordMouseSample(x, y) {
+  const path = session.mousePath;
+  path.push({ x, y });
+
+  // Measure curvature: angle change between last three points
+  if (path.length >= 3) {
+    const a = path[path.length - 3];
+    const b = path[path.length - 2];
+    const c = path[path.length - 1];
+
+    const ab = Math.atan2(b.y - a.y, b.x - a.x);
+    const bc = Math.atan2(c.y - b.y, c.x - b.x);
+    let delta = Math.abs(bc - ab);
+    if (delta > Math.PI) delta = 2 * Math.PI - delta; // wrap
+
+    session.curvatureAccum += delta;
+    session.curvatureSamples += 1;
+  }
+
+  // Keep path buffer small — only need recent samples for curvature
+  if (path.length > 20) path.shift();
+}
+
+function scoreCurvature() {
+  if (session.curvatureSamples < 5) return 0;
+  // Average angle change per sample. Humans: ~0.2–0.8 rad. Bots: ~0.
+  const avg = session.curvatureAccum / session.curvatureSamples;
+  return Math.min(1, avg / 0.4);
+}
+
+function scoreTimingVariance() {
+  const t = session.interactionTimings;
+  if (t.length < 3) return 0;
+  const mean = t.reduce((s, v) => s + v, 0) / t.length;
+  const variance = t.reduce((s, v) => s + (v - mean) ** 2, 0) / t.length;
+  const cv = Math.sqrt(variance) / mean; // coefficient of variation
+  // Humans: CV typically 0.5–2+. Bots: CV near 0.
+  return Math.min(1, cv / 1.0);
+}
+
+function scoreActionCount() {
+  const total = Object.values(session.actionCounts).reduce((s, v) => s + v, 0);
+  const uniqueTypes = Object.keys(session.actionCounts).length;
+  // Reward breadth (different action types) as well as volume
+  return Math.min(1, (total / 10) * 0.5 + (uniqueTypes / 5) * 0.5);
+}
+
+function scoreDuration() {
+  if (!session.firstInteractionAt) return 0;
+  const elapsed = performance.now() - session.firstInteractionAt;
+  // Full score at 2 minutes of interaction
+  return Math.min(1, elapsed / (2 * 60 * 1000));
+}
+
+function getSessionScore() {
+  const curvature     = scoreCurvature()      * 0.30;
+  const timing        = scoreTimingVariance() * 0.25;
+  const actions       = scoreActionCount()    * 0.25;
+  const duration      = scoreDuration()       * 0.20;
+  return curvature + timing + actions + duration;
+}
+
+// Passive mouse path collector (runs independently of scrub state)
+document.addEventListener("mousemove", (e) => {
+  recordMouseSample(e.clientX, e.clientY);
+});
 
 // ============================================================
 // Initialization -----
