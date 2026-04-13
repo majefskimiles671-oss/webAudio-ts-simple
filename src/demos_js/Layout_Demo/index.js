@@ -117,6 +117,8 @@ let selectedMarkerId = 0;
 let bpm = 120; // beats per minute
 let beatsPerBar = timeSignature.beats; // kept in sync with timeSignature.beats
 
+let trackCount = 8;
+
 //  Transport State
 let playing = false;
 let recording = false;
@@ -351,7 +353,7 @@ function applyTransportChange({ play, record }) {
     // }
   }
 
-  if (!wasRecording && recording) startRecordingRange();
+  if (!wasRecording && recording) { onRecordStart(); startRecordingRange(); }
   if (wasRecording && !recording) clearRecordingRange();
 
   syncTransportUI();
@@ -360,6 +362,71 @@ function applyTransportChange({ play, record }) {
 function returnToBeginning() {
   setPlayheadPositionPx(0);
   timelineArea.scrollLeft = 0;
+}
+
+// ----- Track Management
+function createTrack(label, { prepend = false } = {}) {
+  /* ----- Controls Row ----- */
+  const controlTpl = document.getElementById("control-row-template");
+  const controlFrag = controlTpl.content.cloneNode(true);
+  const controlRow = controlFrag.querySelector(".control-row");
+  const title = controlFrag.querySelector(".track-title");
+
+  title.textContent = label;
+  title.spellcheck = false;
+
+  title.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); title.blur(); }
+  });
+
+  title.addEventListener("blur", () => {
+    const t = title.textContent.trim();
+    title.textContent = t === "" ? label : t;
+  });
+
+  controlFrag.querySelectorAll(".track-scene").forEach((btn) => {
+    btn.addEventListener("click", () => btn.classList.toggle("active"));
+  });
+
+  controlFrag.querySelector(".track-scene-clear").addEventListener("click", (e) => {
+    e.currentTarget.closest(".control-row")
+      .querySelectorAll(".track-scene.active")
+      .forEach((btn) => btn.classList.remove("active"));
+  });
+
+  if (prepend) {
+    controlsScrollCol.prepend(controlFrag);
+  } else {
+    controlsScrollCol.appendChild(controlFrag);
+  }
+
+  /* ----- Timeline Row ----- */
+  const timelineTpl = document.getElementById("timeline-row-template");
+  const timelineFrag = timelineTpl.content.cloneNode(true);
+  const timelineRow = timelineFrag.querySelector(".timeline-row");
+  const canvas = timelineFrag.querySelector(".waveform-canvas");
+
+  canvas.width = 0;
+
+  if (prepend) {
+    timelineCol.prepend(timelineFrag);
+  } else {
+    timelineCol.appendChild(timelineFrag);
+  }
+
+  /* ----- Height Sync ----- */
+  const ro = new ResizeObserver(([e]) => {
+    controlRow.style.height = `${e.contentRect.height}px`;
+  });
+  ro.observe(timelineRow);
+}
+
+function onRecordStart() {
+  trackCount += 1;
+  createTrack(`Track ${trackCount}`, { prepend: true });
+  timelineArea.scrollTop = 0;
+  controlsScrollCol.scrollTop = 0;
+  syncTimelineOverlay();
 }
 
 // ============================================================
@@ -1161,68 +1228,8 @@ function updateMeter() {
 // ============================================================
 
 const timelineCol = document.getElementById("timeline-column");
-for (let i = 0; i < 8; i++) {
-  /* ----- Controls Row ----- */
-  const controlTpl = document.getElementById("control-row-template");
-  const controlFrag = controlTpl.content.cloneNode(true);
-  const controlRow = controlFrag.querySelector(".control-row");
-  const title = controlFrag.querySelector(".track-title");
-  const soloBtn = controlFrag.querySelector(".solo-btn");
-
-  title.textContent = `Track ${i + 1}`;
-  title.spellcheck = false;
-
-  title.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      title.blur();
-    }
-  });
-
-  title.addEventListener("blur", () => {
-    const t = title.textContent.trim();
-    title.textContent = t === "" ? `Track ${i + 1}` : t;
-  });
-
-  controlFrag.querySelectorAll(".track-scene").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      btn.classList.toggle("active");
-    });
-  });
-
-  //scenes
-
-  controlFrag
-    .querySelector(".track-scene-clear")
-    .addEventListener("click", (e) => {
-      const row = e.currentTarget.closest(".control-row");
-
-      row
-        .querySelectorAll(".track-scene.active")
-        .forEach((btn) => btn.classList.remove("active"));
-    });
-
-  controlsScrollCol.appendChild(controlFrag);
-
-  /* ----- Timeline Row ----- */
-
-  const timelineTpl = document.getElementById("timeline-row-template");
-  const timelineFrag = timelineTpl.content.cloneNode(true);
-  const timelineRow = timelineFrag.querySelector(".timeline-row");
-  const canvas = timelineFrag.querySelector(".waveform-canvas");
-
-  const trackDurationSeconds = 10 + i * 5;
-  canvas.width = computeWaveformWidth(trackDurationSeconds);
-
-  timelineCol.appendChild(timelineFrag);
-
-  /* ----- Height Sync ----- */
-
-  const ro = new ResizeObserver(([e]) => {
-    controlRow.style.height = `${e.contentRect.height}px`;
-  });
-
-  ro.observe(timelineRow);
+for (let i = 0; i < trackCount; i++) {
+  createTrack(`Track ${i + 1}`);
 }
 
 document.body.setAttribute("data-theme", "light");
