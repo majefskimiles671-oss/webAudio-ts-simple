@@ -1040,6 +1040,7 @@ tempoEl.addEventListener("blur", () => {
   bpm = tempoBPM;
   renderTempo();
   syncTimelineMinWidth();
+  renderTimelineLayer();
 });
 
 // ----- Time Signature Dropdown
