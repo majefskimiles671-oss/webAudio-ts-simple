@@ -120,7 +120,7 @@ let selectedMarkerId = 0;
 let bpm = 120; // beats per minute
 let beatsPerBar = timeSignature.beats; // kept in sync with timeSignature.beats
 
-let trackCount = 6;
+let trackCount = 0;
 
 //  Transport State
 let playing = false;
@@ -720,8 +720,6 @@ function renderMetronomeGrid() {
 }
 
 function renderMetronomeScan() {
-  if (getTransportState() === "IDLE") return;
-
   const t = getPlayheadTime(); // seconds
   const spb = secondsPerBeat(); // already defined
 
@@ -776,6 +774,7 @@ function setPlayheadPositionPx(px) {
   currentTimeSeconds = pixelsToSeconds(px);
   timer.textContent = formatTime(currentTimeSeconds);
   updateTimeDisplay(currentTimeSeconds);
+  renderMetronomeScan();
 }
 
 function updateTimeDisplay(s) {
