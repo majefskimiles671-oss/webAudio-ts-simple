@@ -253,34 +253,7 @@ function getPlayheadX() {
 }
 
 // ----- Track Name Generator
-const TRACK_NAMES_STARS = [
-  "Vega", "Lyra", "Altair", "Rigel", "Deneb", "Sirius", "Spica",
-  "Antares", "Aldebaran", "Capella", "Procyon", "Castor", "Pollux",
-  "Fomalhaut", "Canopus", "Achernar", "Alioth", "Mizar", "Alkaid",
-  "Thuban", "Eltanin", "Kochab", "Schedar", "Caph", "Pulsar",
-  "Quasar", "Nebula", "Zenith", "Umbra", "Corona", "Solstice",
-  "Equinox", "Perihelion", "Aphelion", "Liminal", "Penumbra",
-];
-
-const TRACK_NAMES_FLOWERS = [
-  "Aster", "Dahlia", "Iris", "Lotus", "Peony", "Violet", "Jasmine",
-  "Zinnia", "Poppy", "Larkspur", "Verbena", "Foxglove", "Wisteria",
-  "Azalea", "Camellia", "Magnolia", "Narcissus", "Hyacinth", "Lavender",
-  "Salvia", "Amaranth", "Yarrow", "Hellebore", "Clematis", "Anemone",
-  "Cosmos", "Delphinium", "Freesia", "Hibiscus", "Lupin", "Primrose",
-  "Trillium", "Allium", "Borage", "Celosia", "Gentian", "Heliotrope",
-];
-
-const TRACK_NAMES_WEATHER = [
-  "Squall", "Mistral", "Sirocco", "Zephyr", "Föhn", "Bora", "Chinook",
-  "Haboob", "Tramontane", "Levanter", "Solano", "Harmattan", "Gregale",
-  "Etesian", "Shamal", "Mizzle", "Virga", "Graupel", "Whiteout", "Pampero",
-  "Leste", "Khamsin", "Libeccio", "Norther", "Williwaw", "Sundowner",
-  "Diablo", "Coromell", "Tehuantepecer", "Papagayo", "Chubasco", "Breva",
-  "Vendaval", "Abroholos", "Friagem", "Suestada", "Minuano",
-];
-
-const TRACK_NAMES = TRACK_NAMES_WEATHER;
+// Lists live in trackNames.js (loaded before this script)
 
 let _trackNamePool = [];
 
@@ -288,7 +261,8 @@ function pickTrackName() {
   if (_trackNamePool.length === 0) {
     _trackNamePool = [...TRACK_NAMES].sort(() => Math.random() - 0.5);
   }
-  return _trackNamePool.pop();
+  const entry = _trackNamePool.pop();
+  return typeof entry === "string" ? { name: entry, definition: null } : entry;
 }
 
 function formatTime(s) {
@@ -495,12 +469,14 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
 
 function createRecordingLane() {
   trackCount += 1;
-  const { controlRow, timelineRow } = createTrack(pickTrackName(), { prepend: true });
+  const { name, definition } = pickTrackName();
+  const { controlRow, timelineRow } = createTrack(name, { prepend: true });
   controlRow.classList.add("recording-lane");
   timelineRow.classList.add("recording-lane");
   controlRow.querySelector(".delete-btn").style.display = "none";
   recordingLaneControlRow = controlRow;
   recordingLaneTimelineRow = timelineRow;
+  showTrackNameTooltip(name, definition);
 }
 
 function promoteRecordingLane() {
@@ -1375,6 +1351,38 @@ function updateMeter() {
   requestAnimationFrame(updateMeter);
 }
 
+// ----- Track Name Tooltip
+function showTrackNameTooltip(name, definition) {
+  if (!definition) return;
+
+  const existing = document.getElementById("track-name-tooltip");
+  if (existing) {
+    clearTimeout(existing._dismissTimer);
+    existing.remove();
+  }
+
+  const toast = document.createElement("div");
+  toast.id = "track-name-tooltip";
+  toast.innerHTML = `
+    <div class="tnt-header">
+      <span class="tnt-name">${name}</span>
+      <button class="tnt-close" aria-label="Dismiss">&#x2715;</button>
+    </div>
+    <p class="tnt-definition">${definition}</p>
+    <div class="tnt-progress"></div>
+  `;
+  document.body.appendChild(toast);
+
+  function dismiss() {
+    clearTimeout(toast._dismissTimer);
+    toast.classList.add("tnt-exit");
+    toast.addEventListener("animationend", () => toast.remove(), { once: true });
+  }
+
+  toast._dismissTimer = setTimeout(dismiss, 20_000);
+  toast.querySelector(".tnt-close").addEventListener("click", dismiss);
+}
+
 // ============================================================
 // Session Score -----
 // ============================================================
@@ -1488,7 +1496,7 @@ document.addEventListener("mousemove", (e) => {
 
 const timelineCol = document.getElementById("timeline-column");
 for (let i = 0; i < trackCount; i++) {
-  createTrack(pickTrackName());
+  createTrack(pickTrackName().name);
 }
 createRecordingLane();
 

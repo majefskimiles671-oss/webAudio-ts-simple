@@ -1023,6 +1023,90 @@
 
 
 
+        /* Track Name Tooltip */
+
+        @keyframes tnt-in {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes tnt-out {
+            from { opacity: 1; transform: translateY(0); }
+            to   { opacity: 0; transform: translateY(12px); }
+        }
+
+        @keyframes tnt-shrink {
+            from { width: 100%; }
+            to   { width: 0%; }
+        }
+
+        #track-name-tooltip {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+
+            width: 260px;
+            padding: 12px 14px 0;
+            box-sizing: border-box;
+
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+
+            animation: tnt-in 200ms ease forwards;
+            overflow: hidden;
+        }
+
+        #track-name-tooltip.tnt-exit {
+            animation: tnt-out 200ms ease forwards;
+        }
+
+        .tnt-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .tnt-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+            letter-spacing: 0.02em;
+        }
+
+        .tnt-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 2px 4px;
+            line-height: 1;
+            border-radius: 3px;
+        }
+
+        .tnt-close:hover {
+            color: var(--text-main);
+            background: var(--bg-surface);
+        }
+
+        .tnt-definition {
+            margin: 0 0 10px;
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--text-muted);
+        }
+
+        .tnt-progress {
+            height: 2px;
+            margin: 0 -14px;
+            background: var(--accent-primary);
+            animation: tnt-shrink 20s linear forwards;
+        }
+
         /* Debug CSS */
 
         /* =============================
