@@ -401,8 +401,32 @@ function createTrack(label, { prepend = false } = {}) {
   title.textContent = label;
   title.spellcheck = false;
 
+  title.addEventListener("focus", () => {
+    const range = document.createRange();
+    range.selectNodeContents(title);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+
   title.addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); title.blur(); }
+  });
+
+  title.addEventListener("input", () => {
+    const text = title.textContent;
+    if (text.length <= 30) return;
+    const sel = window.getSelection();
+    const offset = sel.rangeCount ? sel.getRangeAt(0).startOffset : 30;
+    title.textContent = text.slice(0, 30);
+    const textNode = title.firstChild;
+    if (textNode) {
+      const range = document.createRange();
+      range.setStart(textNode, Math.min(offset, 30));
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
   });
 
   title.addEventListener("blur", () => {
@@ -499,7 +523,6 @@ function createRecordingLane() {
   const { controlRow, timelineRow } = createTrack(name, { prepend: true });
   controlRow.classList.add("recording-lane");
   timelineRow.classList.add("recording-lane");
-  controlRow.querySelector(".delete-btn").style.display = "none";
   recordingLaneControlRow = controlRow;
   recordingLaneTimelineRow = timelineRow;
   showTrackNameTooltip(name, definition);
@@ -510,7 +533,6 @@ function promoteRecordingLane() {
   if (!recordingLaneTimelineRow.querySelector(".waveform")) return;
 
   recordingLaneControlRow.classList.remove("recording-lane");
-  recordingLaneControlRow.querySelector(".delete-btn").style.display = "";
   recordingLaneTimelineRow.classList.remove("recording-lane");
   recordingLaneControlRow = null;
   recordingLaneTimelineRow = null;
@@ -1558,7 +1580,7 @@ for (let i = 0; i < trackCount; i++) {
 }
 createRecordingLane();
 
-document.body.setAttribute("data-theme", "dark");
+document.body.setAttribute("data-theme", "light");
 
 updateMeter();
 syncTimelineOverlayWidth();
@@ -1568,3 +1590,4 @@ renderTimelineLayer();
 renderTempo();
 renderTimeSignature();
 renderMetronomeGrid();
+startOnboarding();

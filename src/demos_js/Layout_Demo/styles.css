@@ -413,6 +413,8 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            min-width: 0;
+            flex-shrink: 1;
         }
 
         .track-title:hover {
@@ -690,6 +692,10 @@
             padding: 8px;
         }
 
+        .control-row .row-inner {
+            overflow: hidden;
+        }
+
         /* Timeline rows: no horizontal padding, fixed height, positioning context for clips */
         .timeline-row .row-inner {
             padding: 8px 0;
@@ -719,6 +725,25 @@
         }
 
         /* Recording Lane */
+
+        /* Recording lane — strip controls, center the name */
+        .recording-lane.control-row .solo-btn,
+        .recording-lane.control-row .delete-btn,
+        .recording-lane.control-row .gain-slider,
+        .recording-lane.control-row .track-scenes {
+            display: none;
+        }
+
+        .recording-lane.control-row .row-inner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .recording-lane.control-row .track-title {
+            font-style: italic;
+            opacity: 0.75;
+        }
 
         .recording-lane.control-row,
         .recording-lane.timeline-row {
@@ -1115,6 +1140,123 @@
             margin: 0 -14px;
             background: var(--accent-primary);
             animation: tnt-shrink 20s linear forwards;
+        }
+
+        /* Onboarding */
+
+        @keyframes onboarding-fade-in {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        @keyframes onboarding-fade-out {
+            from { opacity: 1; }
+            to   { opacity: 0; }
+        }
+
+        @keyframes onboarding-glow {
+            0%, 100% {
+                box-shadow:
+                    0 0 0 9999px rgba(0, 0, 0, 0.72),
+                    0 0 0 0px rgba(255, 149, 0, 0.7);
+            }
+            50% {
+                box-shadow:
+                    0 0 0 9999px rgba(0, 0, 0, 0.72),
+                    0 0 0 10px rgba(255, 149, 0, 0);
+            }
+        }
+
+        #onboarding-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            pointer-events: none;
+            animation: onboarding-fade-in 300ms ease forwards;
+        }
+
+        #onboarding-overlay.onboarding-exit {
+            animation: onboarding-fade-out 250ms ease forwards;
+        }
+
+        #onboarding-spotlight {
+            position: fixed;
+            border-radius: 8px;
+            border: 2px solid var(--accent-primary);
+            pointer-events: none;
+            animation: onboarding-glow 2s ease-in-out infinite;
+            transition:
+                left   0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                top    0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                width  0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #onboarding-card {
+            position: fixed;
+            width: 280px;
+            padding: 16px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            pointer-events: all;
+            transition:
+                top  0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #onboarding-text {
+            margin: 0 0 14px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-main);
+        }
+
+        .onboarding-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #onboarding-counter {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .onboarding-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        #onboarding-skip {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 5px;
+            color: var(--text-muted);
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        #onboarding-skip:hover {
+            color: var(--text-main);
+        }
+
+        #onboarding-next {
+            background: var(--accent-primary);
+            border: none;
+            border-radius: 5px;
+            color: var(--bg-app);
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        #onboarding-next:hover {
+            opacity: 0.85;
         }
 
         /* Debug CSS */
