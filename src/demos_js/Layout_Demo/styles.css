@@ -72,8 +72,14 @@
             gap: 12px;
             background: var(--bg-panel);
             border-bottom: 1px solid var(--border-subtle);
-
         }
+
+        /* Transport group separators */
+        .metronome-scan       { margin-left: 16px; }
+        #returnToBeginningBtn { margin-left: 16px; }
+        .global-time          { margin-left: 16px; }
+        .zoom-container       { margin-left: 16px; }
+        .meter                { margin-left: auto; }
 
         .transport button {
             padding: 6px 12px;
