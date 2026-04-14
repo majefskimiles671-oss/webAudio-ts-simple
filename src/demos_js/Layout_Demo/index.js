@@ -413,6 +413,17 @@ function createTrack(label, { prepend = false } = {}) {
     updateSceneMask();
   });
 
+  const soloBtn = controlFrag.querySelector(".solo-btn");
+  soloBtn.addEventListener("click", () => {
+    const allSoloBtns = Array.from(document.querySelectorAll(".solo-btn"));
+    const isActive = soloBtn.classList.contains("active");
+    allSoloBtns.forEach((b) => { b.classList.remove("active"); b.disabled = false; });
+    if (!isActive) {
+      soloBtn.classList.add("active");
+      allSoloBtns.forEach((b) => { if (b !== soloBtn) b.disabled = true; });
+    }
+  });
+
   const deleteBtn = controlFrag.querySelector(".delete-btn");
   deleteBtn.addEventListener("click", () => {
     const idx = Array.from(controlsScrollCol.children).indexOf(controlRow);
@@ -940,29 +951,6 @@ function syncTimelineMinWidth() {
 // Event Handlers (Intent Layer)  -----
 // ============================================================
 
-// solo buttons
-function setupSoloBtns() {
-  const soloButtons = Array.from(document.querySelectorAll(".solo-btn"));
-  soloButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const isActive = btn.classList.contains("active");
-
-      // Reset all
-      soloButtons.forEach((b) => {
-        b.classList.remove("active");
-        b.disabled = false;
-      });
-
-      // If clicked button was not active, activate it and disable others
-      if (!isActive) {
-        btn.classList.add("active");
-        soloButtons.forEach((b) => {
-          if (b !== btn) b.disabled = true;
-        });
-      }
-    });
-  });
-}
 
 document.querySelectorAll("[data-theme]").forEach((el) => {
   el.onclick = () => {
@@ -1505,7 +1493,7 @@ for (let i = 0; i < trackCount; i++) {
 createRecordingLane();
 
 document.body.setAttribute("data-theme", "dark");
-setupSoloBtns();
+
 updateMeter();
 syncTimelineOverlayWidth();
 syncTimelineOverlay();
