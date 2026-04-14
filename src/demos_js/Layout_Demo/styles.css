@@ -414,6 +414,8 @@
         .track-title:focus {
             outline: 1px solid #ff9500;
             background: var(--bg-surface);
+            overflow: auto;
+            text-overflow: clip;
         }
 
         .track-controls {

@@ -59,4 +59,52 @@ const TRACK_NAMES_WEATHER = [
   { name: "Minuano",       definition: "A cold southerly wind that sweeps through southern Brazil and Uruguay." },
 ];
 
-const TRACK_NAMES = TRACK_NAMES_WEATHER;
+const TRACK_NAMES_MUSIC = [
+  "Fermata", "Coda", "Aria", "Fugue", "Étude", "Nocturne", "Caprice", "Impromptu",
+  "Cadenza", "Ostinato", "Rubato", "Tremolo", "Glissando", "Portamento", "Toccata", "Scherzo",
+  "Rhapsody", "Fantasia", "Passacaglia", "Chaconne", "Barcarolle", "Berceuse", "Tarantella", "Bolero",
+  "Pavane", "Gavotte", "Gigue", "Mazurka", "Polonaise", "Serenade", "Cantata", "Concerto",
+  "Prelude", "Interlude", "Cadence", "Rondo",
+];
+
+const TRACK_NAMES_NAMES = [
+  "Yuki", "Hana", "Sora", "Ren",
+  "Layla", "Zara", "Amir", "Tariq",
+  "Amara", "Kofi", "Zuri", "Kwame",
+  "Lola", "Paloma", "Diego", "Luna",
+  "Astrid", "Sigrid", "Freya", "Leif",
+  "Priya", "Arjun", "Kavya", "Rohan",
+  "Mila", "Zoya", "Sasha", "Lena",
+  "Mei", "Lin", "Jing", "Wei",
+  "Niamh", "Aoife", "Ciarán", "Brigid",
+];
+
+const TRACK_NAMES_CITIES = [
+  "Kyoto", "Lagos", "Havana", "Oslo",
+  "Dubrovnik", "Reykjavik", "Marrakech", "Tbilisi",
+  "Cartagena", "Nairobi", "Kathmandu", "Zanzibar",
+  "Lisbon", "Seville", "Porto", "Gdańsk",
+  "Ljubljana", "Tallinn", "Kotor", "Mostar",
+  "Muscat", "Hoi An", "Chiang Mai", "Baku",
+  "Vilnius", "Riga", "Valletta", "Tangier",
+  "Oaxaca", "Medellín", "Banff", "Salzburg",
+  "Tromsø", "Plovdiv", "Yerevan", "Essaouira",
+];
+
+const TRACK_NAMES_VERBS = [
+  "visits", "dreams of", "returns to", "escapes to", "wanders",
+  "left", "misses", "calls from", "arrived in", "vanished in",
+  "wrote from", "waits in", "fell asleep in", "got lost in", "passed through",
+  "never reached", "sings of", "hides in", "longs for", "remembered",
+  "forgot", "ran to", "moved to", "belongs in", "hears",
+  "recorded in", "slept through", "photographed",
+];
+
+const TRACK_NAMES_NAMES_IN_CITIES = (() => {
+  const names  = [...TRACK_NAMES_NAMES].sort(() => Math.random() - 0.5);
+  const verbs = [...TRACK_NAMES_VERBS].sort(() => Math.random() - 0.5);
+  const cities = [...TRACK_NAMES_CITIES].sort(() => Math.random() - 0.5);
+  return names.map((name, i) => `${name} ${verbs[i]??"in"} ${cities[i]}`);
+})();
+
+const TRACK_NAMES = TRACK_NAMES_NAMES_IN_CITIES;
