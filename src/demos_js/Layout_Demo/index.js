@@ -376,7 +376,7 @@ function applyTransportChange({ play, record }) {
   }
 
   if (!wasRecording && recording) { onRecordStart(); startRecordingRange(); }
-  if (wasRecording && !recording) { onRecordStop(); clearRecordingRange(); }
+  if (wasRecording && !recording) { if (wasPlaying) onRecordStop(); clearRecordingRange(); }
 
   if (prevState !== "IDLE" && nextState === "IDLE") {
     promoteRecordingLane();
