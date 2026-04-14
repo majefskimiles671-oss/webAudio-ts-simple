@@ -120,7 +120,7 @@ let selectedMarkerId = 0;
 let bpm = 120; // beats per minute
 let beatsPerBar = timeSignature.beats; // kept in sync with timeSignature.beats
 
-let trackCount = 0;
+let trackCount = 6;
 
 //  Transport State
 let playing = false;
@@ -615,13 +615,14 @@ function renderTimelineRuler() {
     const firstBar = Math.floor(startSeconds / barLen);
 
     let barTime = firstBar * barLen;
+    let barNum = firstBar;
 
     while (barTime <= endSeconds) {
       // Major bar tick
       ticks.push({
         time: barTime,
         major: true,
-        label: `Bar ${firstBar + 1 + (barTime - firstBar * barLen) / barLen}`,
+        label: `Bar ${barNum + 1}`,
       });
 
       // Beat ticks
@@ -637,6 +638,7 @@ function renderTimelineRuler() {
       }
 
       barTime += barLen;
+      barNum++;
     }
   }
 
