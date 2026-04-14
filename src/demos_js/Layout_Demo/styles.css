@@ -116,7 +116,9 @@
         }
 
         .control-row.not-in-scene,
-        .timeline-row.not-in-scene {
+        .timeline-row.not-in-scene,
+        .control-row.not-in-solo,
+        .timeline-row.not-in-solo {
             opacity: 0.35;
         }
 

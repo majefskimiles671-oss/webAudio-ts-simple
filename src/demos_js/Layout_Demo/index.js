@@ -433,6 +433,7 @@ function createTrack(label, { prepend = false } = {}) {
       soloBtn.classList.add("active");
       allSoloBtns.forEach((b) => { if (b !== soloBtn) b.disabled = true; });
     }
+    updateSoloMask();
   });
 
   const deleteBtn = controlFrag.querySelector(".delete-btn");
@@ -519,6 +520,7 @@ function promoteRecordingLane() {
   controlsScrollCol.scrollTop = 0;
   syncTimelineOverlay();
   updateSceneMask();
+  updateSoloMask();
 }
 
 function onRecordStart() {
@@ -1231,6 +1233,32 @@ function updateSceneMask() {
 
     controlRow.classList.toggle("not-in-scene", !trackHasScene);
     timelineRow?.classList.toggle("not-in-scene", !trackHasScene);
+  });
+}
+
+function updateSoloMask() {
+  const activeSolo = document.querySelector(".solo-btn.active");
+  const controlRows = Array.from(controlsScrollCol.children);
+  const timelineRows = Array.from(timelineCol.children);
+
+  controlRows.forEach((controlRow, i) => {
+    const timelineRow = timelineRows[i];
+
+    if (controlRow.classList.contains("recording-lane")) {
+      controlRow.classList.remove("not-in-solo");
+      timelineRow?.classList.remove("not-in-solo");
+      return;
+    }
+
+    if (!activeSolo) {
+      controlRow.classList.remove("not-in-solo");
+      timelineRow?.classList.remove("not-in-solo");
+      return;
+    }
+
+    const isSoloed = controlRow.contains(activeSolo);
+    controlRow.classList.toggle("not-in-solo", !isSoloed);
+    timelineRow?.classList.toggle("not-in-solo", !isSoloed);
   });
 }
 
