@@ -276,6 +276,17 @@ function computeWaveformWidth(seconds) {
   return Math.floor(seconds * BASE_PPS * zoom);
 }
 
+function generateWaveformData(numSamples) {
+  const data = [];
+  let envelope = 0.4 + Math.random() * 0.4;
+  for (let i = 0; i < numSamples; i++) {
+    envelope += (Math.random() - 0.5) * 0.08;
+    envelope = Math.max(0.05, Math.min(0.95, envelope));
+    data.push(Math.random() * envelope);
+  }
+  return data;
+}
+
 // ----- Playhead View Helpers
 function ensurePlayheadInViewCentered() {
   const playheadX = secondsToPixels(currentTimeSeconds);
@@ -473,6 +484,9 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
 
   waveform.style.left = `${secondsToPixels(startSeconds)}px`;
   waveform.style.width = `${computeWaveformWidth(durationSeconds)}px`;
+
+  canvas.dataset.amplitudes = JSON.stringify(generateWaveformData(256));
+  drawDummyWaveform(canvas);
 
   waveform.appendChild(canvas);
   rowInner.appendChild(waveform);
@@ -840,6 +854,32 @@ function renderMarkerTransport() {
   }
 }
 
+function drawDummyWaveform(canvas) {
+  const amplitudes = JSON.parse(canvas.dataset.amplitudes || "[]");
+  if (!amplitudes.length) return;
+
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const midY = h / 2;
+  const n = amplitudes.length;
+  const color = getComputedStyle(document.body).getPropertyValue("--accent-primary").trim() || "#ff9500";
+
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.55;
+
+  for (let i = 0; i < n; i++) {
+    const x = (i / n) * w;
+    const barW = Math.max(1, (w / n) - 1);
+    const barH = Math.max(1, amplitudes[i] * (h * 0.45));
+    ctx.fillRect(Math.round(x), Math.round(midY - barH), Math.ceil(barW), Math.round(barH * 2));
+  }
+
+  ctx.globalAlpha = 1;
+}
+
 function rerenderWaveforms() {
   /**
    * Make sure that every time you draw a waveform you do this first:
@@ -858,8 +898,7 @@ function rerenderWaveforms() {
     waveform.style.left = `${secondsToPixels(startSeconds)}px`;
     waveform.style.width = `${width}px`;
 
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawDummyWaveform(canvas);
   });
 }
 
