@@ -120,7 +120,7 @@ let selectedMarkerId = 0;
 let bpm = 120; // beats per minute
 let beatsPerBar = timeSignature.beats; // kept in sync with timeSignature.beats
 
-let trackCount = 4;
+let trackCount = 0;
 
 //  Transport State
 let playing = false;
@@ -493,6 +493,7 @@ function promoteRecordingLane() {
   timelineArea.scrollTop = 0;
   controlsScrollCol.scrollTop = 0;
   syncTimelineOverlay();
+  updateSceneMask();
 }
 
 function onRecordStart() {
