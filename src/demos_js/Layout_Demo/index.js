@@ -252,6 +252,45 @@ function getPlayheadX() {
   return match ? parseFloat(match[1]) : 0;
 }
 
+// ----- Track Name Generator
+const TRACK_NAMES_STARS = [
+  "Vega", "Lyra", "Altair", "Rigel", "Deneb", "Sirius", "Spica",
+  "Antares", "Aldebaran", "Capella", "Procyon", "Castor", "Pollux",
+  "Fomalhaut", "Canopus", "Achernar", "Alioth", "Mizar", "Alkaid",
+  "Thuban", "Eltanin", "Kochab", "Schedar", "Caph", "Pulsar",
+  "Quasar", "Nebula", "Zenith", "Umbra", "Corona", "Solstice",
+  "Equinox", "Perihelion", "Aphelion", "Liminal", "Penumbra",
+];
+
+const TRACK_NAMES_FLOWERS = [
+  "Aster", "Dahlia", "Iris", "Lotus", "Peony", "Violet", "Jasmine",
+  "Zinnia", "Poppy", "Larkspur", "Verbena", "Foxglove", "Wisteria",
+  "Azalea", "Camellia", "Magnolia", "Narcissus", "Hyacinth", "Lavender",
+  "Salvia", "Amaranth", "Yarrow", "Hellebore", "Clematis", "Anemone",
+  "Cosmos", "Delphinium", "Freesia", "Hibiscus", "Lupin", "Primrose",
+  "Trillium", "Allium", "Borage", "Celosia", "Gentian", "Heliotrope",
+];
+
+const TRACK_NAMES_WEATHER = [
+  "Squall", "Mistral", "Sirocco", "Zephyr", "Föhn", "Bora", "Chinook",
+  "Haboob", "Tramontane", "Levanter", "Solano", "Harmattan", "Gregale",
+  "Etesian", "Shamal", "Mizzle", "Virga", "Graupel", "Whiteout", "Pampero",
+  "Leste", "Khamsin", "Libeccio", "Norther", "Williwaw", "Sundowner",
+  "Diablo", "Coromell", "Tehuantepecer", "Papagayo", "Chubasco", "Breva",
+  "Vendaval", "Abroholos", "Friagem", "Suestada", "Minuano",
+];
+
+const TRACK_NAMES = TRACK_NAMES_WEATHER;
+
+let _trackNamePool = [];
+
+function pickTrackName() {
+  if (_trackNamePool.length === 0) {
+    _trackNamePool = [...TRACK_NAMES].sort(() => Math.random() - 0.5);
+  }
+  return _trackNamePool.pop();
+}
+
 function formatTime(s) {
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
@@ -387,13 +426,17 @@ function createTrack(label, { prepend = false } = {}) {
   });
 
   controlFrag.querySelectorAll(".track-scene").forEach((btn) => {
-    btn.addEventListener("click", () => btn.classList.toggle("active"));
+    btn.addEventListener("click", () => {
+      btn.classList.toggle("active");
+      updateSceneMask();
+    });
   });
 
   controlFrag.querySelector(".track-scene-clear").addEventListener("click", (e) => {
     e.currentTarget.closest(".control-row")
       .querySelectorAll(".track-scene.active")
       .forEach((btn) => btn.classList.remove("active"));
+    updateSceneMask();
   });
 
   const deleteBtn = controlFrag.querySelector(".delete-btn");
@@ -452,7 +495,7 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
 
 function createRecordingLane() {
   trackCount += 1;
-  const { controlRow, timelineRow } = createTrack(`Track ${trackCount}`, { prepend: true });
+  const { controlRow, timelineRow } = createTrack(pickTrackName(), { prepend: true });
   controlRow.classList.add("recording-lane");
   timelineRow.classList.add("recording-lane");
   controlRow.querySelector(".delete-btn").style.display = "none";
@@ -1161,6 +1204,14 @@ function updateSceneMask() {
 
   controlRows.forEach((controlRow, i) => {
     const timelineRow = timelineRows[i];
+
+    // Recording lane is operational infrastructure — always visible
+    if (controlRow.classList.contains("recording-lane")) {
+      controlRow.classList.remove("not-in-scene");
+      timelineRow?.classList.remove("not-in-scene");
+      return;
+    }
+
     if (!activeBtn) {
       controlRow.classList.remove("not-in-scene");
       timelineRow?.classList.remove("not-in-scene");
@@ -1437,7 +1488,7 @@ document.addEventListener("mousemove", (e) => {
 
 const timelineCol = document.getElementById("timeline-column");
 for (let i = 0; i < trackCount; i++) {
-  createTrack(`Track ${i + 1}`);
+  createTrack(pickTrackName());
 }
 createRecordingLane();
 

@@ -710,12 +710,24 @@
 
         /* Recording Lane */
 
-        .recording-lane.control-row {
-            border-left: 3px solid var(--accent-danger);
-        }
-
+        .recording-lane.control-row,
         .recording-lane.timeline-row {
             border-left: 3px solid var(--accent-danger);
+            background: color-mix(in oklab, var(--accent-danger) 8%, var(--bg-app));
+        }
+
+        .recording-lane.control-row {
+            border-bottom: 1px solid color-mix(in oklab, var(--accent-danger) 30%, transparent);
+        }
+
+        .recording-lane.timeline-row .row-inner {
+            background: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 6px,
+                color-mix(in oklab, var(--accent-danger) 6%, transparent) 6px,
+                color-mix(in oklab, var(--accent-danger) 6%, transparent) 12px
+            );
         }
 
 
