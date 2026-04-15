@@ -113,8 +113,9 @@ let timeSignature = {
   noteValue: 4,
 };
 
-let markers = []; //[{ id: 0, time: 0 }]; // [{ id, time }]
-let selectedMarkerId = 0;
+const ORIGIN_MARKER_ID = "origin";
+let markers = [];
+let selectedMarkerId = null;
 
 //  Musical Grid
 let bpm = 120; // beats per minute
@@ -836,16 +837,13 @@ function renderMarkers() {
 // ----- Marker Transport Rendering
 // ----- Marker Transport Controls
 const markerAddBtn = document.getElementById("marker-add");
-const markerPrevBtn = document.getElementById("marker-prev");
-const markerNextBtn = document.getElementById("marker-next");
 const markerDeleteBtn = document.getElementById("marker-delete");
 
 function renderMarkerTransport() {
   const idx = getSelectedMarkerIndex();
+  const isOrigin = idx !== -1 && markers[idx].id === ORIGIN_MARKER_ID;
 
-  markerPrevBtn.disabled = idx <= 0;
-  markerNextBtn.disabled = idx === -1 || idx === markers.length - 1;
-  markerDeleteBtn.disabled = idx === -1;
+  markerDeleteBtn.disabled = idx === -1 || isOrigin;
 
   const display = document.getElementById("marker-time");
   display.textContent = idx === -1 ? "—" : formatTime(markers[idx].time);
@@ -1136,14 +1134,13 @@ timelineRuler.addEventListener("click", (e) => {
 markerDeleteBtn.addEventListener("click", () => {
   const idx = getSelectedMarkerIndex();
   if (idx === -1) return;
+  if (markers[idx].id === ORIGIN_MARKER_ID) return;
 
-  // Remove the marker
   markers.splice(idx, 1);
 
-  // Clear selection explicitly
-  selectedMarkerId = null;
+  // Select the marker to the left, if any
+  selectedMarkerId = idx > 0 ? markers[idx - 1].id : null;
 
-  // Re-render without selecting another marker
   renderMarkers();
   renderMarkerTransport();
 });
@@ -1243,18 +1240,6 @@ document.getElementById("marker-time").addEventListener("click", (e) => {
   if (markers.length === 0) return;
   showMarkerDropdown(e.currentTarget);
   e.stopPropagation();
-});
-
-markerPrevBtn.addEventListener("click", () => {
-  const idx = getSelectedMarkerIndex();
-  if (idx <= 0) return;
-  selectMarkerByIndex(idx - 1);
-});
-
-markerNextBtn.addEventListener("click", () => {
-  const idx = getSelectedMarkerIndex();
-  if (idx === -1 || idx === markers.length - 1) return;
-  selectMarkerByIndex(idx + 1);
 });
 
 // Sync scrollTop from timeline → controls
@@ -1637,6 +1622,11 @@ for (let i = 0; i < trackCount; i++) {
   createTrack(pickTrackName().name);
 }
 createRecordingLane();
+
+markers.push({ id: ORIGIN_MARKER_ID, time: 0 });
+markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 4 });
+markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 8 });
+selectedMarkerId = ORIGIN_MARKER_ID;
 
 document.body.setAttribute("data-theme", "light");
 
