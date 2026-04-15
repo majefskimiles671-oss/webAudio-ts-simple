@@ -62,6 +62,33 @@ async function demoClick(el) {
   _demoCursor?.classList.remove("demo-cursor-clicking");
 }
 
+// ---- Intro Popup
+
+function showDemoIntro(onConfirm) {
+  const overlay = document.createElement("div");
+  overlay.id = "demo-intro-overlay";
+
+  overlay.innerHTML = `
+    <div id="demo-intro-card">
+      <p id="demo-intro-text">This demo shows the basic recording workflow. A scripted cursor will arm the track for recording, start playback, then stop after a few seconds.</p>
+      <div id="demo-intro-actions">
+        <button id="demo-intro-cancel">Cancel</button>
+        <button id="demo-intro-run">Run Demo</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector("#demo-intro-run").addEventListener("click", () => {
+    overlay.remove();
+    onConfirm();
+  });
+
+  overlay.querySelector("#demo-intro-cancel").addEventListener("click", () => {
+    overlay.remove();
+  });
+}
+
 // ---- Demo Sequences
 
 async function runDemo() {
@@ -103,5 +130,5 @@ document.addEventListener("keydown", (e) => {
 // ---- Menu Wiring (runs after DOM is ready since this script loads before index.js)
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("run-demo").addEventListener("click", runDemo);
+  document.getElementById("run-demo").addEventListener("click", () => showDemoIntro(runDemo));
 });

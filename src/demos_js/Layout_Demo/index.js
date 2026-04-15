@@ -1739,4 +1739,4 @@ renderTimeSignature();
 renderMetronomeGrid();
 renderMarkerTransport();
 renderBottomPanel();
-startOnboarding();
+// startOnboarding();

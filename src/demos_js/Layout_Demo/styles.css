@@ -1388,6 +1388,54 @@
             border-color: var(--accent-primary);
         }
 
+        /* Demo Intro Popup */
+
+        #demo-intro-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #demo-intro-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 24px;
+            max-width: 360px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        #demo-intro-text {
+            margin: 0 0 20px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-main);
+        }
+
+        #demo-intro-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        #demo-intro-actions button {
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        #demo-intro-run {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: #000;
+            font-weight: 600;
+        }
+
         /* Demo Cursor */
 
         #demo-cursor {
