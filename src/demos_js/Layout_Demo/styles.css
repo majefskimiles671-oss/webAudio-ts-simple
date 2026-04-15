@@ -51,7 +51,8 @@
         .timeline-ruler,
         #timeline-overlay,
         button,
-        input[type="range"] {
+        input[type="range"],
+        gain-slider {
             user-select: none;
             -webkit-user-select: none;
             -moz-user-select: none;
@@ -498,19 +499,66 @@
         }
 
         .delete-btn {
-            padding: 2px 6px;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
             color: var(--text-muted);
             background: transparent;
             border: none;
+            flex-shrink: 0;
         }
 
         .delete-btn:hover {
             color: var(--accent-danger);
         }
 
-        .gain-slider {
+        gain-slider {
+            display: block;
             width: 100%;
+            height: 20px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .gs-track {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 4px;
+            transform: translateY(-50%);
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 2px;
+        }
+
+        .gs-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: var(--accent-primary);
+            border-radius: 2px;
+        }
+
+        .gs-thumb {
+            position: absolute;
+            top: 50%;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            border: 2px solid var(--bg-app);
+            transform: translate(-50%, -50%);
+        }
+
+        gain-slider:hover .gs-thumb,
+        gain-slider[data-dragging] .gs-thumb {
+            background: var(--accent-highlight);
         }
 
         .track-scenes {
@@ -1114,6 +1162,56 @@
 
 
 
+
+        /* Marker Dropdown */
+
+        #marker-dropdown {
+            position: fixed;
+            z-index: 9000;
+            min-width: 160px;
+            padding: 4px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+        }
+
+        .marker-dropdown-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .marker-dropdown-item:not(.marker-dropdown-playhead):hover {
+            background: var(--bg-surface);
+        }
+
+        .marker-dropdown-playhead {
+            pointer-events: none;
+            opacity: 0.55;
+            cursor: default;
+        }
+
+        .mdd-label {
+            font-size: 11px;
+            font-style: italic;
+            color: var(--accent-primary);
+        }
+
+        .mdd-time {
+            font-family: monospace;
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-muted);
+        }
+
+        .marker-dropdown-item:not(.marker-dropdown-playhead):hover .mdd-time {
+            color: var(--text-main);
+        }
 
         /* Track Name Tooltip */
 

@@ -843,13 +843,8 @@ const markerDeleteBtn = document.getElementById("marker-delete");
 function renderMarkerTransport() {
   const idx = getSelectedMarkerIndex();
 
-  if (idx !== -1) {
-    markerPrevBtn.disabled = idx <= 0;
-    markerNextBtn.disabled = idx === markers.length - 1;
-  } else {
-    markerPrevBtn.disabled = !markers.some(m => m.time <= currentTimeSeconds);
-    markerNextBtn.disabled = !markers.some(m => m.time > currentTimeSeconds);
-  }
+  markerPrevBtn.disabled = idx <= 0;
+  markerNextBtn.disabled = idx === -1 || idx === markers.length - 1;
   markerDeleteBtn.disabled = idx === -1;
 
   const display = document.getElementById("marker-time");
@@ -1173,37 +1168,93 @@ markerAddBtn.addEventListener("click", () => {
   renderMarkerTransport();
 });
 
-document.getElementById("marker-time").addEventListener("click", () => {
+// ----- Marker Dropdown
+let _markerDropdown = null;
+
+function closeMarkerDropdown() {
+  if (!_markerDropdown) return;
+  _markerDropdown.remove();
+  _markerDropdown = null;
+}
+
+function showMarkerDropdown(anchorEl) {
+  closeMarkerDropdown();
+
+  const selectedIdx = getSelectedMarkerIndex();
+
+  // Build sorted list: all markers + playhead position
+  const entries = [
+    ...markers.map((m, i) => ({ type: "marker", time: m.time, index: i })),
+    { type: "playhead", time: currentTimeSeconds },
+  ].sort((a, b) => a.time - b.time);
+
+  const menu = document.createElement("div");
+  menu.id = "marker-dropdown";
+
+  for (const entry of entries) {
+    const item = document.createElement("div");
+    item.className = "marker-dropdown-item";
+
+    if (entry.type === "playhead") {
+      item.classList.add("marker-dropdown-playhead");
+      const label = document.createElement("span");
+      label.className = "mdd-label";
+      label.textContent = "<playhead>";
+      const time = document.createElement("span");
+      time.className = "mdd-time";
+      time.textContent = formatTime(entry.time);
+      item.append(label, time);
+    } else {
+      const isSelected = entry.index === selectedIdx;
+      if (isSelected) item.classList.add("marker-dropdown-selected");
+
+      const dot = document.createElement("span");
+      dot.className = "mdd-dot";
+      dot.textContent = isSelected ? "●" : "";
+
+      const time = document.createElement("span");
+      time.className = "mdd-time";
+      time.textContent = formatTime(entry.time);
+
+      item.append(dot, time);
+      item.addEventListener("click", () => {
+        selectMarkerByIndex(entry.index);
+        closeMarkerDropdown();
+      });
+    }
+
+    menu.appendChild(item);
+  }
+
+  const rect = anchorEl.getBoundingClientRect();
+  menu.style.top  = `${rect.bottom + 4}px`;
+  menu.style.left = `${rect.left}px`;
+  document.body.appendChild(menu);
+  _markerDropdown = menu;
+
+  // Close on next outside click
+  setTimeout(() => {
+    document.addEventListener("click", closeMarkerDropdown, { once: true });
+  }, 0);
+}
+
+document.getElementById("marker-time").addEventListener("click", (e) => {
   if (recording) return;
-  const idx = getSelectedMarkerIndex();
-  if (idx === -1) return;
-  selectMarkerByIndex(idx);
+  if (markers.length === 0) return;
+  showMarkerDropdown(e.currentTarget);
+  e.stopPropagation();
 });
 
 markerPrevBtn.addEventListener("click", () => {
   const idx = getSelectedMarkerIndex();
-  if (idx !== -1) {
-    if (idx <= 0) return;
-    selectMarkerByIndex(idx - 1);
-  } else {
-    let target = -1;
-    for (let i = 0; i < markers.length; i++) {
-      if (markers[i].time <= currentTimeSeconds) target = i;
-      else break;
-    }
-    if (target !== -1) selectMarkerByIndex(target);
-  }
+  if (idx <= 0) return;
+  selectMarkerByIndex(idx - 1);
 });
 
 markerNextBtn.addEventListener("click", () => {
   const idx = getSelectedMarkerIndex();
-  if (idx !== -1) {
-    if (idx === markers.length - 1) return;
-    selectMarkerByIndex(idx + 1);
-  } else {
-    const target = markers.findIndex(m => m.time > currentTimeSeconds);
-    if (target !== -1) selectMarkerByIndex(target);
-  }
+  if (idx === -1 || idx === markers.length - 1) return;
+  selectMarkerByIndex(idx + 1);
 });
 
 // Sync scrollTop from timeline → controls

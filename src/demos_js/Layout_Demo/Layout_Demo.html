@@ -223,9 +223,14 @@ Rule - Add comments before code snippets in this format:
                 <div class="track-controls">
                     <div class="track-title" contenteditable="true"></div>
                     <button class="solo-btn">S</button>
-                    <button class="delete-btn" aria-label="Delete track">⨯</button>
+                    <button class="delete-btn" aria-label="Delete track">
+                        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+                            <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                            <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                        </svg>
+                    </button>
                 </div>
-                <input type="range" class="gain-slider" min="0" max="100" value="80" />
+                <gain-slider class="gain-slider" min="0" max="100" value="80"></gain-slider>
 
                 <div class="track-scenes">
                     <button class="track-scene">A</button>
@@ -253,6 +258,7 @@ Rule - Add comments before code snippets in this format:
 
 <script src="./trackNames.js"></script>
 <script src="./onboarding.js"></script>
+<script src="./gainSlider.js"></script>
 <script src="./index.js"></script>
 
 </body>
