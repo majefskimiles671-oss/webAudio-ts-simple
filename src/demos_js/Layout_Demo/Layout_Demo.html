@@ -89,91 +89,82 @@ Rule - Add comments before code snippets in this format:
 
     <div class="transport">
 
+        <!-- LEFT: Scene selection -->
         <div id="transport-scenes">
             <button class="transport-scene">A</button>
             <button class="transport-scene">B</button>
             <button class="transport-scene">C</button>
             <button class="transport-scene">D</button>
             <button class="transport-scene">E</button>
+            <button class="transport-scene-clear" aria-label="Clear global scene" title="Clear scene selection">X</button>
+        </div>
 
-            <button class="transport-scene-clear" aria-label="Clear global scene" title="Clear scene selection">
-                X
+        <!-- CENTER: Playback controls + position -->
+        <div class="transport-center">
+            <button id="returnToBeginningBtn" aria-label="Return to beginning" title="Return to beginning">
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                    <rect x="1" y="2" width="2" height="10" fill="currentColor" />
+                    <polygon points="12,2 4,7 12,12" fill="currentColor" />
+                </svg>
             </button>
 
+            <button id="playBtn" aria-label="Play">
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                    <polygon points="3,2 12,7 3,12" fill="currentColor" />
+                </svg>
+            </button>
+
+            <button id="recordBtn" class="record-btn" aria-label="Record">
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                    <circle cx="7" cy="7" r="5" fill="currentColor" />
+                </svg>
+            </button>
+
+            <div class="timer" id="timer">00:00.0</div>
         </div>
 
+        <!-- RIGHT: Tempo, metronome, zoom, meter -->
+        <div class="transport-right">
 
-        <div class="metronome-scan">
-            <div class="metronome-line"></div>
-        </div>
+            <div class="metronome-scan">
+                <div class="metronome-line"></div>
+            </div>
 
-        <button id="returnToBeginningBtn" aria-label="Return to beginning" title="Return to beginning">
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                <rect x="1" y="2" width="2" height="10" fill="currentColor" />
-                <polygon points="12,2 4,7 12,12" fill="currentColor" />
-            </svg>
-        </button>
-
-        <button id="playBtn" aria-label="Play">
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                <polygon points="3,2 12,7 3,12" fill="currentColor" />
-            </svg>
-        </button>
-
-
-        <button id="recordBtn" class="record-btn" aria-label="Record">
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                <circle cx="7" cy="7" r="5" fill="currentColor" />
-            </svg>
-        </button>
-
-
-        <div class="timer" id="timer">00:00.0</div>
-
-
-        <div class="global-time">
-
-            <div class="tempo" id="tempoDisplay" contenteditable="true" spellcheck="false">
-                125
-            </div><span class="unit"> BPM</span>
-
-            <div class="timesig-wrapper">
-                <button id="timeSigBtn" class="timesig-btn" aria-haspopup="true" aria-expanded="false">
-                    4/4
-                </button>
-
-                <div id="timeSigMenu" class="timesig-menu">
-                    <button data-beats="4" data-note="4">4/4</button>
-                    <button data-beats="3" data-note="4">3/4</button>
-                    <button data-beats="2" data-note="4">2/4</button>
-                    <button data-beats="6" data-note="8">6/8</button>
-                    <button data-beats="12" data-note="8">12/8</button>
-                    <button data-beats="5" data-note="4">5/4</button>
-                    <button data-beats="7" data-note="8">7/8</button>
+            <div class="global-time">
+                <div class="tempo" id="tempoDisplay" contenteditable="true" spellcheck="false">125</div><span class="unit"> BPM</span>
+                <div class="timesig-wrapper">
+                    <button id="timeSigBtn" class="timesig-btn" aria-haspopup="true" aria-expanded="false">4/4</button>
+                    <div id="timeSigMenu" class="timesig-menu">
+                        <button data-beats="4" data-note="4">4/4</button>
+                        <button data-beats="3" data-note="4">3/4</button>
+                        <button data-beats="2" data-note="4">2/4</button>
+                        <button data-beats="6" data-note="8">6/8</button>
+                        <button data-beats="12" data-note="8">12/8</button>
+                        <button data-beats="5" data-note="4">5/4</button>
+                        <button data-beats="7" data-note="8">7/8</button>
+                    </div>
                 </div>
+            </div>
+
+            <div class="zoom-container">
+                <div class="zoom-slider-wrap">
+                    <input id="zoom-slider" type="range" min="0" max="4" step="1" value="2" />
+                    <div class="zoom-labels">
+                        <span data-pos="0">¼</span>
+                        <span data-pos="1">½</span>
+                        <span data-pos="2">1x</span>
+                        <span data-pos="3">2x</span>
+                        <span data-pos="4">4x</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="meter" id="meter">
+                <div class="meter-bar" id="meterBar"></div>
             </div>
 
         </div>
 
-
-
-        <div class="zoom-container">
-            <div class="zoom-slider-wrap">
-                <input id="zoom-slider" type="range" min="0" max="4" step="1" value="2" />
-
-                <div class="zoom-labels">
-                    <span data-pos="0">¼</span>
-                    <span data-pos="1">½</span>
-                    <span data-pos="2">1x</span>
-                    <span data-pos="3">2x</span>
-                    <span data-pos="4">4x</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="meter" id="meter">
-            <div class="meter-bar" id="meterBar"></div>
-        </div>
     </div>
 
 

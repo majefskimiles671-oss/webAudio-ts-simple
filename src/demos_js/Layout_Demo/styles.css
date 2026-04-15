@@ -69,14 +69,25 @@
             padding: 0 16px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 0;
             background: var(--bg-panel);
             border-bottom: 1px solid var(--border-subtle);
         }
 
-        /* Transport group separators */
-        .metronome-scan       { margin-left: 16px; }
-        #returnToBeginningBtn { margin-left: 16px; }
+        /* Three-zone transport layout */
+        .transport-center {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .transport-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: flex-end;
+        }
 
         #returnToBeginningBtn:active,
         #returnToBeginningBtn.pressed {
@@ -84,9 +95,6 @@
             color: var(--bg-app);
             transform: scale(0.92);
         }
-        .global-time          { margin-left: 16px; }
-        .zoom-container       { margin-left: 16px; }
-        .meter                { margin-left: auto; }
 
         .transport button {
             padding: 6px 12px;
@@ -114,6 +122,7 @@
 
 
         #transport-scenes {
+            flex: 1;
             display: flex;
             gap: 6px;
             align-items: center;
@@ -314,7 +323,6 @@
             border-radius: 3px;
             overflow: hidden;
             display: block;
-            margin-left: auto;
             opacity: 0.35;
             transition: opacity 0.2s ease;
         }
