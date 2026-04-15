@@ -151,6 +151,12 @@
             opacity: 0.35;
         }
 
+        /* Solo overrides scene mask for the soloed track */
+        .layout-root:has(.solo-btn.active) .control-row:not(.not-in-solo).not-in-scene,
+        .layout-root:has(.solo-btn.active) .timeline-row:not(.not-in-solo).not-in-scene {
+            opacity: 1;
+        }
+
 .record-btn.recording {
             background: #ff3b30;
             color: var(--text-main);
@@ -487,6 +493,10 @@
             cursor: not-allowed;
         }
 
+        #controls-scroll-column:has(.solo-btn.active) .solo-btn:not(.active) {
+            display: none;
+        }
+
         .delete-btn {
             padding: 2px 6px;
             cursor: pointer;
@@ -772,8 +782,19 @@
 
         .recording-lane.control-row .row-inner {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 2px;
+        }
+
+        .recording-lane.control-row .row-inner::before {
+            content: "Recording for track:";
+            font-size: 10px;
+            color: var(--text-muted);
+            font-style: normal;
+            letter-spacing: 0.03em;
+            opacity: 0.8;
         }
 
         .recording-lane.control-row .track-title {

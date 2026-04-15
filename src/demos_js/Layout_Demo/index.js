@@ -113,7 +113,7 @@ let timeSignature = {
   noteValue: 4,
 };
 
-let markers = [{ id: 0, time: 0 }]; // [{ id, time }]
+let markers = []; //[{ id: 0, time: 0 }]; // [{ id, time }]
 let selectedMarkerId = 0;
 
 //  Musical Grid
@@ -1597,4 +1597,5 @@ renderTimelineLayer();
 renderTempo();
 renderTimeSignature();
 renderMetronomeGrid();
+renderMarkerTransport();
 startOnboarding();
