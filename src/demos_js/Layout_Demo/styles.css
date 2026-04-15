@@ -1388,9 +1388,9 @@
             border-color: var(--accent-primary);
         }
 
-        /* Demo Intro Popup */
+        /* Demo Sequence Popup */
 
-        #demo-intro-overlay {
+        .demo-seq-overlay {
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, 0.5);
@@ -1400,36 +1400,65 @@
             justify-content: center;
         }
 
-        #demo-intro-card {
+        .demo-seq-card {
             background: var(--bg-panel);
             border: 1px solid var(--border-subtle);
             border-radius: 10px;
-            padding: 24px;
-            max-width: 360px;
+            padding: 28px;
+            max-width: 380px;
+            width: 100%;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
 
-        #demo-intro-text {
-            margin: 0 0 20px;
-            font-size: 14px;
-            line-height: 1.6;
+        .demo-seq-eyebrow {
+            margin: 0 0 6px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent-primary);
+        }
+
+        .demo-seq-title {
+            margin: 0 0 10px;
+            font-size: 18px;
+            font-weight: 700;
             color: var(--text-main);
         }
 
-        #demo-intro-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
+        .demo-seq-description {
+            margin: 0 0 22px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-muted);
         }
 
-        #demo-intro-actions button {
+        .demo-seq-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .demo-seq-actions button {
             padding: 6px 16px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
         }
 
-        #demo-intro-run {
+        .demo-seq-cancel {
+            background: transparent;
+            border-color: var(--border-subtle);
+            color: var(--text-muted);
+        }
+
+        .demo-seq-skip {
+            background: var(--bg-surface);
+            border-color: var(--border-subtle);
+            color: var(--text-main);
+        }
+
+        .demo-seq-run {
             background: var(--accent-primary);
             border-color: var(--accent-primary);
             color: #000;

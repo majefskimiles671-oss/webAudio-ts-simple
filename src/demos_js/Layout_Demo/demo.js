@@ -1,5 +1,5 @@
 // demo.js
-// Demo - Scripted UI Demonstration - Shared Primitives -----
+// Demo - Scripted UI Demonstration - Shared Primitives + Sequence Controller -----
 
 // Cursor SVG — classic arrow, hotspot at top-left tip
 const CURSOR_SVG = `<svg width="22" height="22" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
@@ -64,7 +64,6 @@ async function demoClick(el) {
 
 // ---- Higher-level Interaction Utilities
 
-// Type text character-by-character into a contenteditable element
 async function demoType(el, text, msPerChar = 75) {
   if (_demoAborted) return;
   await moveTo(el);
@@ -81,7 +80,6 @@ async function demoType(el, text, msPerChar = 75) {
   await wait(250);
 }
 
-// Type text into a <textarea>, firing input events so auto-expand works
 async function demoTypeTextarea(el, text, msPerChar = 65) {
   if (_demoAborted) return;
   await moveTo(el);
@@ -96,7 +94,6 @@ async function demoTypeTextarea(el, text, msPerChar = 65) {
   await wait(300);
 }
 
-// Smoothly animate a gain-slider custom element to a target value
 async function demoAnimateGain(gainEl, targetValue, duration = 900) {
   if (_demoAborted) return;
   await moveTo(gainEl);
@@ -114,73 +111,31 @@ async function demoAnimateGain(gainEl, targetValue, duration = 900) {
   });
 }
 
-// Scrub the playhead to a time position by simulating a timeline click
 async function demoScrubTo(seconds) {
   if (_demoAborted) return;
   const timelineArea  = document.getElementById("timeline-area");
   const timelineInner = document.getElementById("timeline-inner");
-
   const targetPx  = seconds * BASE_PPS * zoom;
   const innerRect = timelineInner.getBoundingClientRect();
   const areaRect  = timelineArea.getBoundingClientRect();
-
   const clientX = Math.max(areaRect.left + 10, Math.min(areaRect.right - 10, innerRect.left + targetPx));
   const clientY = areaRect.top + areaRect.height * 0.4;
-
   if (_demoCursor) {
     _demoCursor.style.transition = "left 700ms cubic-bezier(0.25,0.46,0.45,0.94), top 700ms cubic-bezier(0.25,0.46,0.45,0.94)";
     _demoCursor.style.left = `${clientX}px`;
     _demoCursor.style.top  = `${clientY}px`;
     await wait(750);
   }
-
   timelineArea.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, clientX, clientY }));
   await wait(80);
   document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
   await wait(200);
 }
 
-// Returns promoted (non-recording-lane) control rows, top-first
 function getTrackRows() {
   return Array.from(
     document.querySelectorAll("#controls-scroll-column .control-row:not(.recording-lane)")
   );
-}
-
-// ---- Intro Popup
-
-function showDemoIntro(description, onConfirm) {
-  const overlay = document.createElement("div");
-  overlay.id = "demo-intro-overlay";
-  overlay.innerHTML = `
-    <div id="demo-intro-card">
-      <p id="demo-intro-text">${description}</p>
-      <div id="demo-intro-actions">
-        <button id="demo-intro-cancel">Cancel</button>
-        <button id="demo-intro-run">Run Demo</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  overlay.querySelector("#demo-intro-run").addEventListener("click", () => { overlay.remove(); onConfirm(); });
-  overlay.querySelector("#demo-intro-cancel").addEventListener("click", () => overlay.remove());
-}
-
-// ---- Basic Record/Play Demo
-
-async function runDemo() {
-  _demoAborted = false;
-  const recordBtn = document.getElementById("recordBtn");
-  const playBtn   = document.getElementById("playBtn");
-  const start = getCenter(recordBtn);
-  createDemoCursor(start.x - 120, start.y + 60);
-  await wait(400);
-  await demoClick(recordBtn);
-  await wait(600);
-  await demoClick(playBtn);
-  await wait(5000);
-  await demoClick(playBtn);
-  await wait(600);
-  removeDemoCursor();
 }
 
 // ---- Abort on Escape
@@ -192,13 +147,132 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// ---- Menu Wiring
+// ---- Demo Sequence
+
+const DEMO_SEQUENCE = [
+  {
+    title: "Record & Mix the Chorus",
+    description: "Record a chorus section with two acoustic guitar parts and a lead vocal, navigate markers, then refine the mix with gain, solo, scrubbing, and scenes.",
+    run: () => runChorusDemo(),
+  },
+  {
+    title: "Record & Add Notes",
+    description: "Name a track, record a clip, play it back, drop a marker, and write notes.",
+    run: () => runRecordAndNotesDemo(),
+  },
+];
+
+function showDemoSequencePopup(index) {
+  if (index >= DEMO_SEQUENCE.length) {
+    showCompletionPopup();
+    return;
+  }
+
+  const demo    = DEMO_SEQUENCE[index];
+  const isFirst = index === 0;
+
+  const overlay = document.createElement("div");
+  overlay.className = "demo-seq-overlay";
+  overlay.innerHTML = `
+    <div class="demo-seq-card">
+      <p class="demo-seq-eyebrow">${isFirst ? "Welcome to BareTrack" : "Up Next"}</p>
+      <p class="demo-seq-title">${demo.title}</p>
+      <p class="demo-seq-description">${demo.description}</p>
+      <div class="demo-seq-actions">
+        <button class="demo-seq-cancel">Cancel</button>
+        <button class="demo-seq-skip">Skip</button>
+        <button class="demo-seq-run">Show Demo</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector(".demo-seq-cancel").addEventListener("click", () => {
+    overlay.remove();
+  });
+
+  overlay.querySelector(".demo-seq-skip").addEventListener("click", () => {
+    overlay.remove();
+    showDemoSequencePopup(index + 1);
+  });
+
+  overlay.querySelector(".demo-seq-run").addEventListener("click", async () => {
+    overlay.remove();
+    await demo.run();
+    showDemoSequencePopup(index + 1);
+  });
+}
+
+function showDemoComplete() {
+  const overlay = document.createElement("div");
+  overlay.className = "demo-seq-overlay";
+  overlay.innerHTML = `
+    <div class="demo-seq-card">
+      <p class="demo-seq-eyebrow">Finished</p>
+      <p class="demo-seq-title">Demo complete.</p>
+      <p class="demo-seq-description">Now it's your turn — the controls are all yours.</p>
+      <div class="demo-seq-actions">
+        <button class="demo-seq-run">Got it</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector(".demo-seq-run").addEventListener("click", () => overlay.remove());
+}
+
+function showCompletionPopup() {
+  const overlay = document.createElement("div");
+  overlay.className = "demo-seq-overlay";
+  overlay.innerHTML = `
+    <div class="demo-seq-card">
+      <p class="demo-seq-eyebrow">All done!</p>
+      <p class="demo-seq-title">You've seen everything.</p>
+      <p class="demo-seq-description">You can replay any demo from the View menu whenever you like.</p>
+      <div class="demo-seq-actions">
+        <button class="demo-seq-run">Got it</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector(".demo-seq-run").addEventListener("click", () => overlay.remove());
+}
+
+// Legacy single-demo intro (used by individual menu items)
+function showDemoIntro(description, onConfirm) {
+  clearTimeout(_sequenceAutoStartId);
+  _sequenceAutoStartId = null;
+  document.querySelectorAll(".demo-seq-overlay").forEach(el => el.remove());
+  const overlay = document.createElement("div");
+  overlay.className = "demo-seq-overlay";
+  overlay.innerHTML = `
+    <div class="demo-seq-card">
+      <p class="demo-seq-description">${description}</p>
+      <div class="demo-seq-actions">
+        <button class="demo-seq-cancel">Cancel</button>
+        <button class="demo-seq-run">Run Demo</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector(".demo-seq-run").addEventListener("click", () => { overlay.remove(); onConfirm(); });
+  overlay.querySelector(".demo-seq-cancel").addEventListener("click", () => overlay.remove());
+}
+
+// ---- Startup + Menu Wiring
+
+let _sequenceAutoStartId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("run-demo").addEventListener("click", () =>
-    showDemoIntro(
-      "A scripted cursor will arm the track for recording, start playback, then stop after a few seconds.",
-      runDemo
-    )
+  // Auto-start the sequence after a short pause
+  _sequenceAutoStartId = setTimeout(() => showDemoSequencePopup(0), 3000);
+
+  // Individual menu items
+  async function runAndComplete(fn) {
+    try { await fn(); } catch(e) { console.error("Demo error:", e); }
+    showDemoComplete();
+  }
+
+  document.getElementById("run-demo-chorus").addEventListener("click", () =>
+    showDemoIntro(DEMO_SEQUENCE[0].description, () => runAndComplete(runChorusDemo))
+  );
+  document.getElementById("run-demo-record-and-notes").addEventListener("click", () =>
+    showDemoIntro(DEMO_SEQUENCE[1].description, () => runAndComplete(runRecordAndNotesDemo))
   );
 });

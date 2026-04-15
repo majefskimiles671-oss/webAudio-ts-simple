@@ -19,15 +19,15 @@ async function runRecordAndNotesDemo() {
   // ---- Step 1: Rename the recording lane track
   const laneTitle = document.querySelector(".recording-lane.control-row .track-title");
   if (laneTitle && !_demoAborted) {
-    await demoType(laneTitle, "Chorus Vox");
+    await demoType(laneTitle, "Chorus Vox - take 1");
   }
   await wait(400);
 
-  // ---- Step 2: Record for 10 seconds
+  // ---- Step 2: Record for 5 seconds
   await demoClick(recordBtn);  // arm
   await wait(500);
   await demoClick(playBtn);    // start
-  await wait(10000);
+  await wait(5000);
   await demoClick(playBtn);    // stop
   await wait(700);
 
@@ -52,35 +52,42 @@ async function runRecordAndNotesDemo() {
 
   await wait(600);
 
-  // Stop playback before showing the outro
+  // Stop playback
   if (document.getElementById("playBtn").classList.contains("active")) {
     await demoClick(playBtn);
     await wait(400);
   }
 
+  // ---- Step 6: Delete the track
+  const promotedRows = getTrackRows();
+  if (promotedRows.length && !_demoAborted) {
+    const deleteBtn = promotedRows[0].querySelector(".delete-btn");
+    if (deleteBtn) {
+      await demoClick(deleteBtn);
+      await wait(500);
+    }
+  }
+
+  // ---- Step 7: Delete the selected marker
+  const markerDeleteBtn = document.getElementById("marker-delete");
+  if (markerDeleteBtn && !markerDeleteBtn.disabled && !_demoAborted) {
+    await demoClick(markerDeleteBtn);
+    await wait(400);
+  }
+
+  // ---- Step 8: Clear the notes on the origin marker
+  const originPanelRow = document.querySelector(".panel-marker-row.selected");
+  if (originPanelRow && !_demoAborted) {
+    const ta = originPanelRow.querySelector(".panel-marker-note");
+    if (ta && ta.value) {
+      await moveTo(ta);
+      await wait(300);
+      ta.focus();
+      ta.value = "";
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+      await wait(400);
+    }
+  }
+
   removeDemoCursor();
-  showDemoOutro("Now that you know how to record a track and take notes - it's your turn to create!");
 }
-
-function showDemoOutro(message) {
-  const overlay = document.createElement("div");
-  overlay.id = "demo-intro-overlay";
-  overlay.innerHTML = `
-    <div id="demo-intro-card">
-      <p id="demo-intro-text">${message}</p>
-      <div id="demo-intro-actions">
-        <button id="demo-intro-run">Let's go!</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  overlay.querySelector("#demo-intro-run").addEventListener("click", () => overlay.remove());
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("run-demo-record-and-notes").addEventListener("click", () =>
-    showDemoIntro(
-      "Watch how to name a track, record a clip, play it back, drop a marker, and add notes.",
-      runRecordAndNotesDemo
-    )
-  );
-});
