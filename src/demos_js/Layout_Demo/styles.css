@@ -379,6 +379,7 @@
             border-radius: 5px;
             background: color-mix(in oklab, var(--accent-primary) 8%, transparent);
             border-left: 3px solid var(--accent-primary);
+            border-right: 3px solid var(--accent-primary);
         }
 
         .marker-time:hover {
@@ -1360,6 +1361,11 @@
             font-variant-numeric: tabular-nums;
             color: var(--accent-primary);
             padding-top: 5px;
+            cursor: pointer;
+        }
+
+        .panel-marker-time:hover {
+            text-decoration: underline;
         }
 
         .panel-marker-note {

@@ -1680,6 +1680,7 @@ function renderBottomPanel() {
     const timeEl = document.createElement("div");
     timeEl.className = "panel-marker-time";
     timeEl.textContent = formatTime(marker.time);
+    timeEl.addEventListener("click", () => selectMarkerByIndex(markers.indexOf(marker)));
 
     const textarea = document.createElement("textarea");
     textarea.className = "panel-marker-note";
