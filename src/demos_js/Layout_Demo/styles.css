@@ -74,20 +74,23 @@
             border-bottom: 1px solid var(--border-subtle);
         }
 
-        /* Three-zone transport layout */
-        .transport-center {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .transport-right {
+        /* Five-group transport layout */
+        #transport-scenes,
+        .marker-transport,
+        .transport-playback,
+        .transport-tempo,
+        .transport-zoom {
             flex: 1;
             display: flex;
             align-items: center;
-            gap: 12px;
-            justify-content: flex-end;
+            gap: 6px;
         }
+
+        #transport-scenes   { justify-content: flex-start; }
+        .marker-transport   { justify-content: center; }
+        .transport-playback { justify-content: center; gap: 8px; }
+        .transport-tempo    { justify-content: center; gap: 10px; }
+        .transport-zoom     { justify-content: flex-end; }
 
         #returnToBeginningBtn:active,
         #returnToBeginningBtn.pressed {
@@ -121,12 +124,6 @@
         }
 
 
-        #transport-scenes {
-            flex: 1;
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
 
         .transport-scene {
             width: 26px;
@@ -298,8 +295,8 @@
         /* Meter */
 
         .meter {
-            width: 120px;
-            height: 12px;
+            width: 100%;
+            height: 10px;
             background: var(--bg-app);
             border: 1px solid var(--border-subtle);
             border-radius: 3px;
@@ -346,7 +343,7 @@
             background: var(--bg-panel);
             display: flex;
             align-items: center;
-            justify-content: center;
+            padding: 0 10px;
         }
 
         #controls-scroll-column {

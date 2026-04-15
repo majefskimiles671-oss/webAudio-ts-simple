@@ -89,7 +89,7 @@ Rule - Add comments before code snippets in this format:
 
     <div class="transport">
 
-        <!-- LEFT: Scene selection -->
+        <!-- Group 1: Global scene buttons (left-aligned) -->
         <div id="transport-scenes">
             <button class="transport-scene">A</button>
             <button class="transport-scene">B</button>
@@ -98,37 +98,51 @@ Rule - Add comments before code snippets in this format:
             <button class="transport-scene">E</button>
         </div>
 
-        <!-- CENTER: Playback controls + position -->
-        <div class="transport-center">
+        <!-- Group 2: Marker transport -->
+        <div class="marker-transport">
+            <button id="marker-add" title="Add marker at playhead">
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                    <line x1="6" y1="1" x2="6" y2="11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <button id="marker-prev" title="Previous marker">◀</button>
+            <div id="marker-time" class="marker-time" title="Jump to marker">—</div>
+            <button id="marker-next" title="Next marker">▶</button>
+            <button id="marker-delete" disabled title="Delete marker">
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                    <line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="10" y1="2" x2="2" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Group 3: Global transport + timer -->
+        <div class="transport-playback">
             <button id="returnToBeginningBtn" aria-label="Return to beginning" title="Return to beginning">
                 <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
                     <rect x="1" y="2" width="2" height="10" fill="currentColor" />
                     <polygon points="12,2 4,7 12,12" fill="currentColor" />
                 </svg>
             </button>
-
             <button id="playBtn" aria-label="Play">
                 <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
                     <polygon points="3,2 12,7 3,12" fill="currentColor" />
                 </svg>
             </button>
-
             <button id="recordBtn" class="record-btn" aria-label="Record">
                 <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
                     <circle cx="7" cy="7" r="5" fill="currentColor" />
                 </svg>
             </button>
-
             <div class="timer" id="timer">00:00.0</div>
         </div>
 
-        <!-- RIGHT: Tempo, metronome, zoom, meter -->
-        <div class="transport-right">
-
+        <!-- Group 4: Metronome + BPM + Time signature -->
+        <div class="transport-tempo">
             <div class="metronome-scan">
                 <div class="metronome-line"></div>
             </div>
-
             <div class="global-time">
                 <div class="tempo" id="tempoDisplay" contenteditable="true" spellcheck="false">125</div><span class="unit"> BPM</span>
                 <div class="timesig-wrapper">
@@ -144,7 +158,10 @@ Rule - Add comments before code snippets in this format:
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Group 5: Zoom controls (right-aligned) -->
+        <div class="transport-zoom">
             <div class="zoom-container">
                 <div class="zoom-slider-wrap">
                     <input id="zoom-slider" type="range" min="0" max="4" step="1" value="2" />
@@ -157,11 +174,6 @@ Rule - Add comments before code snippets in this format:
                     </div>
                 </div>
             </div>
-
-            <div class="meter" id="meter">
-                <div class="meter-bar" id="meterBar"></div>
-            </div>
-
         </div>
 
     </div>
@@ -170,27 +182,9 @@ Rule - Add comments before code snippets in this format:
     <div class="layout-root">
         <div id="controls-column">
             <div id="controls-column-spacer">
-
-                <div class="marker-transport">
-                    <button id="marker-add" title="Add marker at playhead">
-                        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-                            <line x1="6" y1="1" x2="6" y2="11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </button>
-
-                    <button id="marker-prev" title="Previous marker">◀</button>
-                    <div id="marker-time" class="marker-time" title="Jump to marker">—</div>
-                    <button id="marker-next" title="Next marker">▶</button>
-
-                    <button id="marker-delete" disabled title="Delete marker">
-                        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-                            <line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            <line x1="10" y1="2" x2="2" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </button>
+                <div class="meter" id="meter">
+                    <div class="meter-bar" id="meterBar"></div>
                 </div>
-
             </div>
             <div id="controls-scroll-column"></div>
         </div>

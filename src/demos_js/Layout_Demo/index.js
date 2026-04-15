@@ -991,6 +991,13 @@ function syncTimelineMinWidth() {
   timelineInner.style.minWidth = `${secondsToPixels(minSeconds)}px`;
 }
 
+function ensureTimelineWidth(px) {
+  const buffer = timelineArea.clientWidth;
+  if (px + buffer > timelineInner.scrollWidth) {
+    timelineInner.style.minWidth = `${px + buffer * 2}px`;
+  }
+}
+
 // ============================================================
 // Event Handlers (Intent Layer)  -----
 // ============================================================
@@ -1408,6 +1415,9 @@ function updatePlayhead() {
   if (recording) {
     updateRecordRange();
   }
+
+  // extend timeline if playhead is approaching the right edge
+  ensureTimelineWidth(x);
 
   // scroll
   const right = timelineArea.scrollLeft + timelineArea.clientWidth;
