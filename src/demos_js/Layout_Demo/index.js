@@ -847,7 +847,6 @@ function renderMarkerTransport() {
   const idx = getSelectedMarkerIndex();
   const isOrigin = idx !== -1 && markers[idx].id === ORIGIN_MARKER_ID;
 
-  markerAddBtn.disabled = isOrigin;
   markerDeleteBtn.disabled = idx === -1 || isOrigin;
 
   const display = document.getElementById("marker-time");

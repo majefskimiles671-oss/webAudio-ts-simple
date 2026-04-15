@@ -375,8 +375,10 @@
         .marker-time {
             display: inline;
             cursor: pointer;
-            padding: 2px 4px;
-            border-radius: 3px;
+            padding: 2px 8px;
+            border-radius: 5px;
+            background: color-mix(in oklab, var(--accent-primary) 8%, transparent);
+            border-left: 3px solid var(--accent-primary);
         }
 
         .marker-time:hover {
@@ -495,7 +497,7 @@
         }
 
         #controls-scroll-column:has(.solo-btn.active) .solo-btn:not(.active) {
-            display: none;
+            visibility: hidden;
         }
 
         .delete-btn {
