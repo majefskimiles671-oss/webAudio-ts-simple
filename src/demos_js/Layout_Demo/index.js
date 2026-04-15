@@ -121,7 +121,7 @@ let selectedMarkerId = null;
 let bpm = 120; // beats per minute
 let beatsPerBar = timeSignature.beats; // kept in sync with timeSignature.beats
 
-let trackCount = 10;
+let trackCount = 0;
 
 //  Transport State
 let playing = false;
@@ -267,12 +267,16 @@ function getPlayheadX() {
 
 let _trackNamePool = [];
 
+const NUMBER_WORDS = [
+  "one", "two", "three", "four", "five",
+  "six", "seven", "eight", "nine", "ten",
+  "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+  "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+];
+
 function pickTrackName() {
-  if (_trackNamePool.length === 0) {
-    _trackNamePool = [...TRACK_NAMES].sort(() => Math.random() - 0.5);
-  }
-  const entry = _trackNamePool.pop();
-  return typeof entry === "string" ? { name: entry, definition: null } : entry;
+  const word = NUMBER_WORDS[trackCount - 1] ?? trackCount;
+  return { name: `track ${word}`, definition: null };
 }
 
 function formatTime(s) {
@@ -1722,12 +1726,12 @@ for (let i = 0; i < trackCount; i++) {
 }
 createRecordingLane();
 
-markers.push({ id: ORIGIN_MARKER_ID, time: 0, note: "Intro starts here" });
-markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 4, note: "" });
-markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 8, note: "Chorus begins\nBig energy here\nDon't forget the drop\nRide it out to bar 12" });
+markers.push({ id: ORIGIN_MARKER_ID, time: secondsPerBar() * 0, note: "" });
+// markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 4, note: "" });
+// markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 8, note: "Chorus begins\nBig energy here\nDon't forget the drop\nRide it out to bar 12" });
 selectedMarkerId = ORIGIN_MARKER_ID;
 
-document.body.setAttribute("data-theme", "light");
+document.body.setAttribute("data-theme", "earth");
 
 updateMeter();
 syncTimelineOverlayWidth();

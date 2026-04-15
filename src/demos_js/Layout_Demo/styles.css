@@ -1304,7 +1304,7 @@
 
         #bottom-panel {
             flex-shrink: 0;
-            height: 300px;
+            height: 150px;
             background: var(--bg-panel);
             border-top: 1px solid var(--border-subtle);
             display: flex;

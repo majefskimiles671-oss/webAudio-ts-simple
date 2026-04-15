@@ -76,3 +76,12 @@ session.curvatureSamples // how many mouse path samples collected
  - Scenes
     - scenes on tracks, add, remove during playback
     - global scenes, select deselect during playback and while stopped
+
+### Demo Record and add notes - do these in the order written
+ - change track name in the recording lane
+ - record for 10 seconds
+ - hit return to beginning
+ - start play back and wait 2 seconds
+ - add a marker then add a note to it that says "I love you \nand you love me \nbut we don't speak the same language \nexcept the language of love"
+ - popup that says "Now it's your turn!"
+
