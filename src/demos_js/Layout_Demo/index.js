@@ -738,13 +738,11 @@ function renderMetronomeGrid() {
   const scan = document.querySelector(".metronome-scan");
   const width = scan.clientWidth;
   const tickSpacing = width / beatsPerBar;
-  scan.style.backgroundImage = `repeating-linear-gradient(90deg, var(--text-button), var(--text-button) 2px, transparent 2px, transparent ${tickSpacing}px)`;
+  scan.style.backgroundImage = `repeating-linear-gradient(90deg, var(--border-subtle), var(--border-subtle) 1px, transparent 1px, transparent ${tickSpacing}px)`;
 }
 
 function renderMetronomeScan() {
   const t = getPlayheadTime(); // seconds
-  const spb = secondsPerBeat(); // already defined
-
   const spbar = secondsPerBar();
   const phase = (t / spbar) % 1; // bar mode
 
@@ -1341,7 +1339,11 @@ zoomSlider.oninput = () => {
   ensurePlayheadInViewCentered();
 };
 
-returnToBeginningBtn.onclick = () => returnToBeginning();
+returnToBeginningBtn.onclick = () => {
+  returnToBeginning();
+  returnToBeginningBtn.classList.add("pressed");
+  setTimeout(() => returnToBeginningBtn.classList.remove("pressed"), 180);
+};
 
 playBtn.onclick = () => {
   recordInteraction("transport");

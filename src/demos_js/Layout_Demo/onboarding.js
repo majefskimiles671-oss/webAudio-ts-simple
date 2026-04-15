@@ -4,30 +4,41 @@
 // Onboarding -----
 // ============================================================
 
+// const ONBOARDING_STEPS = [
+//   {
+//     targets: [".recording-lane.control-row", ".recording-lane.timeline-row"],
+//     text: "This is the recording lane, where recordings go first. The default track names are very clever. Click the name to edit it. Then click next",
+//   },
+//   {
+//     target: "#recordBtn",
+//     text: "Use the record button to arm recording. Click it now.Then click next.",
+//   },
+//   {
+//     target: "#meter",
+//     text: "When recording is armed, this meter will show the input level.  Try making some noise to see it react.",
+//   },
+//   {
+//     target: "#playBtn",
+//     text: "Use the play button to start the recording. Click it now. Then Click Next.",
+//   },
+//   {
+//     target: "#playBtn",
+//     text: "Click the play button again to stop the recording. Click it now. Then Click Next.",
+//   },
+//   {
+//     target: "#returnToBeginningBtn",
+//     text: "Use the return to beginning button to reset the playback position. Then Click Next.",
+//   },
+// ];
+
 const ONBOARDING_STEPS = [
   {
-    target: ".recording-lane",
-    text: "This is the recording lane.  This is the one place where you can record audio.  You can have as many tracks as you want, but only one recording lane.",
+    targets: [".recording-lane.control-row", ".recording-lane.timeline-row"],
+    text: "This is the recording lane, where recordings go first. The default track names are very clever. Click the name to edit it. Then click next",
   },
   {
-    target: "#recordBtn",
-    text: "Use the record button to arm recording. Click it now.",
-  },
-  {
-    target: "#meter",
-    text: "When recording is armed, this meter will show the input level.  Try making some noise to see it react.",
-  },
-  {
-    target: "#playBtn",
-    text: "Use the play button to start the recording. Click it now.",
-  },
-  {
-    target: "#playBtn",
-    text: "Click the play button again to stop the recording. Click it now.",
-  },
-  {
-    target: "#returnToBeginningBtn",
-    text: "Use the return to beginning button to reset the playback position.",
+    targets: ["#recordBtn", "#playBtn", "#returnToBeginningBtn"],
+    text: "Use the record button to arm recording. The play button begins and ends recording when record is armed.",
   },
 ];
 
@@ -76,15 +87,21 @@ function startOnboarding() {
   }
 
   function show(index) {
-    const { target, text } = ONBOARDING_STEPS[index];
-    const el = document.querySelector(target);
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
+    const { target, targets, text } = ONBOARDING_STEPS[index];
+    const selectors = targets ?? [target];
+    const rects = selectors.map(s => document.querySelector(s)).filter(Boolean).map(el => el.getBoundingClientRect());
+    if (!rects.length) return;
+    const rect = {
+      left:   Math.min(...rects.map(r => r.left)),
+      top:    Math.min(...rects.map(r => r.top)),
+      right:  Math.max(...rects.map(r => r.right)),
+      bottom: Math.max(...rects.map(r => r.bottom)),
+    };
     const pad = 8;
-    spotlight.style.left   = `${rect.left   - pad}px`;
-    spotlight.style.top    = `${rect.top    - pad}px`;
-    spotlight.style.width  = `${rect.width  + pad * 2}px`;
-    spotlight.style.height = `${rect.height + pad * 2}px`;
+    spotlight.style.left   = `${rect.left - pad}px`;
+    spotlight.style.top    = `${rect.top  - pad}px`;
+    spotlight.style.width  = `${rect.right  - rect.left + pad * 2}px`;
+    spotlight.style.height = `${rect.bottom - rect.top  + pad * 2}px`;
     document.getElementById("onboarding-text").textContent = text;
     document.getElementById("onboarding-counter").textContent = `${index + 1} / ${ONBOARDING_STEPS.length}`;
     document.getElementById("onboarding-next").textContent =
