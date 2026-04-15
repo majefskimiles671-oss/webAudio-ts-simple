@@ -51,3 +51,28 @@ getSessionScore()        // 0–1 overall
 session.actionCounts     // breakdown by type
 session.curvatureSamples // how many mouse path samples collected
 ---
+
+
+### Demos - each script should be in it's own file
+*** Please combine these items into 1 or 2 scripts that tell a story of creating a chorus with 2 acoustic guitar parts and 1 vocal part ***
+ - Recording
+    - simple case: change track name to "Vox 1" then record one clip in a track
+    - multiple clips into the same track (add a marker on the fly before each recording piece)
+ - Markers
+    - Adding both ways
+    - deleting
+    - Making a bunch of markers and then deleting a bunch of markers
+    - navigating by marker
+    - selecting markers
+ - Notes Panel
+    - Adding notes on a marker
+    - Navigating to a marker
+    - Deleting a marker to show what happens to the notes
+ - Playback
+    - return to beginning
+    - scrub
+    - solo
+    - gain tweaking
+ - Scenes
+    - scenes on tracks, add, remove during playback
+    - global scenes, select deselect during playback and while stopped

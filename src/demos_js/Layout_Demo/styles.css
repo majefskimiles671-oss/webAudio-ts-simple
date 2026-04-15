@@ -1388,6 +1388,24 @@
             border-color: var(--accent-primary);
         }
 
+        /* Demo Cursor */
+
+        #demo-cursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            width: 22px;
+            height: 22px;
+            filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+            transition: none;
+        }
+
+        #demo-cursor.demo-cursor-clicking {
+            transform: scale(0.82);
+            filter: drop-shadow(0 0 8px var(--accent-primary));
+            transition: transform 0.1s ease, filter 0.1s ease;
+        }
+
         /* Onboarding */
 
         @keyframes onboarding-fade-in {
