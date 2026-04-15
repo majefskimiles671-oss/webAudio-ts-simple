@@ -951,7 +951,7 @@
             /* Text */
             --text-main: #fef2f2;
             --text-muted: #fca5a5;
-            --text-button: #1f0a06;
+            --text-button: #fef2f2;
 
             /* UI chrome */
             --border-subtle: #7c2d12;
@@ -965,7 +965,7 @@
             --waveform-a: #4a1a14;
             --waveform-b: #5c241c;
 
-            --bg-button: #120f0f;
+            --bg-button: #6b1e14;
         }
 
         body[data-theme="Earth"] {
