@@ -179,15 +179,16 @@ Rule - Add comments before code snippets in this format:
                         </svg>
                     </button>
 
-                    <button id="marker-first">|◀</button>
-                    <button id="marker-prev">◀</button>
+                    <button id="marker-prev" title="Previous marker">◀</button>
+                    <div id="marker-time" class="marker-time" title="Jump to marker">—</div>
+                    <button id="marker-next" title="Next marker">▶</button>
 
-                    <div id="marker-time" class="marker-time" title="Go to marker">—</div>
-
-                    <button id="marker-next">▶</button>
-                    <button id="marker-last">▶|</button>
-
-                    <button id="marker-delete" disabled>⨯</button>
+                    <button id="marker-delete" disabled title="Delete marker">
+                        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                            <line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="10" y1="2" x2="2" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
                 </div>
 
             </div>
@@ -204,6 +205,7 @@ Rule - Add comments before code snippets in this format:
                         <canvas id="timeline-ruler-canvas"></canvas>
                         <div id="record-range"></div>
                         <div id="timeline-markers"></div>
+                        <div id="ruler-playhead"></div>
                     </div>
                 </div>
 

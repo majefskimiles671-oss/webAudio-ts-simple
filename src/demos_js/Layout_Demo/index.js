@@ -137,6 +137,10 @@ let playbackStartX = 0; // px offset where playback begins
 function jumpPlayheadToTime(seconds) {
   const px = secondsToPixels(seconds);
   setPlayheadPositionPx(px);
+  if (playing) {
+    playbackStartX = px;
+    startTime = performance.now();
+  }
 }
 
 function secondsToPixels(seconds) {
@@ -150,6 +154,11 @@ function pixelsToSeconds(px) {
 // ----- Marker Helpers
 function getSelectedMarkerIndex() {
   return markers.findIndex((m) => m.id === selectedMarkerId);
+}
+
+function findNearbyMarker(time, thresholdPx = 8) {
+  const thresholdSec = thresholdPx / (BASE_PPS * zoom);
+  return markers.find((m) => Math.abs(m.time - time) <= thresholdSec) ?? null;
 }
 
 function secondsPerBeat() {
@@ -605,8 +614,6 @@ function renderTimelineRuler() {
 
   const borderSubtle = style.getPropertyValue("--border-subtle").trim();
 
-  const accentPrimary = style.getPropertyValue("--accent-Primary").trim();
-
   const contentWidth = timelineInner.scrollWidth;
   const viewWidth = timelineArea.clientWidth;
 
@@ -710,21 +717,6 @@ function renderTimelineRuler() {
     }
   }
 
-  // ==========================
-  // PLAYHEAD LINE
-  // ==========================
-
-  if (getTransportState() !== "IDLE") {
-    const playheadX = getPlayheadX();
-
-    rulerCtx.strokeStyle = accentPrimary;
-    rulerCtx.lineWidth = 1;
-
-    rulerCtx.beginPath();
-    rulerCtx.moveTo(playheadX + 0.5, 0);
-    rulerCtx.lineTo(playheadX + 0.5, height);
-    rulerCtx.stroke();
-  }
 }
 
 function renderMetronomeGrid() {
@@ -784,6 +776,7 @@ function debugOverlayEventTarget(e, duration = 400) {
 // ----- Playhead Helpers
 function setPlayheadPositionPx(px) {
   playhead.style.transform = `translateX(${px}px)`;
+  rulerPlayhead.style.transform = `translateX(${px}px)`;
   currentTimeSeconds = pixelsToSeconds(px);
   timer.textContent = formatTime(currentTimeSeconds);
   updateTimeDisplay(currentTimeSeconds);
@@ -843,29 +836,25 @@ function renderMarkers() {
 // ----- Marker Transport Rendering
 // ----- Marker Transport Controls
 const markerAddBtn = document.getElementById("marker-add");
-const markerFirstBtn = document.getElementById("marker-first");
 const markerPrevBtn = document.getElementById("marker-prev");
 const markerNextBtn = document.getElementById("marker-next");
-const markerLastBtn = document.getElementById("marker-last");
 const markerDeleteBtn = document.getElementById("marker-delete");
 
 function renderMarkerTransport() {
   const idx = getSelectedMarkerIndex();
-  const hasMarkers = markers.length > 0;
 
-  markerFirstBtn.disabled = !hasMarkers;// || idx === 0;
-  markerPrevBtn.disabled = !hasMarkers || idx <= 0;
-  markerNextBtn.disabled =
-    !hasMarkers || idx === -1 || idx === markers.length - 1;
-  markerLastBtn.disabled = !hasMarkers || idx === markers.length - 1;
+  if (idx !== -1) {
+    markerPrevBtn.disabled = idx <= 0;
+    markerNextBtn.disabled = idx === markers.length - 1;
+  } else {
+    markerPrevBtn.disabled = !markers.some(m => m.time <= currentTimeSeconds);
+    markerNextBtn.disabled = !markers.some(m => m.time > currentTimeSeconds);
+  }
   markerDeleteBtn.disabled = idx === -1;
 
   const display = document.getElementById("marker-time");
-  if (idx === -1) {
-    display.textContent = "—";
-  } else {
-    display.textContent = formatTime(markers[idx].time);
-  }
+  display.textContent = idx === -1 ? "—" : formatTime(markers[idx].time);
+  display.classList.toggle("disabled", recording);
 }
 
 function drawDummyWaveform(canvas) {
@@ -925,6 +914,7 @@ const returnToBeginningBtn = document.getElementById("returnToBeginningBtn");
 const playBtn = document.getElementById("playBtn");
 const recordBtn = document.getElementById("recordBtn");
 const playhead = document.getElementById("playhead");
+const rulerPlayhead = document.getElementById("ruler-playhead");
 const timer = document.getElementById("timer");
 const meter = document.getElementById("meter");
 const meterBar = document.getElementById("meterBar");
@@ -960,6 +950,7 @@ function syncTransportUI() {
     state === "RECORD" || state === "PLAY_RECORD",
   );
   returnToBeginningBtn.disabled = isTransportMoving();
+  renderMarkerTransport();
 
   // DEBUG OVERLAY
   if (document.body.classList.contains("debug")) {
@@ -1123,16 +1114,18 @@ timelineRuler.addEventListener("click", (e) => {
   const x = e.offsetX;
   const time = pixelsToSeconds(x);
 
-  const marker = {
-    id: crypto.randomUUID(),
-    time,
-  };
+  const nearby = findNearbyMarker(time);
+  if (nearby) {
+    selectedMarkerId = nearby.id;
+    renderMarkers();
+    renderMarkerTransport();
+    return;
+  }
 
+  const marker = { id: crypto.randomUUID(), time };
   markers.push(marker);
   markers.sort((a, b) => a.time - b.time);
-
   selectedMarkerId = marker.id;
-
   renderMarkers();
   renderMarkerTransport();
 });
@@ -1156,6 +1149,15 @@ markerDeleteBtn.addEventListener("click", () => {
 markerAddBtn.addEventListener("click", () => {
   recordInteraction("marker");
   const time = currentTimeSeconds;
+
+  const nearby = findNearbyMarker(time);
+  if (nearby) {
+    selectedMarkerId = nearby.id;
+    renderMarkers();
+    renderMarkerTransport();
+    return;
+  }
+
   const marker = { id: crypto.randomUUID(), time };
   markers.push(marker);
   markers.sort((a, b) => a.time - b.time);
@@ -1165,31 +1167,36 @@ markerAddBtn.addEventListener("click", () => {
 });
 
 document.getElementById("marker-time").addEventListener("click", () => {
+  if (recording) return;
   const idx = getSelectedMarkerIndex();
   if (idx === -1) return;
   selectMarkerByIndex(idx);
 });
 
-markerFirstBtn.addEventListener("click", () => {
-  if (!markers.length) return;
-  selectMarkerByIndex(0);
-});
-
 markerPrevBtn.addEventListener("click", () => {
   const idx = getSelectedMarkerIndex();
-  if (idx <= 0) return;
-  selectMarkerByIndex(idx - 1);
+  if (idx !== -1) {
+    if (idx <= 0) return;
+    selectMarkerByIndex(idx - 1);
+  } else {
+    let target = -1;
+    for (let i = 0; i < markers.length; i++) {
+      if (markers[i].time <= currentTimeSeconds) target = i;
+      else break;
+    }
+    if (target !== -1) selectMarkerByIndex(target);
+  }
 });
 
 markerNextBtn.addEventListener("click", () => {
   const idx = getSelectedMarkerIndex();
-  if (idx === -1) return;
-  selectMarkerByIndex(idx + 1);
-});
-
-markerLastBtn.addEventListener("click", () => {
-  if (!markers.length) return;
-  selectMarkerByIndex(markers.length - 1);
+  if (idx !== -1) {
+    if (idx === markers.length - 1) return;
+    selectMarkerByIndex(idx + 1);
+  } else {
+    const target = markers.findIndex(m => m.time > currentTimeSeconds);
+    if (target !== -1) selectMarkerByIndex(target);
+  }
 });
 
 // Sync scrollTop from timeline → controls
@@ -1395,6 +1402,7 @@ function updatePlayhead() {
   const x = playbackStartX + deltaX;
 
   playhead.style.transform = `translateX(${x}px)`;
+  rulerPlayhead.style.transform = `translateX(${x}px)`;
   currentTimeSeconds = pixelsToSeconds(x);
 
   if (recording) {

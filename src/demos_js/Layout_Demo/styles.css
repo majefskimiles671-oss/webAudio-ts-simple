@@ -380,6 +380,16 @@
             color: var(--accent-primary);
         }
 
+        .marker-time.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .marker-time.disabled:hover {
+            background: transparent;
+            color: inherit;
+        }
+
         #timeline-markers {
             position: absolute;
             inset: 0;
@@ -671,6 +681,29 @@
         .timeline-row {
             padding: 0px;
             box-sizing: border-box;
+        }
+
+        #ruler-playhead {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--accent-primary);
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        #ruler-playhead::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid var(--accent-primary);
         }
 
         #playhead {
