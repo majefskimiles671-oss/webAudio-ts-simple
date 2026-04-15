@@ -34,7 +34,7 @@
 const ONBOARDING_STEPS = [
   {
     targets: [".recording-lane.control-row", ".recording-lane.timeline-row"],
-    text: "This is the recording lane, where recordings go first. The default track names are very clever. Click the name to edit it. Then click next",
+    text: "This is the recording lane, where recordings go first. The default track names are very clever and evocative. Click the name to edit it. Then click next",
   },
   {
     targets: ["#recordBtn", "#playBtn", "#returnToBeginningBtn"],

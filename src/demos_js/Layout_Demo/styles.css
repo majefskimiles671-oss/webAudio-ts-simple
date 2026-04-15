@@ -154,25 +154,7 @@
             opacity: 0.35;
         }
 
-        .transport-scene-clear {
-            margin-left: 6px;
-            padding: 4px 8px;
-
-            background: transparent;
-            border: 1px solid var(--border-subtle);
-            border-radius: 4px;
-
-            color: var(--text-muted);
-            cursor: pointer;
-            opacity: 0.75;
-        }
-
-        .transport-scene-clear:hover {
-            opacity: 1;
-            color: var(--text-main);
-        }
-
-        .record-btn.recording {
+.record-btn.recording {
             background: #ff3b30;
             color: var(--text-main);
         }
@@ -538,24 +520,6 @@
             background: var(--accent-primary);
             color: black;
             border-color: var(--accent-primary);
-        }
-
-        /* ⨯ clear button */
-        .track-scene-clear {
-            margin-left: 4px;
-            font-size: 12px;
-            line-height: 18px;
-
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            opacity: 0.6;
-        }
-
-        .track-scene-clear:hover {
-            opacity: 1;
-            color: var(--text-main);
         }
 
 

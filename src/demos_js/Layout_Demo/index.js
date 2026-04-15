@@ -441,13 +441,6 @@ function createTrack(label, { prepend = false } = {}) {
     });
   });
 
-  controlFrag.querySelector(".track-scene-clear").addEventListener("click", (e) => {
-    e.currentTarget.closest(".control-row")
-      .querySelectorAll(".track-scene.active")
-      .forEach((btn) => btn.classList.remove("active"));
-    updateSceneMask();
-  });
-
   const soloBtn = controlFrag.querySelector(".solo-btn");
   soloBtn.addEventListener("click", () => {
     const allSoloBtns = Array.from(document.querySelectorAll(".solo-btn"));
@@ -1291,17 +1284,11 @@ transportToggles.forEach((btn) => {
   });
 });
 
-const globalClearBtn = document.querySelector(".transport-scene-clear");
-
-globalClearBtn.addEventListener("click", () => {
-  document.querySelectorAll("#transport-scenes .transport-scene.active")
-    .forEach((btn) => btn.classList.remove("active"));
-  updateSceneMask();
-});
-
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    globalClearBtn.click();
+    document.querySelectorAll("#transport-scenes .transport-scene.active")
+      .forEach((btn) => btn.classList.remove("active"));
+    updateSceneMask();
   }
 });
 
