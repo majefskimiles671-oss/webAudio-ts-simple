@@ -1297,6 +1297,40 @@
             animation: tnt-shrink 20s linear forwards;
         }
 
+        /* Bottom Panel */
+
+        #bottom-panel {
+            flex-shrink: 0;
+            height: 100px;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #bottom-panel.hidden {
+            display: none;
+        }
+
+        #bottom-panel-handle {
+            height: 6px;
+            flex-shrink: 0;
+            cursor: ns-resize;
+            background: transparent;
+        }
+
+        #bottom-panel-handle:hover {
+            background: var(--accent-primary);
+            opacity: 0.4;
+        }
+
+        #bottom-panel-content {
+            flex: 1;
+            overflow: auto;
+            padding: 8px 12px;
+        }
+
         /* Onboarding */
 
         @keyframes onboarding-fade-in {

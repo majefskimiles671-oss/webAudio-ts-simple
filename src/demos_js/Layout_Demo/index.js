@@ -107,9 +107,9 @@ let recordingLaneControlRow = null;
 let recordingLaneTimelineRow = null;
 
 //  Global Musical State
-let tempoBPM = 125;
+let tempoBPM = 120;
 let timeSignature = {
-  beats: 3,
+  beats: 4,
   noteValue: 4,
 };
 
@@ -121,7 +121,7 @@ let selectedMarkerId = null;
 let bpm = 120; // beats per minute
 let beatsPerBar = timeSignature.beats; // kept in sync with timeSignature.beats
 
-let trackCount = 0;
+let trackCount = 10;
 
 //  Transport State
 let playing = false;
@@ -550,6 +550,8 @@ function promoteRecordingLane() {
 
 function onRecordStart() {
   recordingTrackRow = recordingLaneTimelineRow;
+  timelineArea.scrollTop = 0;
+  controlsScrollCol.scrollTop = 0;
 }
 
 function onRecordStop() {
@@ -1611,6 +1613,41 @@ function getSessionScore() {
 // Passive mouse path collector (runs independently of scrub state)
 document.addEventListener("mousemove", (e) => {
   recordMouseSample(e.clientX, e.clientY);
+});
+
+// ============================================================
+// Bottom Panel -----
+// ============================================================
+
+const bottomPanel = document.getElementById("bottom-panel");
+const bottomPanelHandle = document.getElementById("bottom-panel-handle");
+const toggleBottomPanelBtn = document.getElementById("toggle-bottom-panel");
+
+toggleBottomPanelBtn.addEventListener("click", () => {
+  const hidden = bottomPanel.classList.toggle("hidden");
+  toggleBottomPanelBtn.textContent = hidden ? "Show Bottom Panel" : "Hide Bottom Panel";
+});
+
+let _panelDragging = false;
+let _panelDragStartY = 0;
+let _panelDragStartHeight = 0;
+
+bottomPanelHandle.addEventListener("mousedown", (e) => {
+  _panelDragging = true;
+  _panelDragStartY = e.clientY;
+  _panelDragStartHeight = bottomPanel.offsetHeight;
+  e.preventDefault();
+});
+
+document.addEventListener("mousemove", (e) => {
+  if (!_panelDragging) return;
+  const delta = _panelDragStartY - e.clientY;
+  const newHeight = Math.max(40, _panelDragStartHeight + delta);
+  bottomPanel.style.height = `${newHeight}px`;
+});
+
+document.addEventListener("mouseup", () => {
+  _panelDragging = false;
 });
 
 // ============================================================

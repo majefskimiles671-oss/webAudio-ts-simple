@@ -69,6 +69,13 @@ Rule - Add comments before code snippets in this format:
         </div>
 
         <div class="menu">
+            <span class="menu-label">View</span>
+            <div class="menu-pop">
+                <div id="toggle-bottom-panel">Show Bottom Panel</div>
+            </div>
+        </div>
+
+        <div class="menu">
             <span class="menu-label">Settings</span>
             <div class="menu-pop">
                 <div data-theme="studio">Theme: Studio</div>
@@ -250,6 +257,11 @@ Rule - Add comments before code snippets in this format:
             <div class="row-inner"></div>
         </div>
     </template>
+
+    <div id="bottom-panel" class="hidden">
+        <div id="bottom-panel-handle"></div>
+        <div id="bottom-panel-content"></div>
+    </div>
 
     <div id="debug-transport-state"></div>
 
