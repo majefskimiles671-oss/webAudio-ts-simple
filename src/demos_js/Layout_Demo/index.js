@@ -363,6 +363,7 @@ function selectMarkerByIndex(index) {
 
   // ----- Re-render marker transport controls
   renderMarkerTransport();
+  renderBottomPanel();
 }
 
 //  -----------Apply Transport Change
@@ -829,6 +830,7 @@ function renderMarkers() {
       selectedMarkerId = marker.id;
       renderMarkers();
       renderMarkerTransport();
+      renderBottomPanel();
     });
 
     // (drag comes later; keep click-only for now)
@@ -845,6 +847,7 @@ function renderMarkerTransport() {
   const idx = getSelectedMarkerIndex();
   const isOrigin = idx !== -1 && markers[idx].id === ORIGIN_MARKER_ID;
 
+  markerAddBtn.disabled = isOrigin;
   markerDeleteBtn.disabled = idx === -1 || isOrigin;
 
   const display = document.getElementById("marker-time");
@@ -1121,15 +1124,17 @@ timelineRuler.addEventListener("click", (e) => {
     selectedMarkerId = nearby.id;
     renderMarkers();
     renderMarkerTransport();
+    renderBottomPanel();
     return;
   }
 
-  const marker = { id: crypto.randomUUID(), time };
+  const marker = { id: crypto.randomUUID(), time, note: "" };
   markers.push(marker);
   markers.sort((a, b) => a.time - b.time);
   selectedMarkerId = marker.id;
   renderMarkers();
   renderMarkerTransport();
+  renderBottomPanel();
 });
 
 // ----- Marker Deletion
@@ -1138,13 +1143,21 @@ markerDeleteBtn.addEventListener("click", () => {
   if (idx === -1) return;
   if (markers[idx].id === ORIGIN_MARKER_ID) return;
 
+  const deletedNote = markers[idx].note ?? "";
   markers.splice(idx, 1);
+
+  // Append deleted marker's notes to the previous marker
+  if (idx > 0 && deletedNote) {
+    const prev = markers[idx - 1];
+    prev.note = prev.note ? `${prev.note}\n\n${deletedNote}` : deletedNote;
+  }
 
   // Select the marker to the left, if any
   selectedMarkerId = idx > 0 ? markers[idx - 1].id : null;
 
   renderMarkers();
   renderMarkerTransport();
+  renderBottomPanel();
 });
 
 markerAddBtn.addEventListener("click", () => {
@@ -1156,15 +1169,17 @@ markerAddBtn.addEventListener("click", () => {
     selectedMarkerId = nearby.id;
     renderMarkers();
     renderMarkerTransport();
+    renderBottomPanel();
     return;
   }
 
-  const marker = { id: crypto.randomUUID(), time };
+  const marker = { id: crypto.randomUUID(), time, note: "" };
   markers.push(marker);
   markers.sort((a, b) => a.time - b.time);
   selectedMarkerId = marker.id;
   renderMarkers();
   renderMarkerTransport();
+  renderBottomPanel();
 });
 
 // ----- Marker Dropdown
@@ -1624,8 +1639,9 @@ const bottomPanelHandle = document.getElementById("bottom-panel-handle");
 const toggleBottomPanelBtn = document.getElementById("toggle-bottom-panel");
 
 toggleBottomPanelBtn.addEventListener("click", () => {
-  const hidden = bottomPanel.classList.toggle("hidden");
-  toggleBottomPanelBtn.textContent = hidden ? "Show Bottom Panel" : "Hide Bottom Panel";
+  const nowHidden = bottomPanel.classList.toggle("hidden");
+  toggleBottomPanelBtn.textContent = nowHidden ? "Show Bottom Panel" : "Hide Bottom Panel";
+  if (!nowHidden) renderBottomPanel();
 });
 
 let _panelDragging = false;
@@ -1650,6 +1666,52 @@ document.addEventListener("mouseup", () => {
   _panelDragging = false;
 });
 
+function renderBottomPanel() {
+  const content = document.getElementById("bottom-panel-content");
+  content.innerHTML = "";
+
+  const grid = document.createElement("div");
+  grid.className = "panel-marker-grid";
+
+  for (const marker of markers) {
+    const row = document.createElement("div");
+    row.className = "panel-marker-row";
+    if (marker.id === selectedMarkerId) row.classList.add("selected");
+
+    const timeEl = document.createElement("div");
+    timeEl.className = "panel-marker-time";
+    timeEl.textContent = formatTime(marker.time);
+
+    const textarea = document.createElement("textarea");
+    textarea.className = "panel-marker-note";
+    textarea.placeholder = "Add notes…";
+    textarea.value = marker.note ?? "";
+    textarea.rows = 1;
+
+    textarea.addEventListener("input", () => {
+      marker.note = textarea.value;
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    });
+
+    row.append(timeEl, textarea);
+    grid.appendChild(row);
+  }
+
+  content.appendChild(grid);
+
+  grid.querySelectorAll(".panel-marker-note").forEach((ta) => {
+    ta.style.height = "auto";
+    ta.style.height = `${ta.scrollHeight}px`;
+  });
+
+  // Scroll selected row to vertical center of the panel
+  const selectedRow = content.querySelector(".panel-marker-row.selected");
+  if (selectedRow) {
+    content.scrollTop = selectedRow.offsetTop - (content.clientHeight / 2) + (selectedRow.offsetHeight / 2);
+  }
+}
+
 // ============================================================
 // Initialization -----
 // ============================================================
@@ -1660,9 +1722,9 @@ for (let i = 0; i < trackCount; i++) {
 }
 createRecordingLane();
 
-markers.push({ id: ORIGIN_MARKER_ID, time: 0 });
-markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 4 });
-markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 8 });
+markers.push({ id: ORIGIN_MARKER_ID, time: 0, note: "Intro starts here" });
+markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 4, note: "" });
+markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 8, note: "Chorus begins\nBig energy here\nDon't forget the drop\nRide it out to bar 12" });
 selectedMarkerId = ORIGIN_MARKER_ID;
 
 document.body.setAttribute("data-theme", "light");
@@ -1676,4 +1738,5 @@ renderTempo();
 renderTimeSignature();
 renderMetronomeGrid();
 renderMarkerTransport();
+renderBottomPanel();
 startOnboarding();

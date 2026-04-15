@@ -1301,7 +1301,7 @@
 
         #bottom-panel {
             flex-shrink: 0;
-            height: 100px;
+            height: 300px;
             background: var(--bg-panel);
             border-top: 1px solid var(--border-subtle);
             display: flex;
@@ -1329,6 +1329,55 @@
             flex: 1;
             overflow: auto;
             padding: 8px 12px;
+        }
+
+        .panel-marker-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .panel-marker-row {
+            display: grid;
+            grid-template-columns: 76px 1fr;
+            gap: 6px 12px;
+            align-items: start;
+            padding: 4px 6px;
+            border-radius: 5px;
+            border-left: 3px solid transparent;
+        }
+
+        .panel-marker-row.selected {
+            background: color-mix(in oklab, var(--accent-primary) 8%, transparent);
+            border-left-color: var(--accent-primary);
+        }
+
+        .panel-marker-time {
+            font-family: monospace;
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
+            color: var(--accent-primary);
+            padding-top: 5px;
+        }
+
+        .panel-marker-note {
+            width: 100%;
+            box-sizing: border-box;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-main);
+            font-family: system-ui, sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 4px 8px;
+            resize: none;
+            overflow: hidden;
+        }
+
+        .panel-marker-note:focus {
+            outline: 1px solid var(--accent-primary);
+            border-color: var(--accent-primary);
         }
 
         /* Onboarding */
