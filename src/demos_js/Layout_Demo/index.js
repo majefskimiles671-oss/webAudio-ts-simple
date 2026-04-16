@@ -92,10 +92,18 @@ document.querySelector(".menu-bar").addEventListener("click", (e) => {
 const controlsScrollCol = document.getElementById("controls-scroll-column");
 controlsScrollCol.addEventListener("input", (e) => {
   const gs = e.target.closest("gain-slider");
-  if (!gs) return;
-  markDirty();
-  const track = findTrackByControlRow(gs.closest(".control-row"));
-  if (track) track.gain = gs.value;
+  if (gs) {
+    markDirty();
+    const track = findTrackByControlRow(gs.closest(".control-row"));
+    if (track) track.gain = gs.value;
+    return;
+  }
+  const ps = e.target.closest("pan-slider");
+  if (ps) {
+    markDirty();
+    const track = findTrackByControlRow(ps.closest(".control-row"));
+    if (track) track.pan = ps.value;
+  }
 });
 const timelineArea = document.getElementById("timeline-area");
 const timelineInner = document.getElementById("timeline-inner");
@@ -157,6 +165,7 @@ function clearDirty() {
 //  Transport State
 let playing = false;
 let recording = false;
+let masterGain = 100;
 let startTime = 0;
 let recordStartX = null;
 let playbackStartX = 0; // px offset where playback begins
@@ -419,6 +428,11 @@ function applyTransportChange({ play, record }) {
 
   if (!wasPlaying && playing) {
     onTransportStart();
+    startMeterAnimation();
+  }
+
+  if (wasPlaying && !playing) {
+    stopMeterAnimation();
   }
 
   if (!wasRecording && recording) { onRecordStart(); startRecordingRange(); }
@@ -452,10 +466,19 @@ function createTrack(label, { prepend = false } = {}) {
     id:          crypto.randomUUID(),
     name:        label,
     gain:        80,
+    pan:         0,
     scenes:      [],
     clips:       [],
     controlRow:  null,  // assigned below
     timelineRow: null,  // assigned below
+    meterEl:     null,  // assigned below
+    // Meter animation state
+    meterL: 0, meterR: 0,
+    meterTargetL: 0, meterTargetR: 0,
+    meterPeakL: 0, meterPeakR: 0,
+    meterPeakFramesL: 0, meterPeakFramesR: 0,
+    meterBase: 0.45 + Math.random() * 0.45,
+    meterTicksToNext: 0,
   };
 
   /* ----- Controls Row ----- */
@@ -558,8 +581,19 @@ function createTrack(label, { prepend = false } = {}) {
   });
   ro.observe(timelineRow);
 
+  /* ----- Meter Segments ----- */
+  const meterEl = controlRow.querySelector(".track-meter");
+  meterEl.querySelectorAll(".tm-ch").forEach(ch => {
+    for (let i = 0; i < METER_SEGS; i++) {
+      const seg = document.createElement("div");
+      seg.className = "tm-seg";
+      ch.appendChild(seg);
+    }
+  });
+
   track.controlRow  = controlRow;
   track.timelineRow = timelineRow;
+  track.meterEl     = meterEl;
   return track;
 }
 
@@ -581,6 +615,7 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
   const waveform = document.createElement("div");
   waveform.className = "waveform";
   waveform.dataset.clipId = clip.id;
+  waveform.dataset.startSeconds = startSeconds;
 
   const canvas = document.createElement("canvas");
   canvas.className = "waveform-canvas";
@@ -1526,6 +1561,161 @@ document.addEventListener("mouseup", () => {
 // Loops -----
 // ============================================================
 
+// ---- Track Meter Animation
+
+const METER_SEGS   = 12;
+const METER_GREEN  = 7;   // segments 1-7 (nth-child) are green
+const METER_YELLOW = 9;   // segments 8-9 are yellow; 10-12 are red
+
+let _meterRafId   = null;
+let _meterPlaying = false;
+
+function startMeterAnimation() {
+  _meterPlaying = true;
+  if (_meterRafId) return;
+  _meterRafId = requestAnimationFrame(_meterTick);
+}
+
+function stopMeterAnimation() {
+  _meterPlaying = false;
+  // Leave RAF running so meters decay to 0 naturally
+}
+
+function _meterTick() {
+  let anyActive = false;
+
+  for (const track of tracks) {
+    if (!track.meterEl) continue;
+
+    if (_meterPlaying) {
+      // Periodically pick a new target level
+      if (track.meterTicksToNext <= 0) {
+        track.meterTicksToNext = 8 + Math.floor(Math.random() * 18);
+        const vL = (Math.random() - 0.5) * 0.55;
+        const vR = (Math.random() - 0.5) * 0.45;
+        track.meterTargetL = Math.max(0.05, Math.min(1, track.meterBase + vL));
+        track.meterTargetR = Math.max(0.05, Math.min(1, track.meterBase + vR));
+        // Occasional transient hit
+        if (Math.random() < 0.12) {
+          track.meterTargetL = Math.min(1, track.meterBase + 0.25 + Math.random() * 0.25);
+        }
+      }
+      track.meterTicksToNext--;
+
+      // Fast attack, slower release
+      const aL = track.meterTargetL > track.meterL ? 0.45 : 0.07;
+      const aR = track.meterTargetR > track.meterR ? 0.45 : 0.07;
+      track.meterL += (track.meterTargetL - track.meterL) * aL;
+      track.meterR += (track.meterTargetR - track.meterR) * aR;
+    } else {
+      track.meterL      *= 0.88;
+      track.meterR      *= 0.88;
+      track.meterTargetL = 0;
+      track.meterTargetR = 0;
+    }
+
+    // Peak hold — L
+    if (track.meterL > track.meterPeakL) {
+      track.meterPeakL       = track.meterL;
+      track.meterPeakFramesL = 50;
+    } else if (track.meterPeakFramesL > 0) {
+      track.meterPeakFramesL--;
+    } else {
+      track.meterPeakL = Math.max(track.meterL, track.meterPeakL * 0.93);
+    }
+
+    // Peak hold — R
+    if (track.meterR > track.meterPeakR) {
+      track.meterPeakR       = track.meterR;
+      track.meterPeakFramesR = 50;
+    } else if (track.meterPeakFramesR > 0) {
+      track.meterPeakFramesR--;
+    } else {
+      track.meterPeakR = Math.max(track.meterR, track.meterPeakR * 0.93);
+    }
+
+    _renderTrackMeter(track);
+
+    if (track.meterL > 0.002 || track.meterR > 0.002) anyActive = true;
+  }
+
+  _updateMasterMeter();
+
+  if (_meterPlaying || anyActive) {
+    _meterRafId = requestAnimationFrame(_meterTick);
+  } else {
+    _meterRafId = null;
+  }
+}
+
+function _renderTrackMeter(track) {
+  const channels = track.meterEl.querySelectorAll(".tm-ch");
+  const levels = [track.meterL, track.meterR];
+  const peaks  = [track.meterPeakL, track.meterPeakR];
+
+  channels.forEach((ch, ci) => {
+    const activeSegs = Math.round(levels[ci] * METER_SEGS);
+    const peakIdx    = Math.round(peaks[ci] * (METER_SEGS - 1));
+    ch.querySelectorAll(".tm-seg").forEach((seg, i) => {
+      const lit    = i < activeSegs;
+      const isPeak = !lit && i === peakIdx && peaks[ci] > 0.05;
+      seg.classList.toggle("lit",  lit);
+      seg.classList.toggle("peak", isPeak);
+    });
+  });
+}
+
+// ---- Master Meter
+
+const MASTER_METER_SEGS = 20;
+let _masterL = 0, _masterR = 0;
+let _masterPeakL = 0, _masterPeakR = 0;
+let _masterPeakFramesL = 0, _masterPeakFramesR = 0;
+
+function _updateMasterMeter() {
+  const gainFactor = masterGain / 100;
+
+  // Drive from the highest active track level
+  const rawL = tracks.length > 0 ? Math.max(...tracks.map(t => t.meterL)) * gainFactor : 0;
+  const rawR = tracks.length > 0 ? Math.max(...tracks.map(t => t.meterR)) * gainFactor : 0;
+
+  _masterL += (rawL - _masterL) * (rawL > _masterL ? 0.6 : 0.1);
+  _masterR += (rawR - _masterR) * (rawR > _masterR ? 0.6 : 0.1);
+
+  // Peak hold — L
+  if (_masterL > _masterPeakL) { _masterPeakL = _masterL; _masterPeakFramesL = 50; }
+  else if (_masterPeakFramesL > 0) { _masterPeakFramesL--; }
+  else { _masterPeakL = Math.max(_masterL, _masterPeakL * 0.93); }
+
+  // Peak hold — R
+  if (_masterR > _masterPeakR) { _masterPeakR = _masterR; _masterPeakFramesR = 50; }
+  else if (_masterPeakFramesR > 0) { _masterPeakFramesR--; }
+  else { _masterPeakR = Math.max(_masterR, _masterPeakR * 0.93); }
+
+  _renderMasterMeter();
+}
+
+function _renderMasterMeter() {
+  const bars   = [
+    document.getElementById("master-meter-L"),
+    document.getElementById("master-meter-R"),
+  ];
+  const levels = [_masterL, _masterR];
+  const peaks  = [_masterPeakL, _masterPeakR];
+
+  bars.forEach((bar, bi) => {
+    if (!bar) return;
+    const activeSegs = Math.round(levels[bi] * MASTER_METER_SEGS);
+    const peakIdx    = Math.round(peaks[bi] * (MASTER_METER_SEGS - 1));
+    bar.querySelectorAll(".mm-seg").forEach((seg, i) => {
+      const lit    = i < activeSegs;
+      const isPeak = !lit && i === peakIdx && peaks[bi] > 0.05;
+      seg.classList.toggle("lit",  lit);
+      seg.classList.toggle("peak", isPeak);
+    });
+  });
+}
+
 //  Transport Transitions
 function onTransportStart() {
   playbackStartX = getPlayheadX(); // ← THIS is the fix
@@ -1818,6 +2008,20 @@ markers.push({ id: ORIGIN_MARKER_ID, time: secondsPerBar() * 0, note: "" });
 selectedMarkerId = ORIGIN_MARKER_ID;
 
 document.body.setAttribute("data-theme", "earth");
+
+// Populate master meter segments
+document.querySelectorAll(".master-meter-bar").forEach(bar => {
+  for (let i = 0; i < MASTER_METER_SEGS; i++) {
+    const seg = document.createElement("div");
+    seg.className = "mm-seg";
+    bar.appendChild(seg);
+  }
+});
+
+// Master gain slider
+document.getElementById("master-gain-slider").addEventListener("input", (e) => {
+  masterGain = e.target.value;
+});
 
 updateMeter();
 syncTimelineOverlayWidth();

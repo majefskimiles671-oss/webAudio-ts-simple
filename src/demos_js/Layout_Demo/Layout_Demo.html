@@ -86,13 +86,16 @@ Rule - Add comments before code snippets in this format:
             <span class="menu-label">Settings</span>
             <div class="menu-pop">
                 <div data-theme="studio">Theme: Studio</div>
+                <div data-theme="Cookies Haze">Theme: Cookies Haze</div>
                 <div data-theme="dark">Theme: Dark</div>
-                <div data-theme="light">Theme: Light</div>
-                <div data-theme="Ice">Theme: Ice</div>
+                <!-- <div data-theme="light">Theme: Light</div> -->
+                <!-- <div data-theme="Ice">Theme: Ice</div> -->
                 <div data-theme="Fire">Theme: Fire</div>
                 <div data-theme="Earth">Theme: Earth</div>
-                <div data-theme="Wind">Theme: Wind</div>
-                <div data-theme="Sol">Theme: Sol</div>
+                <div data-theme="Ice9">Theme: Ice9</div>
+                <div data-theme="x286">Theme: x286</div>
+                <!-- <div data-theme="Wind">Theme: Wind</div> -->
+                <!-- <div data-theme="Sol">Theme: Sol</div> -->
                 <hr />
                 <div data-ruler="seconds">Ruler Mode: Seconds</div>
                 <div data-ruler="bars">Ruler Mode: Bars</div>
@@ -244,7 +247,10 @@ Rule - Add comments before code snippets in this format:
                         </svg>
                     </button>
                 </div>
-                <gain-slider class="gain-slider" min="0" max="100" value="80"></gain-slider>
+                <div class="track-sliders">
+                    <gain-slider class="gain-slider" min="0" max="100" value="80"></gain-slider>
+                    <pan-slider class="pan-slider" min="-100" max="100" value="0"></pan-slider>
+                </div>
 
                 <div class="track-scenes">
                     <button class="track-scene">A</button>
@@ -254,8 +260,10 @@ Rule - Add comments before code snippets in this format:
                     <button class="track-scene">E</button>
                 </div>
 
-
-
+                <div class="track-meter" aria-hidden="true">
+                    <div class="tm-ch"></div>
+                    <div class="tm-ch"></div>
+                </div>
 
             </div>
         </div>
@@ -269,11 +277,39 @@ Rule - Add comments before code snippets in this format:
 
     <div id="bottom-panel">
         <div id="bottom-panel-handle"></div>
-        <div id="bottom-panel-content"></div>
+        <div id="bottom-panel-body">
+
+            <div id="bottom-panel-master">
+                <p class="master-heading">Master</p>
+                <div id="master-meter">
+                    <div class="master-meter-row">
+                        <span class="master-ch-label">L</span>
+                        <div class="master-meter-bar" id="master-meter-L"></div>
+                    </div>
+                    <div class="master-meter-row">
+                        <span class="master-ch-label">R</span>
+                        <div class="master-meter-bar" id="master-meter-R"></div>
+                    </div>
+                </div>
+                <div class="master-gain-row">
+                    <span class="master-gain-label">Vol</span>
+                    <gain-slider id="master-gain-slider" min="0" max="100" value="100"></gain-slider>
+                </div>
+            </div>
+
+            <div id="bottom-panel-content"></div>
+
+        </div>
     </div>
 
     <div id="debug-transport-state"></div>
 
+    <div id="x286-newswire" aria-hidden="true">
+        <div class="x286-nw-badge">MARSNET</div>
+        <div class="x286-nw-viewport">
+            <div class="x286-nw-track"></div>
+        </div>
+    </div>
 
 <script src="./project-io.js"></script>
 <script src="./demo.js"></script>
@@ -284,8 +320,10 @@ Rule - Add comments before code snippets in this format:
 <script src="./trackNames.js"></script>
 <script src="./onboarding.js"></script>
 <script src="./gainSlider.js"></script>
+<script src="./panSlider.js"></script>
 <script src="./mixdown.js"></script>
 <script src="./index.js"></script>
+<script src="./x286-newswire.js"></script>
 
 </body>
 

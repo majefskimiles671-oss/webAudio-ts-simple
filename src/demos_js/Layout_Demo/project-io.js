@@ -26,6 +26,7 @@ function serializeProject() {
       id:     track.id,
       name:   track.name,
       gain:   track.gain,
+      pan:    track.pan,
       scenes: [...track.scenes],
       clips:  track.clips.map(clip => ({
         id:              clip.id,
@@ -109,6 +110,11 @@ function deserializeProject(data) {
     track.gain = saved.gain ?? 80;
     const gainEl = track.controlRow.querySelector("gain-slider");
     if (gainEl) gainEl.value = track.gain;
+
+    // Pan
+    track.pan = saved.pan ?? 0;
+    const panEl = track.controlRow.querySelector("pan-slider");
+    if (panEl) panEl.value = track.pan;
 
     // Scene assignments
     track.scenes = saved.scenes ?? [];
