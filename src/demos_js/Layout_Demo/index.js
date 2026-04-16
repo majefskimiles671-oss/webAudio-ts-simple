@@ -91,7 +91,11 @@ document.querySelector(".menu-bar").addEventListener("click", (e) => {
 
 const controlsScrollCol = document.getElementById("controls-scroll-column");
 controlsScrollCol.addEventListener("input", (e) => {
-  if (e.target.closest("gain-slider")) markDirty();
+  const gs = e.target.closest("gain-slider");
+  if (!gs) return;
+  markDirty();
+  const track = findTrackByControlRow(gs.closest(".control-row"));
+  if (track) track.gain = gs.value;
 });
 const timelineArea = document.getElementById("timeline-area");
 const timelineInner = document.getElementById("timeline-inner");
@@ -115,8 +119,11 @@ let rulerMode = "bars"; // "seconds" | "bars"
 
 let recordStartTime = null;
 let recordingTrackRow = null;
-let recordingLaneControlRow = null;
-let recordingLaneTimelineRow = null;
+let recordingLaneTrack = null;  // the current (unpromoted) recording lane track object
+
+//  Track State
+const tracks = [];        // promoted tracks only, front = newest (matches DOM order)
+const SAMPLE_RATE = 48000; // used for sample-accurate time serialization
 
 //  Global Musical State
 let tempoBPM = 120;
@@ -429,8 +436,28 @@ function returnToBeginning() {
   timelineArea.scrollLeft = 0;
 }
 
+// ----- Track Lookup Helpers
+function findTrackByControlRow(el) {
+  return tracks.find(t => t.controlRow === el) ?? null;
+}
+function findTrackByTimelineRow(el) {
+  return tracks.find(t => t.timelineRow === el) ?? null;
+}
+
 // ----- Track Management
 function createTrack(label, { prepend = false } = {}) {
+  // State object is created first so all event listeners can close over it.
+  // controlRow and timelineRow are assigned after DOM construction.
+  const track = {
+    id:          crypto.randomUUID(),
+    name:        label,
+    gain:        80,
+    scenes:      [],
+    clips:       [],
+    controlRow:  null,  // assigned below
+    timelineRow: null,  // assigned below
+  };
+
   /* ----- Controls Row ----- */
   const controlTpl = document.getElementById("control-row-template");
   const controlFrag = controlTpl.content.cloneNode(true);
@@ -470,13 +497,17 @@ function createTrack(label, { prepend = false } = {}) {
 
   title.addEventListener("blur", () => {
     const t = title.textContent.trim();
-    title.textContent = t === "" ? label : t;
+    const finalName = t === "" ? label : t;
+    title.textContent = finalName;
+    track.name = finalName;
     markDirty();
   });
 
   controlFrag.querySelectorAll(".track-scene").forEach((btn) => {
     btn.addEventListener("click", () => {
       btn.classList.toggle("active");
+      track.scenes = Array.from(controlRow.querySelectorAll(".track-scene.active"))
+        .map(b => b.textContent.trim());
       markDirty();
       updateSceneMask();
     });
@@ -496,11 +527,12 @@ function createTrack(label, { prepend = false } = {}) {
 
   const deleteBtn = controlFrag.querySelector(".delete-btn");
   deleteBtn.addEventListener("click", () => {
-    const idx = Array.from(controlsScrollCol.children).indexOf(controlRow);
-    if (idx === -1) return;
+    const trackIdx = tracks.indexOf(track);
+    if (trackIdx === -1) return;  // recording lane — not in tracks, protected
     markDirty();
-    controlRow.remove();
-    timelineCol.children[idx]?.remove();
+    tracks.splice(trackIdx, 1);
+    track.controlRow.remove();
+    track.timelineRow.remove();
   });
 
   if (prepend) {
@@ -526,15 +558,27 @@ function createTrack(label, { prepend = false } = {}) {
   });
   ro.observe(timelineRow);
 
-  return { controlRow, timelineRow };
+  track.controlRow  = controlRow;
+  track.timelineRow = timelineRow;
+  return track;
 }
 
 function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
+  // Push to state — the clip gets a stable ID for serialization
+  const clip = {
+    id:              crypto.randomUUID(),
+    startSample:     Math.round(startSeconds * SAMPLE_RATE),
+    durationSamples: Math.round(durationSeconds * SAMPLE_RATE),
+  };
+  const track = findTrackByTimelineRow(timelineRow);
+  if (track) track.clips.push(clip);
+
+  // Render waveform DOM element
   const rowInner = timelineRow.querySelector(".row-inner");
 
   const waveform = document.createElement("div");
   waveform.className = "waveform";
-  waveform.dataset.startSeconds = startSeconds;
+  waveform.dataset.clipId = clip.id;
 
   const canvas = document.createElement("canvas");
   canvas.className = "waveform-canvas";
@@ -555,23 +599,22 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
 function createRecordingLane() {
   trackCount += 1;
   const { name, definition } = pickTrackName();
-  const { controlRow, timelineRow } = createTrack(name, { prepend: true });
-  controlRow.classList.add("recording-lane");
-  timelineRow.classList.add("recording-lane");
-  recordingLaneControlRow = controlRow;
-  recordingLaneTimelineRow = timelineRow;
+  const track = createTrack(name, { prepend: true });
+  track.controlRow.classList.add("recording-lane");
+  track.timelineRow.classList.add("recording-lane");
+  recordingLaneTrack = track;
   showTrackNameTooltip(name, definition);
 }
 
 function promoteRecordingLane() {
-  if (!recordingLaneTimelineRow) return;
-  if (!recordingLaneTimelineRow.querySelector(".waveform")) return;
+  if (!recordingLaneTrack) return;
+  if (!recordingLaneTrack.timelineRow.querySelector(".waveform")) return;
 
   markDirty();
-  recordingLaneControlRow.classList.remove("recording-lane");
-  recordingLaneTimelineRow.classList.remove("recording-lane");
-  recordingLaneControlRow = null;
-  recordingLaneTimelineRow = null;
+  recordingLaneTrack.controlRow.classList.remove("recording-lane");
+  recordingLaneTrack.timelineRow.classList.remove("recording-lane");
+  tracks.unshift(recordingLaneTrack);  // newest promoted track at front, matches DOM order
+  recordingLaneTrack = null;
 
   createRecordingLane();
   timelineArea.scrollTop = 0;
@@ -582,7 +625,7 @@ function promoteRecordingLane() {
 }
 
 function onRecordStart() {
-  recordingTrackRow = recordingLaneTimelineRow;
+  recordingTrackRow = recordingLaneTrack.timelineRow;
   timelineArea.scrollTop = 0;
   controlsScrollCol.scrollTop = 0;
 }
