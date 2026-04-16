@@ -570,7 +570,9 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
     startSample:     Math.round(startSeconds * SAMPLE_RATE),
     durationSamples: Math.round(durationSeconds * SAMPLE_RATE),
   };
-  const track = findTrackByTimelineRow(timelineRow);
+  // Also check the recording lane — it isn't in `tracks` yet when onRecordStop fires
+  const track = findTrackByTimelineRow(timelineRow)
+    ?? (recordingLaneTrack?.timelineRow === timelineRow ? recordingLaneTrack : null);
   if (track) track.clips.push(clip);
 
   // Render waveform DOM element
@@ -1717,9 +1719,8 @@ document.getElementById("menu-new-project").addEventListener("click", () => {
   location.reload();
 });
 
-document.getElementById("menu-save-project").addEventListener("click", () => {
-  clearDirty();
-});
+document.getElementById("menu-save-project").addEventListener("click", () => saveProject());
+document.getElementById("menu-open-project").addEventListener("click", () => openProject());
 
 const bottomPanel = document.getElementById("bottom-panel");
 const bottomPanelHandle = document.getElementById("bottom-panel-handle");
