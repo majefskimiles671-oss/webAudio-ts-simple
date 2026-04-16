@@ -80,7 +80,19 @@
 // Shared DOM Referneces -----
 // ============================================================
 
+// Close menu on item click by momentarily dropping pointer-events (kills :hover)
+document.querySelector(".menu-bar").addEventListener("click", (e) => {
+  const item = e.target.closest(".menu-pop div");
+  if (!item) return;
+  const menu = item.closest(".menu");
+  menu.style.pointerEvents = "none";
+  setTimeout(() => { menu.style.pointerEvents = ""; }, 200);
+});
+
 const controlsScrollCol = document.getElementById("controls-scroll-column");
+controlsScrollCol.addEventListener("input", (e) => {
+  if (e.target.closest("gain-slider")) markDirty();
+});
 const timelineArea = document.getElementById("timeline-area");
 const timelineInner = document.getElementById("timeline-inner");
 
@@ -122,6 +134,18 @@ let bpm = 120; // beats per minute
 let beatsPerBar = timeSignature.beats; // kept in sync with timeSignature.beats
 
 let trackCount = 0;
+
+//  Dirty Flag
+let _dirty = false;
+const _unsavedIndicator = document.getElementById("unsaved-indicator");
+function markDirty() {
+  _dirty = true;
+  _unsavedIndicator.hidden = false;
+}
+function clearDirty() {
+  _dirty = false;
+  _unsavedIndicator.hidden = true;
+}
 
 //  Transport State
 let playing = false;
@@ -447,11 +471,13 @@ function createTrack(label, { prepend = false } = {}) {
   title.addEventListener("blur", () => {
     const t = title.textContent.trim();
     title.textContent = t === "" ? label : t;
+    markDirty();
   });
 
   controlFrag.querySelectorAll(".track-scene").forEach((btn) => {
     btn.addEventListener("click", () => {
       btn.classList.toggle("active");
+      markDirty();
       updateSceneMask();
     });
   });
@@ -472,6 +498,7 @@ function createTrack(label, { prepend = false } = {}) {
   deleteBtn.addEventListener("click", () => {
     const idx = Array.from(controlsScrollCol.children).indexOf(controlRow);
     if (idx === -1) return;
+    markDirty();
     controlRow.remove();
     timelineCol.children[idx]?.remove();
   });
@@ -540,6 +567,7 @@ function promoteRecordingLane() {
   if (!recordingLaneTimelineRow) return;
   if (!recordingLaneTimelineRow.querySelector(".waveform")) return;
 
+  markDirty();
   recordingLaneControlRow.classList.remove("recording-lane");
   recordingLaneTimelineRow.classList.remove("recording-lane");
   recordingLaneControlRow = null;
@@ -1078,6 +1106,7 @@ tempoEl.addEventListener("blur", () => {
 
   if (!Number.isNaN(next)) {
     tempoBPM = Math.min(300, Math.max(30, next));
+    markDirty();
   }
 
   bpm = tempoBPM;
@@ -1106,6 +1135,7 @@ timeSigMenu.addEventListener("click", (e) => {
   const noteValue = Number(btn.dataset.note);
 
   setTimeSignature(beats, noteValue);
+  markDirty();
   timeSigWrapper.classList.remove("open");
   timeSigBtn.setAttribute("aria-expanded", "false");
 });
@@ -1148,6 +1178,7 @@ markerDeleteBtn.addEventListener("click", () => {
 
   const deletedNote = markers[idx].note ?? "";
   markers.splice(idx, 1);
+  markDirty();
 
   // Append deleted marker's notes to the previous marker
   if (idx > 0 && deletedNote) {
@@ -1180,6 +1211,7 @@ markerAddBtn.addEventListener("click", () => {
   markers.push(marker);
   markers.sort((a, b) => a.time - b.time);
   selectedMarkerId = marker.id;
+  markDirty();
   renderMarkers();
   renderMarkerTransport();
   renderBottomPanel();
@@ -1638,9 +1670,12 @@ document.addEventListener("mousemove", (e) => {
 // ============================================================
 
 document.getElementById("menu-new-project").addEventListener("click", () => {
-  if (confirm("Start a new project? All unsaved work will be lost.")) {
-    location.reload();
-  }
+  if (_dirty && !confirm("Start a new project? All unsaved work will be lost.")) return;
+  location.reload();
+});
+
+document.getElementById("menu-save-project").addEventListener("click", () => {
+  clearDirty();
 });
 
 const bottomPanel = document.getElementById("bottom-panel");
@@ -1700,6 +1735,7 @@ function renderBottomPanel() {
 
     textarea.addEventListener("input", () => {
       marker.note = textarea.value;
+      markDirty();
       textarea.style.height = "auto";
       textarea.style.height = `${textarea.scrollHeight}px`;
     });

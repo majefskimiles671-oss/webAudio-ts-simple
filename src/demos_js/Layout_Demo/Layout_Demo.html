@@ -64,7 +64,7 @@ Rule - Add comments before code snippets in this format:
             <div class="menu-pop">
                 <div id="menu-new-project">New Project</div>
                 <div>Open Project</div>
-                <div>Save Project</div>
+                <div id="menu-save-project">Save Project</div>
             </div>
         </div>
 
@@ -74,6 +74,8 @@ Rule - Add comments before code snippets in this format:
                 <div id="toggle-bottom-panel">Hide Bottom Panel</div>
                 <hr />
                 <div id="run-demo-chorus">&#9654; Record &amp; Mix the Chorus</div>
+                <div id="run-demo-recording">&#9654; Recording &amp; Arming</div>
+                <div id="run-demo-takes">&#9654; Multiple Takes</div>
                 <div id="run-demo-record-and-notes">&#9654; Record &amp; Add Notes</div>
             </div>
         </div>
@@ -94,6 +96,8 @@ Rule - Add comments before code snippets in this format:
                 <div data-ruler="bars">Ruler Mode: Bars</div>
             </div>
         </div>
+
+        <span id="unsaved-indicator" hidden>Unsaved changes</span>
     </div>
 
 
@@ -271,6 +275,8 @@ Rule - Add comments before code snippets in this format:
 
 <script src="./demo.js"></script>
 <script src="./demo-chorus.js"></script>
+<script src="./demo-recording.js"></script>
+<script src="./demo-takes.js"></script>
 <script src="./demo-record-and-notes.js"></script>
 <script src="./trackNames.js"></script>
 <script src="./onboarding.js"></script>

@@ -156,6 +156,16 @@ const DEMO_SEQUENCE = [
     run: () => runChorusDemo(),
   },
   {
+    title: "Recording & Arming",
+    description: "Record a long first take, then see how to arm and disarm the record button before committing to a second recording.",
+    run: () => runRecordingDemo(),
+  },
+  {
+    title: "Multiple Takes",
+    description: "Record three takes of the same part, solo each one to compare, then delete the weaker takes and keep the best.",
+    run: () => runTakesDemo(),
+  },
+  {
     title: "Record & Add Notes",
     description: "Name a track, record a clip, play it back, drop a marker, and write notes.",
     run: () => runRecordAndNotesDemo(),
@@ -272,7 +282,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("run-demo-chorus").addEventListener("click", () =>
     showDemoIntro(DEMO_SEQUENCE[0].description, () => runAndComplete(runChorusDemo))
   );
+  document.getElementById("run-demo-recording").addEventListener("click", () =>
+    showDemoIntro(DEMO_SEQUENCE[1].description, () => runAndComplete(runRecordingDemo))
+  );
+  document.getElementById("run-demo-takes").addEventListener("click", () =>
+    showDemoIntro(DEMO_SEQUENCE[2].description, () => runAndComplete(runTakesDemo))
+  );
   document.getElementById("run-demo-record-and-notes").addEventListener("click", () =>
-    showDemoIntro(DEMO_SEQUENCE[1].description, () => runAndComplete(runRecordAndNotesDemo))
+    showDemoIntro(DEMO_SEQUENCE[3].description, () => runAndComplete(runRecordAndNotesDemo))
   );
 });

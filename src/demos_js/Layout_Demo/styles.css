@@ -1104,6 +1104,21 @@
 
         /* Menu CSS */
 
+        #unsaved-indicator {
+            margin-left: auto;
+            margin-right: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: var(--accent-primary);
+            background: color-mix(in oklab, var(--accent-primary) 12%, transparent);
+            border: 1px solid color-mix(in oklab, var(--accent-primary) 35%, transparent);
+            border-radius: 4px;
+            padding: 2px 8px;
+            pointer-events: none;
+            user-select: none;
+        }
+
         .menu-bar {
             height: 32px;
             display: flex;
