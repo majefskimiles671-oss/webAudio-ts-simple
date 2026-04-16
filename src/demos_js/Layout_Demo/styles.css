@@ -1692,3 +1692,164 @@
         body.debug .timeline-row {
             outline: 1px dashed #4cd964;
         }
+
+        /* Mixdown Dialog */
+
+        .mixdown-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mixdown-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 28px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .mixdown-title {
+            margin: 0 0 18px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .mixdown-section-label {
+            margin: 0 0 8px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .mixdown-notice {
+            margin: 0 0 18px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+
+        /* Scene list */
+
+        .mixdown-scene-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-bottom: 20px;
+        }
+
+        .mixdown-scene-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: var(--bg-surface);
+            cursor: pointer;
+        }
+
+        .mixdown-scene-row.empty {
+            opacity: 0.38;
+            cursor: default;
+        }
+
+        .mixdown-scene-row input[type="checkbox"] {
+            flex-shrink: 0;
+            accent-color: var(--accent-primary);
+        }
+
+        .mixdown-scene-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+        }
+
+        .mixdown-scene-letter {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .mixdown-scene-tracks {
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Output format */
+
+        .mixdown-mode-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 24px;
+            font-size: 13px;
+            color: var(--text-main);
+        }
+
+        .mixdown-mode-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .mixdown-mode-group input[type="checkbox"] {
+            accent-color: var(--accent-primary);
+        }
+
+        /* Done state file list */
+
+        .mixdown-file-list {
+            margin: 0 0 22px;
+            padding-left: 18px;
+            font-size: 12px;
+            font-family: monospace;
+            color: var(--text-muted);
+            line-height: 1.9;
+        }
+
+        /* Actions */
+
+        .mixdown-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .mixdown-actions button {
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .mixdown-cancel {
+            background: transparent;
+            border-color: var(--border-subtle);
+            color: var(--text-muted);
+        }
+
+        .mixdown-primary {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .mixdown-primary:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
