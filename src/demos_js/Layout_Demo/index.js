@@ -1637,6 +1637,12 @@ document.addEventListener("mousemove", (e) => {
 // Bottom Panel -----
 // ============================================================
 
+document.getElementById("menu-new-project").addEventListener("click", () => {
+  if (confirm("Start a new project? All unsaved work will be lost.")) {
+    location.reload();
+  }
+});
+
 const bottomPanel = document.getElementById("bottom-panel");
 const bottomPanelHandle = document.getElementById("bottom-panel-handle");
 const toggleBottomPanelBtn = document.getElementById("toggle-bottom-panel");
