@@ -1150,13 +1150,14 @@ function ensureTimelineWidth(px) {
 // ============================================================
 
 
-function setTheme(name) {
+function setTheme(name, { silent = false } = {}) {
   document.body.setAttribute("data-theme", name);
   document.querySelectorAll(".menu-pop [data-theme]").forEach(el => {
     el.classList.toggle("active", el.dataset.theme === name);
   });
   renderTimelineLayer();
   rerenderWaveforms();
+  if (!silent) markDirty();
 }
 
 document.querySelectorAll("[data-theme]").forEach((el) => {
@@ -1176,6 +1177,7 @@ document.getElementById("debug-toggle-display").onclick = () => document.body.cl
 document.getElementById("toggle-notes-font").onclick = () => {
   const isActive = document.body.getAttribute("data-notes-font") === "mono";
   document.body.setAttribute("data-notes-font", isActive ? "" : "mono");
+  markDirty();
 };
 
 timelineArea.addEventListener("scroll", () => {
@@ -2083,7 +2085,7 @@ markers.push({ id: ORIGIN_MARKER_ID, time: secondsPerBar() * 0, note: "" });
 // markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 8, note: "Chorus begins\nBig energy here\nDon't forget the drop\nRide it out to bar 12" });
 selectedMarkerId = ORIGIN_MARKER_ID;
 
-setTheme("earth");
+setTheme("earth", { silent: true });
 
 // Populate master meter segments
 document.querySelectorAll(".master-meter-bar").forEach(bar => {

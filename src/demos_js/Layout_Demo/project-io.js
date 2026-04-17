@@ -17,6 +17,7 @@ function serializeProject() {
     version: 1,
     id:         projectId,
     theme:      document.body.getAttribute("data-theme") ?? "earth",
+    notesMono:  document.body.getAttribute("data-notes-font") === "mono",
     sampleRate: SAMPLE_RATE,
     bpm:        tempoBPM,
     timeSignature: {
@@ -93,7 +94,8 @@ function deserializeProject(data) {
 
   // ----- Restore musical state -----
 
-  if (data.theme) setTheme(data.theme);
+  if (data.theme) setTheme(data.theme, { silent: true });
+  document.body.setAttribute("data-notes-font", data.notesMono ? "mono" : "");
 
   const sr  = data.sampleRate ?? SAMPLE_RATE;
   tempoBPM  = data.bpm ?? 120;
