@@ -2185,7 +2185,7 @@
             border-bottom: 1px solid var(--border-subtle);
             border-right: none;
             cursor: pointer;
-            aspect-ratio: 1;
+            aspect-ratio: 10 / 12;
         }
 
         .cd-fret-cell::before {
@@ -2362,6 +2362,12 @@
 
         /* Editor */
 
+        .cd-editor-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .cd-name-row {
             display: flex;
             align-items: center;
@@ -2472,6 +2478,50 @@
         }
 
         .cd-btn-delete-chord:hover { opacity: 0.75; }
+
+        /* Chord edit popover */
+
+        #chord-edit-popover {
+            position: fixed;
+            left: -9999px;
+            top: -9999px;
+            width: 240px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+            z-index: 5100;
+            display: none;
+            flex-direction: column;
+        }
+
+        #chord-edit-popover.cd-popover-visible {
+            display: flex;
+        }
+
+        .cd-popover-inner {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .cd-popover-inner .cd-grid-wrap {
+            width: 100%;
+        }
+
+        .cd-popover-inner .cd-fret-label {
+            font-size: 13px;
+            min-width: 18px;
+            text-align: right;
+        }
+
+        .cd-popover-inner .cd-dialog-footer {
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 10px;
+            margin-top: 2px;
+            justify-content: space-between;
+        }
 
 /* Debug CSS */
 

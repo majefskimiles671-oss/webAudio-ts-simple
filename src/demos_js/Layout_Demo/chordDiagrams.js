@@ -42,6 +42,10 @@ function cdGetDialog() {
   return document.getElementById("chord-diagrams-dialog");
 }
 
+function cdGetEditPopover() {
+  return document.getElementById("chord-edit-popover");
+}
+
 function cdGetBody() {
   return document.getElementById("chord-diagrams-body");
 }
@@ -92,19 +96,52 @@ function cdTogglePanel() {
 }
 
 function cdOpenDialog(chordId = null) {
+  cdGetDialog().classList.add("cd-visible");
+  cdOpenEditPopover(chordId, null);
+}
+
+function cdShowList() {
+  _editingChord = null;
+  cdGetEditPopover().classList.remove("cd-popover-visible");
+}
+
+function cdOpenEditPopover(chordId, anchorEl) {
   if (chordId) {
     const existing = chords.find(c => c.id === chordId);
     _editingChord = existing ? cdCloneChord(existing) : cdMakeBlankChord();
   } else {
     _editingChord = cdMakeBlankChord();
   }
-  cdGetDialog().classList.add("cd-visible");
-  cdRenderDialog();
+  cdRenderEditPopover();
+  const pop = cdGetEditPopover();
+  pop.classList.add("cd-popover-visible");
+  requestAnimationFrame(() => {
+    cdPositionPopover(anchorEl);
+    pop.querySelectorAll(".cd-grid-wrap").forEach(cdSyncFretLabel);
+    const nameInput = pop.querySelector(".cd-name-input");
+    if (nameInput) nameInput.focus();
+  });
 }
 
-function cdShowList() {
-  _editingChord = null;
-  cdRenderDialog();
+function cdPositionPopover(anchorEl) {
+  const pop = cdGetEditPopover();
+  if (!anchorEl) {
+    pop.style.left = "50%";
+    pop.style.top  = "50%";
+    pop.style.transform = "translate(-50%, -50%)";
+    return;
+  }
+  pop.style.transform = "";
+  const popW = pop.offsetWidth;
+  const popH = pop.offsetHeight;
+  const rect = anchorEl.getBoundingClientRect();
+  let top  = rect.top - popH - 8;
+  let left = rect.left + rect.width / 2 - popW / 2;
+  if (top < 8) top = rect.bottom + 8;
+  left = Math.max(8, Math.min(left, window.innerWidth  - popW - 8));
+  top  = Math.max(8, Math.min(top,  window.innerHeight - popH - 8));
+  pop.style.left = left + "px";
+  pop.style.top  = top  + "px";
 }
 
 function cdSaveChord() {
@@ -117,11 +154,13 @@ function cdSaveChord() {
   }
   if (typeof markDirty === "function") markDirty();
   cdShowList();
+  cdRenderDialog();
 }
 
 function cdDeleteChord(id) {
   chords = chords.filter(c => c.id !== id);
   if (typeof markDirty === "function") markDirty();
+  cdShowList();
   cdRenderDialog();
 }
 
@@ -200,19 +239,14 @@ function cdSyncFretLabel(wrap) {
   // Vertical: align with first fret cell
   label.style.paddingTop = "0";
   const vertOffset = (firstCell.getBoundingClientRect().top - label.getBoundingClientRect().top) / zoom;
-  if (vertOffset > 0) label.style.paddingTop = vertOffset + "px";
+  const vertOffsetTweaked = vertOffset - 5;
+  if (vertOffsetTweaked > 0) label.style.paddingTop = vertOffsetTweaked + "px";
 
-  // Horizontal: slide label right so it sits just left of the first string line
-  label.style.position = "relative";
-  label.style.left = "0";
-  const firstStringX = firstCell.getBoundingClientRect().left + firstCell.getBoundingClientRect().width / 2;
-  const shift = (firstStringX - label.getBoundingClientRect().right - 2) / zoom;
-  if (shift > 0) label.style.left = shift + "px";
 }
 
 function cdRenderEditor() {
-  const body = cdGetBody();
-  const existingWrap = body.querySelector(".cd-grid-wrap");
+  const pop = cdGetEditPopover();
+  const existingWrap = pop ? pop.querySelector(".cd-grid-wrap") : null;
   if (existingWrap) {
     const newWrap = cdBuildGridEl(_editingChord, true);
     existingWrap.replaceWith(newWrap);
@@ -220,17 +254,19 @@ function cdRenderEditor() {
   }
 }
 
+function cdRenderEditPopover() {
+  const inner = cdGetEditPopover().querySelector(".cd-popover-inner");
+  inner.innerHTML = "";
+  cdRenderEditorInto(inner);
+}
+
 function cdRenderDialog() {
   const body = cdGetBody();
   const footer = cdGetFooter();
   body.innerHTML = "";
   footer.innerHTML = "";
-  if (_editingChord) {
-    cdRenderEditorInto(body);
-  } else {
-    cdRenderListInto(body);
-    cdRenderListFooterInto(footer);
-  }
+  cdRenderListInto(body);
+  cdRenderListFooterInto(footer);
 }
 
 function cdRenderListInto(container) {
@@ -245,7 +281,7 @@ function cdRenderListInto(container) {
     for (const chord of chords) {
       const card = document.createElement("div");
       card.className = "cd-chord-card";
-      card.addEventListener("click", () => cdOpenDialog(chord.id));
+      card.addEventListener("click", () => cdOpenEditPopover(chord.id, card));
 
       const name = document.createElement("div");
       name.className = "cd-card-name";
@@ -270,7 +306,7 @@ function cdRenderListFooterInto(footer) {
   const addBtn = document.createElement("button");
   addBtn.className = "cd-add-btn";
   addBtn.textContent = "+ Add Chord";
-  addBtn.addEventListener("click", () => cdOpenDialog());
+  addBtn.addEventListener("click", () => cdOpenEditPopover(null, addBtn));
 
   const zoomWrap = document.createElement("div");
   zoomWrap.className = "cd-zoom-wrap";
@@ -300,16 +336,18 @@ function cdRenderListFooterInto(footer) {
 }
 
 function cdRenderEditorInto(container) {
-  // Name + baseFret row
-  const nameRow = document.createElement("div");
-  nameRow.className = "cd-name-row";
-
+  // Chord name
   const nameInput = document.createElement("input");
   nameInput.className = "cd-name-input";
   nameInput.type = "text";
   nameInput.placeholder = "Chord name…";
   nameInput.value = _editingChord.name;
   nameInput.addEventListener("input", () => { _editingChord.name = nameInput.value; });
+  container.appendChild(nameInput);
+
+  // Controls row: fret + rows
+  const controls = document.createElement("div");
+  controls.className = "cd-editor-controls";
 
   const fretLabel = document.createElement("span");
   fretLabel.className = "cd-basefret-label";
@@ -344,24 +382,23 @@ function cdRenderEditorInto(container) {
         while (_editingChord.dots[s].length > n) _editingChord.dots[s].pop();
         while (_editingChord.dots[s].length < n) _editingChord.dots[s].push(false);
       }
-      if (prev !== n) cdRenderDialog();
+      if (prev !== n) cdRenderEditPopover();
     });
     rowsSeg.appendChild(btn);
   });
 
-  nameRow.appendChild(nameInput);
-  nameRow.appendChild(fretLabel);
-  nameRow.appendChild(fretInput);
-  nameRow.appendChild(rowsLabel);
-  nameRow.appendChild(rowsSeg);
-  container.appendChild(nameRow);
+  controls.appendChild(fretLabel);
+  controls.appendChild(fretInput);
+  controls.appendChild(rowsLabel);
+  controls.appendChild(rowsSeg);
+  container.appendChild(controls);
 
   // Diagram grid
   const editorWrap = cdBuildGridEl(_editingChord, true);
   container.appendChild(editorWrap);
   cdSyncFretLabel(editorWrap);
 
-  // Footer buttons
+  // Footer
   const footer = document.createElement("div");
   footer.className = "cd-dialog-footer";
 
@@ -369,6 +406,9 @@ function cdRenderEditorInto(container) {
   cancelBtn.className = "cd-btn-cancel";
   cancelBtn.textContent = "Cancel";
   cancelBtn.addEventListener("click", cdShowList);
+
+  const rightGroup = document.createElement("div");
+  rightGroup.className = "cd-editor-footer-right";
 
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "cd-btn-delete-chord";
@@ -380,9 +420,10 @@ function cdRenderEditorInto(container) {
   saveBtn.textContent = "Save";
   saveBtn.addEventListener("click", cdSaveChord);
 
+  rightGroup.appendChild(deleteBtn);
+  rightGroup.appendChild(saveBtn);
   footer.appendChild(cancelBtn);
-  footer.appendChild(deleteBtn);
-  footer.appendChild(saveBtn);
+  footer.appendChild(rightGroup);
   container.appendChild(footer);
 }
 
@@ -451,6 +492,31 @@ function cdInit() {
   dialog.style.setProperty("--cd-zoom", _cdZoom);
   cdInitDrag();
   cdRenderDialog();
+
+  const popover = document.createElement("div");
+  popover.id = "chord-edit-popover";
+  const popoverInner = document.createElement("div");
+  popoverInner.className = "cd-popover-inner";
+  popover.appendChild(popoverInner);
+  document.body.appendChild(popover);
+
+  document.addEventListener("mousedown", (e) => {
+    const pop = cdGetEditPopover();
+    if (pop.classList.contains("cd-popover-visible") && !pop.contains(e.target)) {
+      pop.classList.remove("cd-popover-visible");
+      _editingChord = null;
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const pop = cdGetEditPopover();
+      if (pop.classList.contains("cd-popover-visible")) {
+        pop.classList.remove("cd-popover-visible");
+        _editingChord = null;
+      }
+    }
+  });
 }
 
 cdInit();
