@@ -214,21 +214,6 @@ function showDemoSequencePopup(index) {
   });
 }
 
-function showDemoComplete() {
-  const overlay = document.createElement("div");
-  overlay.className = "demo-seq-overlay";
-  overlay.innerHTML = `
-    <div class="demo-seq-card">
-      <p class="demo-seq-eyebrow">Finished</p>
-      <p class="demo-seq-title">Demo complete.</p>
-      <p class="demo-seq-description">Now it's your turn — the controls are all yours.</p>
-      <div class="demo-seq-actions">
-        <button class="demo-seq-run">Got it</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  overlay.querySelector(".demo-seq-run").addEventListener("click", () => { setDemoCookie(); overlay.remove(); });
-}
 
 function showCompletionPopup() {
   const overlay = document.createElement("div");
@@ -246,25 +231,6 @@ function showCompletionPopup() {
   overlay.querySelector(".demo-seq-run").addEventListener("click", () => { setDemoCookie(); overlay.remove(); });
 }
 
-// Legacy single-demo intro (used by individual menu items)
-function showDemoIntro(description, onConfirm) {
-  clearTimeout(_sequenceAutoStartId);
-  _sequenceAutoStartId = null;
-  document.querySelectorAll(".demo-seq-overlay").forEach(el => el.remove());
-  const overlay = document.createElement("div");
-  overlay.className = "demo-seq-overlay";
-  overlay.innerHTML = `
-    <div class="demo-seq-card">
-      <p class="demo-seq-description">${description}</p>
-      <div class="demo-seq-actions">
-        <button class="demo-seq-cancel">Cancel</button>
-        <button class="demo-seq-run">Run Demo</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  overlay.querySelector(".demo-seq-run").addEventListener("click", () => { overlay.remove(); onConfirm(); });
-  overlay.querySelector(".demo-seq-cancel").addEventListener("click", () => overlay.remove());
-}
 
 // ---- Startup + Menu Wiring
 
