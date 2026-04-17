@@ -2242,6 +2242,16 @@
             gap: 4px;
             width: 72px;
             zoom: var(--cd-zoom, 1);
+            cursor: pointer;
+        }
+
+        .cd-name-grid-col {
+            position: relative;
+        }
+
+        .cd-chord-card:hover .cd-card-name {
+            color: var(--accent-primary);
+            text-decoration: underline;
         }
 
         .cd-grid-wrap {
@@ -2450,6 +2460,18 @@
         }
 
         .cd-btn-cancel:hover { color: var(--text-main); }
+
+        .cd-btn-delete-chord {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--accent-danger);
+            font-size: 12px;
+            padding: 5px 14px;
+            cursor: pointer;
+        }
+
+        .cd-btn-delete-chord:hover { opacity: 0.75; }
 
 /* Debug CSS */
 

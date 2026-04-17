@@ -245,6 +245,7 @@ function cdRenderListInto(container) {
     for (const chord of chords) {
       const card = document.createElement("div");
       card.className = "cd-chord-card";
+      card.addEventListener("click", () => cdOpenDialog(chord.id));
 
       const name = document.createElement("div");
       name.className = "cd-card-name";
@@ -257,23 +258,6 @@ function cdRenderListInto(container) {
       col.appendChild(gridWrap.querySelector(".cd-grid"));
       gridWrap.appendChild(col);
       card.appendChild(gridWrap);
-
-      const actions = document.createElement("div");
-      actions.className = "cd-card-actions";
-
-      const editBtn = document.createElement("button");
-      editBtn.className = "cd-card-btn";
-      editBtn.textContent = "Edit";
-      editBtn.addEventListener("click", () => cdOpenDialog(chord.id));
-
-      const delBtn = document.createElement("button");
-      delBtn.className = "cd-card-btn cd-btn-delete";
-      delBtn.textContent = "✕";
-      delBtn.addEventListener("click", () => cdDeleteChord(chord.id));
-
-      actions.appendChild(editBtn);
-      actions.appendChild(delBtn);
-      card.appendChild(actions);
       row.appendChild(card);
     }
     container.appendChild(row);
@@ -386,12 +370,18 @@ function cdRenderEditorInto(container) {
   cancelBtn.textContent = "Cancel";
   cancelBtn.addEventListener("click", cdShowList);
 
+  const deleteBtn = document.createElement("button");
+  deleteBtn.className = "cd-btn-delete-chord";
+  deleteBtn.textContent = "Delete";
+  deleteBtn.addEventListener("click", () => cdDeleteChord(_editingChord.id));
+
   const saveBtn = document.createElement("button");
   saveBtn.className = "cd-btn-save";
   saveBtn.textContent = "Save";
   saveBtn.addEventListener("click", cdSaveChord);
 
   footer.appendChild(cancelBtn);
+  footer.appendChild(deleteBtn);
   footer.appendChild(saveBtn);
   container.appendChild(footer);
 }
