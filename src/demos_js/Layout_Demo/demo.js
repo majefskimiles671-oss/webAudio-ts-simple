@@ -198,6 +198,7 @@ function showDemoSequencePopup(index) {
   document.body.appendChild(overlay);
 
   overlay.querySelector(".demo-seq-cancel").addEventListener("click", () => {
+    setDemoCookie();
     overlay.remove();
   });
 
@@ -226,7 +227,7 @@ function showDemoComplete() {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  overlay.querySelector(".demo-seq-run").addEventListener("click", () => overlay.remove());
+  overlay.querySelector(".demo-seq-run").addEventListener("click", () => { setDemoCookie(); overlay.remove(); });
 }
 
 function showCompletionPopup() {
@@ -242,7 +243,7 @@ function showCompletionPopup() {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  overlay.querySelector(".demo-seq-run").addEventListener("click", () => overlay.remove());
+  overlay.querySelector(".demo-seq-run").addEventListener("click", () => { setDemoCookie(); overlay.remove(); });
 }
 
 // Legacy single-demo intro (used by individual menu items)
@@ -267,28 +268,24 @@ function showDemoIntro(description, onConfirm) {
 
 // ---- Startup + Menu Wiring
 
+function demoCookieIsSet() {
+  return localStorage.getItem("demo_sequence_seen") === "1";
+}
+
+function setDemoCookie() {
+  localStorage.setItem("demo_sequence_seen", "1");
+}
+
 let _sequenceAutoStartId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Auto-start the sequence after a short pause
-  _sequenceAutoStartId = setTimeout(() => showDemoSequencePopup(0), 3000);
-
-  // Individual menu items
-  async function runAndComplete(fn) {
-    try { await fn(); } catch(e) { console.error("Demo error:", e); }
-    showDemoComplete();
+  // Auto-start the sequence after a short pause, but only if not seen before
+  if (!demoCookieIsSet()) {
+    _sequenceAutoStartId = setTimeout(() => showDemoSequencePopup(0), 3000);
   }
 
-  document.getElementById("run-demo-chorus").addEventListener("click", () =>
-    showDemoIntro(DEMO_SEQUENCE[0].description, () => runAndComplete(runChorusDemo))
-  );
-  document.getElementById("run-demo-recording").addEventListener("click", () =>
-    showDemoIntro(DEMO_SEQUENCE[1].description, () => runAndComplete(runRecordingDemo))
-  );
-  document.getElementById("run-demo-takes").addEventListener("click", () =>
-    showDemoIntro(DEMO_SEQUENCE[2].description, () => runAndComplete(runTakesDemo))
-  );
-  document.getElementById("run-demo-record-and-notes").addEventListener("click", () =>
-    showDemoIntro(DEMO_SEQUENCE[3].description, () => runAndComplete(runRecordAndNotesDemo))
-  );
+  document.getElementById("restore-demo-popup").addEventListener("click", () => {
+    localStorage.removeItem("demo_sequence_seen");
+    showDemoSequencePopup(0);
+  });
 });

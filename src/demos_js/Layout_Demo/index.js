@@ -144,6 +144,9 @@ const ORIGIN_MARKER_ID = "origin";
 let markers = [];
 let selectedMarkerId = null;
 
+//  Clip Selection
+let selectedClipId = null;
+
 //  Musical Grid
 let bpm = 120; // beats per minute
 let beatsPerBar = timeSignature.beats; // kept in sync with timeSignature.beats
@@ -378,6 +381,19 @@ function setTimeSignature(beats, noteValue) {
   renderTimelineLayer();
   renderMetronomeGrid();
   syncTimelineMinWidth();
+}
+
+// ----- Clip Selection
+function selectClip(clipId) {
+  selectedClipId = clipId;
+  document.querySelectorAll(".waveform").forEach(el => {
+    el.classList.toggle("selected", el.dataset.clipId === clipId);
+  });
+}
+
+function deselectClip() {
+  selectedClipId = null;
+  document.querySelectorAll(".waveform.selected").forEach(el => el.classList.remove("selected"));
 }
 
 // ----- Marker Selection
@@ -1112,11 +1128,17 @@ function ensureTimelineWidth(px) {
 // ============================================================
 
 
+function setTheme(name) {
+  document.body.setAttribute("data-theme", name);
+  document.querySelectorAll(".menu-pop [data-theme]").forEach(el => {
+    el.classList.toggle("active", el.dataset.theme === name);
+  });
+  renderTimelineLayer();
+  rerenderWaveforms();
+}
+
 document.querySelectorAll("[data-theme]").forEach((el) => {
-  el.onclick = () => {
-    document.body.setAttribute("data-theme", el.dataset.theme);
-    renderTimelineLayer();
-  };
+  el.onclick = () => setTheme(el.dataset.theme);
 });
 
 document.querySelectorAll("[data-ruler]").forEach((el) => {
@@ -1125,6 +1147,13 @@ document.querySelectorAll("[data-ruler]").forEach((el) => {
     setRulerMode(mode);
   };
 });
+
+document.getElementById("debug-log-project").onclick = () => console.log(serializeProject());
+
+document.getElementById("toggle-notes-font").onclick = () => {
+  const isActive = document.body.getAttribute("data-notes-font") === "mono";
+  document.body.setAttribute("data-notes-font", isActive ? "" : "mono");
+};
 
 timelineArea.addEventListener("scroll", () => {
   renderTimelineLayer();
@@ -1524,6 +1553,20 @@ recordBtn.onclick = () => {
   applyTransportChange({ play: playing, record: !recording });
 };
 
+
+// ----- Clip Selection Handlers
+timelineArea.addEventListener("click", (e) => {
+  const waveform = e.target.closest(".waveform");
+  if (waveform) {
+    selectClip(waveform.dataset.clipId);
+  } else {
+    deselectClip();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") deselectClip();
+});
 
 // ----- Scrub Handlers
 timelineArea.addEventListener("mousedown", (e) => {
@@ -1959,13 +2002,17 @@ function renderBottomPanel() {
     const timeEl = document.createElement("div");
     timeEl.className = "panel-marker-time";
     timeEl.textContent = formatTime(marker.time);
-    timeEl.addEventListener("click", () => selectMarkerByIndex(markers.indexOf(marker)));
 
     const textarea = document.createElement("textarea");
     textarea.className = "panel-marker-note";
     textarea.placeholder = "Add notes…";
     textarea.value = marker.note ?? "";
     textarea.rows = 1;
+
+    row.addEventListener("click", (e) => {
+      if (e.target === textarea) return;
+      selectMarkerByIndex(markers.indexOf(marker));
+    });
 
     textarea.addEventListener("input", () => {
       marker.note = textarea.value;
@@ -2007,7 +2054,7 @@ markers.push({ id: ORIGIN_MARKER_ID, time: secondsPerBar() * 0, note: "" });
 // markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 8, note: "Chorus begins\nBig energy here\nDon't forget the drop\nRide it out to bar 12" });
 selectedMarkerId = ORIGIN_MARKER_ID;
 
-document.body.setAttribute("data-theme", "earth");
+setTheme("earth");
 
 // Populate master meter segments
 document.querySelectorAll(".master-meter-bar").forEach(bar => {
@@ -2033,4 +2080,4 @@ renderTimeSignature();
 renderMetronomeGrid();
 renderMarkerTransport();
 renderBottomPanel();
-// startOnboarding();
+

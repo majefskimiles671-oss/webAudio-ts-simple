@@ -16,6 +16,7 @@ function serializeProject() {
   return {
     version: 1,
     id:         projectId,
+    theme:      document.body.getAttribute("data-theme") ?? "earth",
     sampleRate: SAMPLE_RATE,
     bpm:        tempoBPM,
     timeSignature: {
@@ -91,6 +92,8 @@ function deserializeProject(data) {
   selectedMarkerId = null;
 
   // ----- Restore musical state -----
+
+  if (data.theme) setTheme(data.theme);
 
   const sr  = data.sampleRate ?? SAMPLE_RATE;
   tempoBPM  = data.bpm ?? 120;

@@ -44,6 +44,7 @@ const ONBOARDING_STEPS = [
 
 function startOnboarding() {
   if (!ONBOARDING_STEPS.length) return;
+  if (document.cookie.split(";").some(c => c.trim() === "onboarding_dismissed=1")) return;
 
   const overlay = document.createElement("div");
   overlay.id = "onboarding-overlay";
@@ -110,6 +111,7 @@ function startOnboarding() {
   }
 
   function dismiss() {
+    document.cookie = "onboarding_dismissed=1; max-age=31536000; path=/";
     overlay.classList.add("onboarding-exit");
     overlay.addEventListener("animationend", () => overlay.remove(), { once: true });
   }
