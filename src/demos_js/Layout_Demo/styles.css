@@ -2444,9 +2444,9 @@
 
         .cd-btn-save {
             background: var(--accent-primary);
-            border: none;
+            border: 1px solid transparent;
             border-radius: 4px;
-            color: #000;
+            color: var(--bg-base);
             font-weight: 600;
             font-size: 12px;
             padding: 5px 14px;
@@ -2457,7 +2457,7 @@
 
         .cd-btn-cancel {
             background: transparent;
-            border: 1px solid var(--border-subtle);
+            border: 1px solid transparent;
             border-radius: 4px;
             color: var(--text-muted);
             font-size: 12px;
@@ -2471,13 +2471,16 @@
             background: transparent;
             border: 1px solid var(--border-subtle);
             border-radius: 4px;
-            color: var(--accent-danger);
+            color: var(--text-muted);
             font-size: 12px;
             padding: 5px 14px;
             cursor: pointer;
         }
 
-        .cd-btn-delete-chord:hover { opacity: 0.75; }
+        .cd-btn-delete-chord:hover {
+            color: var(--accent-danger);
+            border-color: var(--accent-danger);
+        }
 
         /* Chord edit popover */
 
@@ -2507,13 +2510,25 @@
         }
 
         .cd-popover-inner .cd-grid-wrap {
-            width: 100%;
+            width: 150px;
         }
 
         .cd-popover-inner .cd-fret-label {
-            font-size: 13px;
-            min-width: 18px;
+            font-size: 17px;
+            min-width: 22px;
             text-align: right;
+        }
+
+        .cd-popover-inner .cd-top-cell {
+            font-size: 19px;
+        }
+
+        .cd-popover-inner .cd-grid {
+            grid-template-rows: 28px repeat(5, 1fr);
+        }
+
+        .cd-popover-inner .cd-grid.cd-4frets {
+            grid-template-rows: 28px repeat(4, 1fr);
         }
 
         .cd-popover-inner .cd-dialog-footer {

@@ -893,8 +893,8 @@ function renderMetronomeScan() {
   const width = scan.clientWidth;
   const x = phase * width;
 
-  // blink at beginning of phase
-  if (phase < 0.03) {
+  const beatPhase = (phase * beatsPerBar) % 1;
+  if (phase < 0.03 || beatPhase < 0.1) {
     line.style.opacity = "1";
     line.style.width = "3px";
   } else {
