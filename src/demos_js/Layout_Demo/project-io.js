@@ -37,6 +37,15 @@ function serializeProject() {
         durationSamples: clip.durationSamples,
       })),
     })),
+    chordPanel: (typeof cdGetPanelState === "function") ? cdGetPanelState() : undefined,
+    chords: (typeof chords !== "undefined" ? chords : []).map(c => ({
+      id:       c.id,
+      name:     c.name,
+      baseFret: c.baseFret,
+      frets:    c.frets ?? 5,
+      tops:     [...c.tops],
+      dots:     c.dots.map(row => [...row]),
+    })),
     markers: markers.map(m => ({
       id:         m.id,
       timeSample: Math.round(m.time * SAMPLE_RATE),
@@ -173,6 +182,25 @@ function deserializeProject(data) {
   }
   markers.sort((a, b) => a.time - b.time);
   selectedMarkerId = markers[0]?.id ?? null;
+
+  // ----- Restore chords -----
+
+  if (typeof chords !== "undefined") {
+    chords.length = 0;
+    for (const c of (data.chords ?? [])) {
+      const f = c.frets ?? 5;
+      chords.push({
+        id:       c.id,
+        name:     c.name ?? "",
+        baseFret: c.baseFret ?? 1,
+        frets:    f,
+        tops:     c.tops ?? Array(6).fill(null),
+        dots:     c.dots ?? Array.from({ length: 6 }, () => Array(f).fill(false)),
+      });
+    }
+    if (typeof cdRenderDialog === "function") cdRenderDialog();
+    if (typeof cdSetPanelState === "function") cdSetPanelState(data.chordPanel);
+  }
 
   // ----- Fresh recording lane -----
 

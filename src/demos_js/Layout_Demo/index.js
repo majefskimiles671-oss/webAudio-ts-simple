@@ -1174,6 +1174,8 @@ document.querySelectorAll("[data-ruler]").forEach((el) => {
 document.getElementById("debug-log-project").onclick = () => console.log(serializeProject());
 document.getElementById("debug-toggle-display").onclick = () => document.body.classList.toggle("debug");
 
+document.getElementById("toggle-chord-panel").addEventListener("click", cdTogglePanel);
+
 document.getElementById("toggle-notes-font").onclick = () => {
   const isActive = document.body.getAttribute("data-notes-font") === "mono";
   document.body.setAttribute("data-notes-font", isActive ? "" : "mono");
