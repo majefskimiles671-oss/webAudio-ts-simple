@@ -396,6 +396,27 @@ function deselectClip() {
   document.querySelectorAll(".waveform.selected").forEach(el => el.classList.remove("selected"));
 }
 
+function deleteSelectedClip() {
+  if (!selectedClipId) return;
+  const track = tracks.find(t => t.clips.some(c => c.id === selectedClipId));
+  if (track) track.clips = track.clips.filter(c => c.id !== selectedClipId);
+  document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`)?.remove();
+  deselectClip();
+  markDirty();
+}
+
+function attachClipDeleteButton(waveform) {
+  const btn = document.createElement("button");
+  btn.className = "waveform-delete-btn";
+  btn.innerHTML = "&#x2715;";
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    selectClip(waveform.dataset.clipId);
+    deleteSelectedClip();
+  });
+  waveform.appendChild(btn);
+}
+
 // ----- Marker Selection
 function selectMarkerByIndex(index) {
   if (!markers.length) return;
@@ -646,6 +667,7 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
   drawDummyWaveform(canvas);
 
   waveform.appendChild(canvas);
+  attachClipDeleteButton(waveform);
   rowInner.appendChild(waveform);
 }
 
@@ -1149,6 +1171,7 @@ document.querySelectorAll("[data-ruler]").forEach((el) => {
 });
 
 document.getElementById("debug-log-project").onclick = () => console.log(serializeProject());
+document.getElementById("debug-toggle-display").onclick = () => document.body.classList.toggle("debug");
 
 document.getElementById("toggle-notes-font").onclick = () => {
   const isActive = document.body.getAttribute("data-notes-font") === "mono";
@@ -1503,11 +1526,6 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "d") {
-    document.body.classList.toggle("debug");
-  }
-});
 
 const zoomSlider = document.getElementById("zoom-slider");
 
@@ -1565,7 +1583,18 @@ timelineArea.addEventListener("click", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
+  const editable = document.activeElement?.tagName === "INPUT"
+    || document.activeElement?.tagName === "TEXTAREA"
+    || document.activeElement?.isContentEditable;
+
   if (e.key === "Escape") deselectClip();
+
+  if ((e.key === "Delete" || e.key === "Backspace") && !editable) deleteSelectedClip();
+
+  if (e.key === " " && !editable) {
+    e.preventDefault();
+    applyTransportChange({ play: !playing, record: playing ? false : recording });
+  }
 });
 
 // ----- Scrub Handlers
@@ -2080,4 +2109,32 @@ renderTimeSignature();
 renderMetronomeGrid();
 renderMarkerTransport();
 renderBottomPanel();
+
+// ----- Auto-Open Last Project
+const _autoOpenEl = document.getElementById("toggle-auto-open");
+
+function updateAutoOpenLabel() {
+  const on = localStorage.getItem("autoOpenPreviousProject") === "1";
+  _autoOpenEl.textContent = `Auto-Open Last Project: ${on ? "On" : "Off"}`;
+}
+
+_autoOpenEl.onclick = () => {
+  const on = localStorage.getItem("autoOpenPreviousProject") === "1";
+  localStorage.setItem("autoOpenPreviousProject", on ? "0" : "1");
+  updateAutoOpenLabel();
+};
+
+updateAutoOpenLabel();
+
+if (localStorage.getItem("autoOpenPreviousProject") === "1") {
+  const raw = localStorage.getItem("previousProjectData");
+  if (raw) {
+    try {
+      deserializeProject(JSON.parse(raw));
+      markDirty(); // file handle is lost on reload — prompt user to re-save
+    } catch (e) {
+      console.warn("Failed to restore previous project:", e);
+    }
+  }
+}
 

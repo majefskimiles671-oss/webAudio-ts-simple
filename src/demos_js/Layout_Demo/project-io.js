@@ -157,6 +157,7 @@ function deserializeProject(data) {
       drawDummyWaveform(canvas);
 
       waveform.appendChild(canvas);
+      attachClipDeleteButton(waveform);
       rowInner.appendChild(waveform);
     }
 
@@ -202,7 +203,8 @@ async function saveProject() {
     }
 
     // Write project.json
-    const data       = serializeProject();
+    const data = serializeProject();
+    localStorage.setItem("previousProjectData", JSON.stringify(data));
     const jsonHandle = await projectFolderHandle.getFileHandle("project.json", { create: true });
     const jsonWriter = await jsonHandle.createWritable();
     await jsonWriter.write(JSON.stringify(data, null, 2));
@@ -247,6 +249,7 @@ async function openProject() {
     projectId            = data.id ?? folderHandle.name;
     projectFolderHandle  = folderHandle;
 
+    localStorage.setItem("previousProjectData", JSON.stringify(data));
     deserializeProject(data);
     clearDirty();
   } catch (err) {
@@ -256,3 +259,9 @@ async function openProject() {
     }
   }
 }
+
+window.addEventListener("beforeunload", () => {
+  if (localStorage.getItem("autoOpenPreviousProject") === "1") {
+    localStorage.setItem("previousProjectData", JSON.stringify(serializeProject()));
+  }
+});
