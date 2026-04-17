@@ -85,3 +85,18 @@ session.curvatureSamples // how many mouse path samples collected
  - add a marker then add a note to it that says "I love you \nand you love me \nbut we don't speak the same language \nexcept the language of love"
  - popup that says "Now it's your turn!"
 
+---
+
+After recording, the most natural workflow toward a shareable mixdown is:
+
+Trim/crop clips — recordings rarely start and end cleanly. The ability to drag the edges of a clip to cut out silence or mistakes is probably the single most-wanted editing feature.
+
+Move clips — nudge a clip left or right to fix timing, or slide it to a different position after trimming.
+
+Actual audio playback — right now clips are visual placeholders. Without real audio playing back, nothing else matters much. This is the big one.
+
+Per-track volume/pan during playback — the sliders exist but aren't wired to actual audio nodes yet.
+
+Of these, 3 is the prerequisite for everything else feeling real. Without playback, trim and move are just aesthetic. I'd prioritize wiring up the Web Audio API so recorded audio actually plays back through the existing track/gain/pan structure — then trim and move become immediately satisfying to use.
+
+---
