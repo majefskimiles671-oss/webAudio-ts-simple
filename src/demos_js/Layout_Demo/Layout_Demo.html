@@ -73,6 +73,8 @@ Rule - Add comments before code snippets in this format:
         <div class="menu">
             <button class="menu-label" aria-haspopup="menu">View</button>
             <div class="menu-pop" role="menu">
+                <div id="view-settings-open" role="menuitem" tabindex="-1">View Settings…</div>
+                <hr />
                 <div id="toggle-bottom-panel" role="menuitem" tabindex="-1">Hide Bottom Panel</div>
                 <div id="toggle-master" role="menuitem" tabindex="-1">Hide Master Controls</div>
                 <div id="toggle-notes" role="menuitem" tabindex="-1">Hide Marker Notes</div>
@@ -329,6 +331,28 @@ Rule - Add comments before code snippets in this format:
     </div>
 
 <div id="aria-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+<div id="view-settings-overlay" class="view-settings-overlay" hidden>
+    <div class="view-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="view-settings-title">
+        <h2 class="view-settings-title" id="view-settings-title">View Settings</h2>
+        <div class="view-settings-body">
+            <label><input type="checkbox" data-view-key="bottomPanel"> Bottom Panel</label>
+            <label><input type="checkbox" data-view-key="master"> Master Controls</label>
+            <label><input type="checkbox" data-view-key="notes"> Marker Notes</label>
+            <label><input type="checkbox" data-view-key="scenes"> Scenes</label>
+            <label><input type="checkbox" data-view-key="markerTransport"> Marker Transport</label>
+            <label><input type="checkbox" data-view-key="tempo"> Tempo &amp; Time Sig</label>
+            <label><input type="checkbox" data-view-key="metronome"> Metronome</label>
+            <label><input type="checkbox" data-view-key="zoom"> Zoom Slider</label>
+            <label><input type="checkbox" data-view-key="solo"> Solo Buttons</label>
+            <label><input type="checkbox" data-view-key="recordingLane"> Recording Lane</label>
+        </div>
+        <div class="view-settings-actions">
+            <button id="view-settings-cancel">Cancel</button>
+            <button id="view-settings-accept" class="view-settings-accept-btn">OK</button>
+        </div>
+    </div>
+</div>
 
 <script src="./project-io.js"></script>
 <script src="./demo.js"></script>

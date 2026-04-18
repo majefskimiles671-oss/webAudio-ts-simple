@@ -199,6 +199,46 @@ function clearDirty() {
   _unsavedIndicator.hidden = true;
 }
 
+// State - View State - Truth Layer -----
+const viewState = {
+  bottomPanel:     true,
+  master:          true,
+  notes:           true,
+  scenes:          true,
+  markerTransport: true,
+  tempo:           true,
+  metronome:       true,
+  zoom:            true,
+  solo:            true,
+  recordingLane:   true,
+};
+
+// Authority - View State - Apply -----
+function applyViewState() {
+  const toggles = [
+    ["scenes",          "hide-scenes",          "toggle-scenes",          "Hide Scenes",           "Show Scenes"],
+    ["markerTransport", "hide-marker-transport", "toggle-marker-transport","Hide Marker Transport", "Show Marker Transport"],
+    ["tempo",           "hide-tempo",            "toggle-tempo",           "Hide Tempo & Time Sig", "Show Tempo & Time Sig"],
+    ["metronome",       "hide-metronome",        "toggle-metronome",       "Hide Metronome",        "Show Metronome"],
+    ["zoom",            "hide-zoom",             "toggle-zoom",            "Hide Zoom Slider",      "Show Zoom Slider"],
+    ["solo",            "hide-solo",             "toggle-solo",            "Hide Solo Buttons",     "Show Solo Buttons"],
+    ["recordingLane",   "hide-recording-lane",   "toggle-recording-lane",  "Hide Recording Lane",   "Show Recording Lane"],
+    ["master",          "hide-master",           "toggle-master",          "Hide Master Controls",  "Show Master Controls"],
+    ["notes",           "hide-notes",            "toggle-notes",           "Hide Marker Notes",     "Show Marker Notes"],
+  ];
+  toggles.forEach(([key, cls, menuId, hideLabel, showLabel]) => {
+    document.body.classList.toggle(cls, !viewState[key]);
+    const el = document.getElementById(menuId);
+    if (el) el.textContent = viewState[key] ? hideLabel : showLabel;
+  });
+
+  const bp = document.getElementById("bottom-panel");
+  bp.classList.toggle("hidden", !viewState.bottomPanel);
+  const bpBtn = document.getElementById("toggle-bottom-panel");
+  if (bpBtn) bpBtn.textContent = viewState.bottomPanel ? "Hide Bottom Panel" : "Show Bottom Panel";
+  if (viewState.bottomPanel) renderBottomPanel();
+}
+
 //  Transport State
 let playing = false;
 let recording = false;
@@ -2064,29 +2104,57 @@ const bottomPanelHandle = document.getElementById("bottom-panel-handle");
 const toggleBottomPanelBtn = document.getElementById("toggle-bottom-panel");
 
 toggleBottomPanelBtn.addEventListener("click", () => {
-  const nowHidden = bottomPanel.classList.toggle("hidden");
-  toggleBottomPanelBtn.textContent = nowHidden ? "Show Bottom Panel" : "Hide Bottom Panel";
-  if (!nowHidden) renderBottomPanel();
+  viewState.bottomPanel = !viewState.bottomPanel;
+  applyViewState();
 });
 
 // ----- View Toggles - Event Handlers -----
-function makeViewToggle(menuId, bodyClass, labelHide, labelShow) {
-  const el = document.getElementById(menuId);
-  el.addEventListener("click", () => {
-    const nowHidden = document.body.classList.toggle(bodyClass);
-    el.textContent = nowHidden ? labelShow : labelHide;
+function makeViewToggle(menuId, stateKey) {
+  document.getElementById(menuId).addEventListener("click", () => {
+    viewState[stateKey] = !viewState[stateKey];
+    applyViewState();
   });
 }
 
-makeViewToggle("toggle-scenes",          "hide-scenes",           "Hide Scenes",              "Show Scenes");
-makeViewToggle("toggle-marker-transport","hide-marker-transport",  "Hide Marker Transport",    "Show Marker Transport");
-makeViewToggle("toggle-tempo",           "hide-tempo",            "Hide Tempo & Time Sig",    "Show Tempo & Time Sig");
-makeViewToggle("toggle-metronome",       "hide-metronome",        "Hide Metronome",           "Show Metronome");
-makeViewToggle("toggle-zoom",            "hide-zoom",             "Hide Zoom Slider",         "Show Zoom Slider");
-makeViewToggle("toggle-solo",            "hide-solo",             "Hide Solo Buttons",        "Show Solo Buttons");
-makeViewToggle("toggle-recording-lane",  "hide-recording-lane",   "Hide Recording Lane",      "Show Recording Lane");
-makeViewToggle("toggle-master",          "hide-master",           "Hide Master Controls",     "Show Master Controls");
-makeViewToggle("toggle-notes",           "hide-notes",            "Hide Marker Notes",        "Show Marker Notes");
+makeViewToggle("toggle-scenes",          "scenes");
+makeViewToggle("toggle-marker-transport","markerTransport");
+makeViewToggle("toggle-tempo",           "tempo");
+makeViewToggle("toggle-metronome",       "metronome");
+makeViewToggle("toggle-zoom",            "zoom");
+makeViewToggle("toggle-solo",            "solo");
+makeViewToggle("toggle-recording-lane",  "recordingLane");
+makeViewToggle("toggle-master",          "master");
+makeViewToggle("toggle-notes",           "notes");
+
+// ----- View Settings Dialog - Event Handlers -----
+const _viewSettingsOverlay = document.getElementById("view-settings-overlay");
+let _viewStateSnapshot = null;
+
+document.getElementById("view-settings-open").addEventListener("click", () => {
+  _viewStateSnapshot = { ...viewState };
+  _viewSettingsOverlay.querySelectorAll("[data-view-key]").forEach(cb => {
+    cb.checked = viewState[cb.dataset.viewKey];
+  });
+  _viewSettingsOverlay.hidden = false;
+});
+
+_viewSettingsOverlay.addEventListener("change", e => {
+  const cb = e.target.closest("[data-view-key]");
+  if (!cb) return;
+  viewState[cb.dataset.viewKey] = cb.checked;
+  applyViewState();
+});
+
+document.getElementById("view-settings-cancel").addEventListener("click", () => {
+  Object.assign(viewState, _viewStateSnapshot);
+  applyViewState();
+  _viewSettingsOverlay.hidden = true;
+});
+
+document.getElementById("view-settings-accept").addEventListener("click", () => {
+  _viewSettingsOverlay.hidden = true;
+  markDirty();
+});
 
 let _panelDragging = false;
 let _panelDragStartY = 0;

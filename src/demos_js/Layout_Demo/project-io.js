@@ -18,6 +18,7 @@ function serializeProject() {
     id:         projectId,
     theme:      document.body.getAttribute("data-theme") ?? "earth",
     notesMono:  document.body.getAttribute("data-notes-font") === "mono",
+    viewState:  { ...viewState },
     sampleRate: SAMPLE_RATE,
     bpm:        tempoBPM,
     timeSignature: {
@@ -105,6 +106,10 @@ function deserializeProject(data) {
 
   if (data.theme) setTheme(data.theme, { silent: true });
   document.body.setAttribute("data-notes-font", data.notesMono ? "mono" : "");
+  if (data.viewState) {
+    Object.assign(viewState, data.viewState);
+    applyViewState();
+  }
 
   const sr  = data.sampleRate ?? SAMPLE_RATE;
   tempoBPM  = data.bpm ?? 120;
@@ -234,6 +239,7 @@ async function saveProject() {
 
     // Write project.json
     const data = serializeProject();
+    console.log("saveProject:", data);
     localStorage.setItem("previousProjectData", JSON.stringify(data));
     const jsonHandle = await projectFolderHandle.getFileHandle("project.json", { create: true });
     const jsonWriter = await jsonHandle.createWritable();

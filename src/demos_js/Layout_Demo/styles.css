@@ -2643,6 +2643,74 @@
             justify-content: space-between;
         }
 
+/* View Settings Dialog */
+
+        .view-settings-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .view-settings-overlay[hidden] { display: none; }
+
+        .view-settings-dialog {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 24px 28px;
+            width: 280px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .view-settings-title {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .view-settings-body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .view-settings-body label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        .view-settings-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .view-settings-actions button {
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .view-settings-accept-btn {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: #000;
+            font-weight: 600;
+        }
+
 /* Debug CSS */
 
         /* =============================
