@@ -117,11 +117,15 @@ git branch -d my_branch_name
 
 ---
 
-git switch -c my_branch_name
+```bash
+git switch -c check_access_for_blind
+```
 
 -- making commits in the UI
 
+```bash
 git switch main
-git merge my_branch_name
+git merge check_access_for_blind
 git push
-git branch -d my_branch_name
+git branch -d check_access_for_blind
+```
