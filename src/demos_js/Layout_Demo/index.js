@@ -729,6 +729,9 @@ function promoteRecordingLane() {
   tracks.unshift(recordingLaneTrack);  // newest promoted track at front, matches DOM order
   recordingLaneTrack = null;
 
+  _completedRecordRanges.length = 0;
+  renderCompletedRecordRanges();
+
   createRecordingLane();
   timelineArea.scrollTop = 0;
   controlsScrollCol.scrollTop = 0;
@@ -759,6 +762,7 @@ function onRecordStop() {
 
 // Recording range
 const recordRange = document.getElementById("record-range");
+const _completedRecordRanges = []; // { startSec, endSec }
 
 function startRecordingRange() {
   recordStartTime = getPlayheadTime(); // seconds
@@ -783,9 +787,25 @@ function updateRecordRange() {
   recordRange.style.width = `${Math.max(0, endX - startX)}px`;
 }
 
+function renderCompletedRecordRanges() {
+  const container = recordRange.parentElement;
+  container.querySelectorAll(".record-range-done").forEach(el => el.remove());
+  _completedRecordRanges.forEach(({ startSec, endSec }) => {
+    const div = document.createElement("div");
+    div.className = "record-range-done";
+    div.style.left = `${secondsToPixels(startSec)}px`;
+    div.style.width = `${Math.max(0, secondsToPixels(endSec) - secondsToPixels(startSec))}px`;
+    container.appendChild(div);
+  });
+}
+
 function clearRecordingRange() {
+  if (recordStartTime !== null) {
+    _completedRecordRanges.push({ startSec: recordStartTime, endSec: getPlayheadTime() });
+    renderCompletedRecordRanges();
+  }
   recordRange.style.display = "none";
-  recordStartX = null;
+  recordStartTime = null;
 }
 
 // Timeline Ruler
@@ -1596,6 +1616,7 @@ zoomSlider.oninput = () => {
   syncTimelineOverlay();
   syncTimelineMinWidth();
   renderTimelineLayer();
+  renderCompletedRecordRanges();
 
   // ----- Restore Center Scroll
   timelineArea.scrollLeft = centerTime * BASE_PPS * zoom;
@@ -2064,6 +2085,8 @@ makeViewToggle("toggle-metronome",       "hide-metronome",        "Hide Metronom
 makeViewToggle("toggle-zoom",            "hide-zoom",             "Hide Zoom Slider",         "Show Zoom Slider");
 makeViewToggle("toggle-solo",            "hide-solo",             "Hide Solo Buttons",        "Show Solo Buttons");
 makeViewToggle("toggle-recording-lane",  "hide-recording-lane",   "Hide Recording Lane",      "Show Recording Lane");
+makeViewToggle("toggle-master",          "hide-master",           "Hide Master Controls",     "Show Master Controls");
+makeViewToggle("toggle-notes",           "hide-notes",            "Hide Marker Notes",        "Show Marker Notes");
 
 let _panelDragging = false;
 let _panelDragStartY = 0;

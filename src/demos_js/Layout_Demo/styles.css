@@ -917,14 +917,14 @@
             z-index: 10;
         }
 
-        #record-range {
+        #record-range,
+        .record-range-done {
             position: absolute;
             left: 0;
             bottom: 0;
             height: 2px;
             background: var(--accent-danger);
             pointer-events: none;
-            background: var(--accent-danger);
             opacity: 0.85;
         }
 
@@ -1529,6 +1529,9 @@
 
         body.hide-recording-lane .recording-lane { display: none; }
 
+        body.hide-master #bottom-panel-master { display: none; }
+        body.hide-notes #bottom-panel-content { display: none; }
+
         /* ----- Accessibility ----- */
 
         .sr-only {
@@ -1866,7 +1869,8 @@
         /* Master section */
 
         #bottom-panel-master {
-            width: 190px;
+            width: 280px;
+            box-sizing: border-box;
             flex-shrink: 0;
             border-right: 1px solid var(--border-subtle);
             padding: 10px 12px;
