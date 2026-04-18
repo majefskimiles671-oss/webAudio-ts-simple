@@ -102,3 +102,25 @@ function audioEngineStop() {
   }
   _activeSources = [];
 }
+
+let _previewSource = null;
+
+function audioEnginePreviewLoop(buffer, loopStartSeconds, loopEndSeconds) {
+  audioEngineStopPreview();
+  if (_audioCtx.state === "suspended") _audioCtx.resume();
+  const src = _audioCtx.createBufferSource();
+  src.buffer    = buffer;
+  src.loop      = true;
+  src.loopStart = loopStartSeconds;
+  src.loopEnd   = loopEndSeconds;
+  src.connect(_audioCtx.destination);
+  src.start(0, loopStartSeconds);
+  _previewSource = src;
+}
+
+function audioEngineStopPreview() {
+  if (_previewSource) {
+    try { _previewSource.stop(); } catch {}
+    _previewSource = null;
+  }
+}

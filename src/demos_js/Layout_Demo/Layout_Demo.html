@@ -366,16 +366,16 @@ Rule - Add comments before code snippets in this format:
         <button class="loop-editor-close-btn" id="loop-editor-close">✕</button>
     </div>
     <div class="loop-editor-body">
-        <div class="loop-editor-waveform"></div>
+        <div class="loop-editor-waveform"><canvas id="loop-editor-canvas"></canvas></div>
         <div class="loop-editor-fields">
-            <label>Start <input type="range" min="0" max="100" value="0"></label>
-            <label>End <input type="range" min="0" max="100" value="100"></label>
-            <label>Crossfade <input type="range" min="0" max="100" value="0"></label>
+            <label>Start <input id="loop-start-bars" type="number" min="0" value="0"> bars <input id="loop-start-beats" type="number" min="0" value="0"> beats</label>
+            <label>Offset <input id="loop-start-slider" type="range" min="-100" max="100" value="0"> <button id="loop-offset-reset" type="button">↺</button></label>
+            <label>Duration <input id="loop-dur-bars" type="number" min="0" value="2"> bars <input id="loop-dur-beats" type="number" min="0" value="0"> beats</label>
         </div>
         <div class="loop-editor-transport">
-            <button>⏮</button>
-            <button>▶ Preview</button>
-            <button>⏹</button>
+            <button id="loop-rewind-btn">⏮</button>
+            <button id="loop-preview-btn">▶ Preview</button>
+            <button id="loop-stop-btn">⏹</button>
         </div>
     </div>
 </div>

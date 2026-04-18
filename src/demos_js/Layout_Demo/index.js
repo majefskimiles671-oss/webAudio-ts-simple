@@ -2245,12 +2245,172 @@ document.getElementById("track-info-close").addEventListener("click", () => {
 });
 
 // ----- Loop Editor Panel -----
+let _loopEditorTrack = null;
+let _loopEditorClip  = null;
+
+function _analyzeAudioBuffer(audioBuffer, numPoints) {
+  const ch   = audioBuffer.getChannelData(0);
+  const step = Math.max(1, Math.floor(ch.length / numPoints));
+  return Array.from({ length: numPoints }, (_, i) => {
+    let peak = 0;
+    const end = Math.min((i + 1) * step, ch.length);
+    for (let j = i * step; j < end; j++) peak = Math.max(peak, Math.abs(ch[j]));
+    return peak;
+  });
+}
+
+function _drawLoopEditorWaveform(canvas, amplitudes, startFrac, endFrac) {
+  const ctx  = canvas.getContext("2d");
+  const w    = canvas.width;
+  const h    = canvas.height;
+  const midY = h / 2;
+  const n    = amplitudes.length;
+  const color = getComputedStyle(document.body).getPropertyValue("--accent-primary").trim() || "#ff9500";
+
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.55;
+  for (let i = 0; i < n; i++) {
+    const x    = (i / n) * w;
+    const barW = Math.max(1, (w / n) - 1);
+    const barH = Math.max(1, amplitudes[i] * (h * 0.45));
+    ctx.fillRect(Math.round(x), Math.round(midY - barH), Math.ceil(barW), Math.round(barH * 2));
+  }
+
+  // dim regions outside the loop
+  ctx.globalAlpha = 0.45;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, startFrac * w, h);
+  ctx.fillRect(endFrac * w, 0, w - endFrac * w, h);
+
+  // loop boundary lines
+  ctx.globalAlpha = 0.9;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(startFrac * w, 0); ctx.lineTo(startFrac * w, h);
+  ctx.moveTo(endFrac * w, 0);   ctx.lineTo(endFrac * w, h);
+  ctx.stroke();
+
+  ctx.globalAlpha = 1;
+}
+
+function _stopLoopPreview() {
+  audioEngineStopPreview();
+}
+
+function _loopStartInputsToSamples(clip) {
+  const bars   = Math.max(0, +document.getElementById("loop-start-bars").value  || 0);
+  const beats  = Math.max(0, +document.getElementById("loop-start-beats").value || 0);
+  const offset = +document.getElementById("loop-start-slider").value / 100; // ±1 beat
+  const totalBeats = bars * beatsPerBar + beats + offset;
+  return Math.max(0, Math.min(
+    Math.round(totalBeats * secondsPerBeat() * SAMPLE_RATE),
+    clip.durationSamples - 1
+  ));
+}
+
+function _loopStartToInputs(clip) {
+  const totalBeats = clip.loopStartSamples / SAMPLE_RATE / secondsPerBeat();
+  const gridBeats  = Math.round(totalBeats);
+  const bars  = Math.floor(Math.max(0, gridBeats) / beatsPerBar);
+  const beats = Math.max(0, gridBeats) % beatsPerBar;
+  const offsetFrac = totalBeats - gridBeats; // ±0.5 of a beat
+  document.getElementById("loop-start-bars").value  = bars;
+  document.getElementById("loop-start-beats").value = beats;
+  document.getElementById("loop-start-slider").value = Math.round(offsetFrac * 100);
+}
+
+function _loopDurToEndSamples(clip) {
+  const bars  = Math.max(0, +document.getElementById("loop-dur-bars").value  || 0);
+  const beats = Math.max(0, +document.getElementById("loop-dur-beats").value || 0);
+  const totalBeats = Math.max(1, bars * beatsPerBar + beats);
+  return Math.min(
+    clip.loopStartSamples + Math.round(totalBeats * secondsPerBeat() * SAMPLE_RATE),
+    clip.durationSamples
+  );
+}
+
+function _loopEndToDurInputs(clip) {
+  const durSecs    = (clip.loopEndSamples - clip.loopStartSamples) / SAMPLE_RATE;
+  const totalBeats = Math.max(0, durSecs / secondsPerBeat());
+  const bars  = Math.floor(totalBeats / beatsPerBar);
+  const beats = Math.round(totalBeats % beatsPerBar);
+  document.getElementById("loop-dur-bars").value  = bars;
+  document.getElementById("loop-dur-beats").value = beats;
+}
+
 function showLoopEditor(track) {
+  const clip = track.clips.find(c => audioEngineHasBuffer(c.id));
+  if (!clip) return;
+
+  _loopEditorTrack = track;
+  _loopEditorClip  = clip;
+
+  clip.loopStartSamples ??= 0;
+  clip.loopEndSamples   ??= clip.durationSamples;
+
+  document.getElementById("loop-start-beats").max = beatsPerBar - 1;
+  document.getElementById("loop-dur-beats").max   = beatsPerBar - 1;
+  _loopStartToInputs(clip);
+  _loopEndToDurInputs(clip);
   document.getElementById("loop-editor-track-name").textContent = `Loop Editor — ${track.name}`;
+
+  const startFrac = clip.loopStartSamples / clip.durationSamples;
+  const endFrac   = clip.loopEndSamples   / clip.durationSamples;
+  const canvas = document.getElementById("loop-editor-canvas");
+  canvas.width  = canvas.parentElement.clientWidth || 600;
+  canvas.height = 80;
+  const amplitudes = _analyzeAudioBuffer(audioEngineGetBuffer(clip.id), 256);
+  _drawLoopEditorWaveform(canvas, amplitudes, startFrac, endFrac);
+
   document.getElementById("loop-editor-panel").hidden = false;
 }
 
+function _updateLoopRegion() {
+  if (!_loopEditorClip) return;
+  const clip = _loopEditorClip;
+  clip.loopStartSamples = _loopStartInputsToSamples(clip);
+  clip.loopEndSamples   = _loopDurToEndSamples(clip);
+
+  const startFrac = clip.loopStartSamples / clip.durationSamples;
+  const endFrac   = clip.loopEndSamples   / clip.durationSamples;
+  const canvas    = document.getElementById("loop-editor-canvas");
+  const amplitudes = _analyzeAudioBuffer(audioEngineGetBuffer(clip.id), 256);
+  _drawLoopEditorWaveform(canvas, amplitudes, startFrac, endFrac);
+  markDirty();
+}
+
+["loop-start-bars", "loop-start-beats", "loop-start-slider",
+ "loop-dur-bars",   "loop-dur-beats"].forEach(id =>
+  document.getElementById(id).addEventListener("input", _updateLoopRegion)
+);
+
+document.getElementById("loop-offset-reset").addEventListener("click", () => {
+  document.getElementById("loop-start-slider").value = 0;
+  _updateLoopRegion();
+});
+
+document.getElementById("loop-preview-btn").addEventListener("click", () => {
+  if (!_loopEditorClip) return;
+  const buf = audioEngineGetBuffer(_loopEditorClip.id);
+  audioEnginePreviewLoop(
+    buf,
+    _loopEditorClip.loopStartSamples / SAMPLE_RATE,
+    _loopEditorClip.loopEndSamples   / SAMPLE_RATE
+  );
+});
+
+document.getElementById("loop-stop-btn").addEventListener("click", _stopLoopPreview);
+
+document.getElementById("loop-rewind-btn").addEventListener("click", () => {
+  _stopLoopPreview();
+  document.getElementById("loop-preview-btn").click();
+});
+
 document.getElementById("loop-editor-close").addEventListener("click", () => {
+  _stopLoopPreview();
   document.getElementById("loop-editor-panel").hidden = true;
 });
 

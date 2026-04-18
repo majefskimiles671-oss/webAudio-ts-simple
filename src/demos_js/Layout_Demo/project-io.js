@@ -36,6 +36,8 @@ function serializeProject() {
         file:            `clip-${clip.id}.wav`,
         startSample:     clip.startSample,
         durationSamples: clip.durationSamples,
+        loopStartSamples: clip.loopStartSamples ?? 0,
+        loopEndSamples:   clip.loopEndSamples   ?? clip.durationSamples,
       })),
     })),
     chordPanel: (typeof cdGetPanelState === "function") ? cdGetPanelState() : undefined,
@@ -150,6 +152,8 @@ function deserializeProject(data) {
         id:              savedClip.id,
         startSample:     savedClip.startSample,
         durationSamples: savedClip.durationSamples,
+        loopStartSamples: savedClip.loopStartSamples ?? 0,
+        loopEndSamples:   savedClip.loopEndSamples   ?? savedClip.durationSamples,
       };
       track.clips.push(clip);
 
