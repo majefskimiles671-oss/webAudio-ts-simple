@@ -118,14 +118,14 @@ git branch -d my_branch_name
 ---
 
 ```bash
-git switch -c check_access_for_blind
+git switch -c update_demo_scripts
 ```
 
 -- making commits in the UI
 
 ```bash
 git switch main
-git merge check_access_for_blind
+git merge update_demo_scripts
 git push
-git branch -d check_access_for_blind
+git branch -d update_demo_scripts
 ```
