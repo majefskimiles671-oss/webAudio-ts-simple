@@ -41,11 +41,20 @@ class PanSlider extends HTMLElement {
       </div>
       <span class="ps-label">R</span>`;
 
-    this.querySelector(".ps-track").addEventListener("mousedown", (e) => {
+    const track = this.querySelector(".ps-track");
+
+    this.addEventListener("mousedown", (e) => {
       _activePanDrag = this;
       this.setAttribute("data-dragging", "");
       this._handleMove(e);
       e.preventDefault();
+    });
+
+    [-80, -20, 20, 80].forEach(v => {
+      const tick = document.createElement("div");
+      tick.className = "ps-tick";
+      tick.style.left = `${((v - this._min) / (this._max - this._min)) * 100}%`;
+      track.appendChild(tick);
     });
 
     this.addEventListener("dblclick", () => {

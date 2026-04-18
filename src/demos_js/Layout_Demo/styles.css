@@ -489,10 +489,16 @@
             gap: 10px;
         }
 
-        .track-sliders gain-slider {
+        .gain-meter-stack {
             flex: 3;
-            width: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
             min-width: 0;
+        }
+
+        .track-sliders gain-slider {
+            width: 100%;
         }
 
         .track-sliders pan-slider {
@@ -630,6 +636,16 @@
             pointer-events: none;
         }
 
+        .ps-tick {
+            position: absolute;
+            top: -3px;
+            bottom: -3px;
+            width: 1px;
+            transform: translateX(-50%);
+            background: var(--text-muted);
+            pointer-events: none;
+        }
+
         .ps-fill {
             position: absolute;
             top: 0;
@@ -658,6 +674,7 @@
             display: flex;
             gap: 6px;
             align-items: center;
+            margin-top: 8px;
         }
 
         .track-scene {
@@ -683,12 +700,10 @@
         /* Track Volume Meter */
 
         .track-meter {
-            position: absolute;
-            right: 8px;
-            top: 10px;
-            bottom: 10px;
             display: flex;
+            flex-direction: column;
             gap: 2px;
+            width: 100%;
             pointer-events: none;
         }
 
@@ -697,10 +712,10 @@
         }
 
         .tm-ch {
-            width: 6px;
+            height: 4px;
             display: flex;
-            flex-direction: column-reverse;
-            gap: 2px;
+            flex-direction: row;
+            gap: 1px;
         }
 
         .tm-seg {
@@ -935,7 +950,6 @@
 
         .control-row .row-inner {
             overflow: hidden;
-            padding-right: 24px;  /* keep meter from overlapping content */
             display: flex;
             flex-direction: column;
             justify-content: space-between;

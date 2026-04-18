@@ -264,7 +264,13 @@ Rule - Add comments before code snippets in this format:
                     </button>
                 </div>
                 <div class="track-sliders">
-                    <gain-slider class="gain-slider" min="0" max="100" value="80"></gain-slider>
+                    <div class="gain-meter-stack">
+                        <gain-slider class="gain-slider" min="0" max="100" value="80"></gain-slider>
+                        <div class="track-meter" aria-hidden="true">
+                            <div class="tm-ch"></div>
+                            <div class="tm-ch"></div>
+                        </div>
+                    </div>
                     <pan-slider class="pan-slider" min="-100" max="100" value="0"></pan-slider>
                 </div>
 
@@ -274,11 +280,6 @@ Rule - Add comments before code snippets in this format:
                     <button class="track-scene" aria-label="Scene C" aria-pressed="false">C</button>
                     <button class="track-scene" aria-label="Scene D" aria-pressed="false">D</button>
                     <button class="track-scene" aria-label="Scene E" aria-pressed="false">E</button>
-                </div>
-
-                <div class="track-meter" aria-hidden="true">
-                    <div class="tm-ch"></div>
-                    <div class="tm-ch"></div>
                 </div>
 
             </div>
