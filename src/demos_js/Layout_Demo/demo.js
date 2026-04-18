@@ -199,6 +199,7 @@ function showDemoSequencePopup(index) {
 
   overlay.querySelector(".demo-seq-cancel").addEventListener("click", () => {
     setDemoCookie();
+    if (typeof updateShowDemoLabel === "function") updateShowDemoLabel();
     overlay.remove();
   });
 
@@ -228,7 +229,11 @@ function showCompletionPopup() {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  overlay.querySelector(".demo-seq-run").addEventListener("click", () => { setDemoCookie(); overlay.remove(); });
+  overlay.querySelector(".demo-seq-run").addEventListener("click", () => {
+    setDemoCookie();
+    if (typeof updateShowDemoLabel === "function") updateShowDemoLabel();
+    overlay.remove();
+  });
 }
 
 
@@ -244,14 +249,13 @@ function setDemoCookie() {
 
 let _sequenceAutoStartId = null;
 
+// Read before index.js clears it — distinguishes a "New Project" reload from a plain refresh
+const _isNewProjectLoad = sessionStorage.getItem("skipAutoOpen") === "1";
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Auto-start the sequence after a short pause, but only if not seen before
-  if (!demoCookieIsSet()) {
+  const isReload = performance.getEntriesByType("navigation")[0]?.type === "reload";
+  if (!demoCookieIsSet() && (!isReload || _isNewProjectLoad)) {
+    console.log("Demo: waiting to start...");
     _sequenceAutoStartId = setTimeout(() => showDemoSequencePopup(0), 3000);
   }
-
-  document.getElementById("restore-demo-popup").addEventListener("click", () => {
-    localStorage.removeItem("demo_sequence_seen");
-    showDemoSequencePopup(0);
-  });
 });

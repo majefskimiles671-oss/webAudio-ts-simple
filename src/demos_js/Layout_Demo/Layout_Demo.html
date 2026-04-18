@@ -74,29 +74,14 @@ Rule - Add comments before code snippets in this format:
             <button class="menu-label" aria-haspopup="menu">View</button>
             <div class="menu-pop" role="menu">
                 <div id="view-settings-open" role="menuitem" tabindex="-1">View Settings…</div>
-                <hr />
-                <div id="restore-demo-popup" role="menuitem" tabindex="-1">Restore Demo Popup</div>
-                <hr />
-                <div id="toggle-chord-panel" role="menuitem" tabindex="-1">Chord Diagrams</div>
             </div>
         </div>
 
         <div class="menu">
             <button class="menu-label" aria-haspopup="menu">Settings</button>
             <div class="menu-pop" role="menu">
-                <div data-theme="studio" role="menuitem" tabindex="-1"><span class="theme-swatch" style="--sb:#020617;--sa:#38bdf8"></span>Studio</div>
-                <div data-theme="dark" role="menuitem" tabindex="-1"><span class="theme-swatch" style="--sb:#111827;--sa:#ff9500"></span>Dark</div>
-                <div data-theme="Cookies Haze" role="menuitem" tabindex="-1"><span class="theme-swatch" style="--sb:#160f1e;--sa:#c87d1a"></span>Cookies Haze</div>
-                <div data-theme="Fire" role="menuitem" tabindex="-1"><span class="theme-swatch" style="--sb:#2a0f0a;--sa:#f97316"></span>Fire</div>
-                <div data-theme="Earth" role="menuitem" tabindex="-1"><span class="theme-swatch" style="--sb:#2b2a25;--sa:#84cc16"></span>Earth</div>
-                <div data-theme="Ice9" role="menuitem" tabindex="-1"><span class="theme-swatch" style="--sb:#d8eaf7;--sa:#0077b6"></span>Ice9</div>
-                <div data-theme="x286" role="menuitem" tabindex="-1"><span class="theme-swatch" style="--sb:#0c0700;--sa:#ff7700"></span>x286</div>
-                <hr />
-                <div data-ruler="seconds" role="menuitem" tabindex="-1">Ruler Mode: Seconds</div>
-                <div data-ruler="bars" role="menuitem" tabindex="-1">Ruler Mode: Bars</div>
-                <hr />
-                <div id="toggle-notes-font" role="menuitem" tabindex="-1">Notes Font: Monospace</div>
                 <div id="toggle-auto-open" role="menuitem" tabindex="-1">Auto-Open Last Project: Off</div>
+                <div id="toggle-show-demo" role="menuitem" tabindex="-1">Demo on New Project: Off</div>
             </div>
         </div>
 
@@ -334,6 +319,20 @@ Rule - Add comments before code snippets in this format:
             <label><input type="checkbox" data-view-key="zoom"> Zoom Slider</label>
             <label><input type="checkbox" data-view-key="solo"> Solo Buttons</label>
             <label><input type="checkbox" data-view-key="recordingLane"> Recording Lane</label>
+            <label><input type="checkbox" data-view-key="chordDiagrams"> Chord Diagrams</label>
+            <hr>
+            <label><input type="radio" name="vs-theme" value="studio"><span class="theme-swatch" style="--sb:#020617;--sa:#38bdf8"></span> Studio</label>
+            <label><input type="radio" name="vs-theme" value="dark"><span class="theme-swatch" style="--sb:#111827;--sa:#ff9500"></span> Dark</label>
+            <label><input type="radio" name="vs-theme" value="Cookies Haze"><span class="theme-swatch" style="--sb:#160f1e;--sa:#c87d1a"></span> Cookies Haze</label>
+            <label><input type="radio" name="vs-theme" value="Fire"><span class="theme-swatch" style="--sb:#2a0f0a;--sa:#f97316"></span> Fire</label>
+            <label><input type="radio" name="vs-theme" value="Earth"><span class="theme-swatch" style="--sb:#2b2a25;--sa:#84cc16"></span> Earth</label>
+            <label><input type="radio" name="vs-theme" value="Ice9"><span class="theme-swatch" style="--sb:#d8eaf7;--sa:#0077b6"></span> Ice9</label>
+            <label><input type="radio" name="vs-theme" value="x286"><span class="theme-swatch" style="--sb:#0c0700;--sa:#ff7700"></span> x286</label>
+            <hr>
+            <label><input type="radio" name="vs-ruler" value="bars"> Ruler: Bars</label>
+            <label><input type="radio" name="vs-ruler" value="seconds"> Ruler: Seconds</label>
+            <hr>
+            <label><input type="checkbox" id="vs-notes-font-mono"> Notes Font: Monospace</label>
         </div>
         <div class="view-settings-actions">
             <button id="view-settings-cancel">Cancel</button>

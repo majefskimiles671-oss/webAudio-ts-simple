@@ -211,6 +211,7 @@ const viewState = {
   zoom:            true,
   solo:            true,
   recordingLane:   true,
+  chordDiagrams:   false,
 };
 
 // Authority - View State - Apply -----
@@ -237,6 +238,9 @@ function applyViewState() {
   const bpBtn = document.getElementById("toggle-bottom-panel");
   if (bpBtn) bpBtn.textContent = viewState.bottomPanel ? "Hide Bottom Panel" : "Show Bottom Panel";
   if (viewState.bottomPanel) renderBottomPanel();
+
+  const cdDialog = document.getElementById("chord-diagrams-dialog");
+  if (cdDialog) cdDialog.classList.toggle("cd-visible", viewState.chordDiagrams);
 }
 
 //  Transport State
@@ -1258,35 +1262,15 @@ function ensureTimelineWidth(px) {
 
 function setTheme(name, { silent = false } = {}) {
   document.body.setAttribute("data-theme", name);
-  document.querySelectorAll(".menu-pop [data-theme]").forEach(el => {
-    el.classList.toggle("active", el.dataset.theme === name);
-  });
   renderTimelineLayer();
   rerenderWaveforms();
   if (!silent) markDirty();
 }
 
-document.querySelectorAll("[data-theme]").forEach((el) => {
-  el.onclick = () => setTheme(el.dataset.theme);
-});
-
-document.querySelectorAll("[data-ruler]").forEach((el) => {
-  el.onclick = () => {
-    const mode = el.getAttribute("data-ruler");
-    setRulerMode(mode);
-  };
-});
-
 document.getElementById("debug-log-project").onclick = () => console.log(serializeProject());
 document.getElementById("debug-toggle-display").onclick = () => document.body.classList.toggle("debug");
 
-document.getElementById("toggle-chord-panel").addEventListener("click", cdTogglePanel);
 
-document.getElementById("toggle-notes-font").onclick = () => {
-  const isActive = document.body.getAttribute("data-notes-font") === "mono";
-  document.body.setAttribute("data-notes-font", isActive ? "" : "mono");
-  markDirty();
-};
 
 timelineArea.addEventListener("scroll", () => {
   renderTimelineLayer();
@@ -2133,25 +2117,48 @@ makeViewToggle("toggle-notes",           "notes");
 // ----- View Settings Dialog - Event Handlers -----
 const _viewSettingsOverlay = document.getElementById("view-settings-overlay");
 let _viewStateSnapshot = null;
+let _themeSnapshot = null;
+let _rulerSnapshot = null;
+let _notesFontSnapshot = null;
 
 document.getElementById("view-settings-open").addEventListener("click", () => {
   _viewStateSnapshot = { ...viewState };
+  _themeSnapshot = document.body.getAttribute("data-theme");
+  _rulerSnapshot = rulerMode;
+  _notesFontSnapshot = document.body.getAttribute("data-notes-font");
   _viewSettingsOverlay.querySelectorAll("[data-view-key]").forEach(cb => {
     cb.checked = viewState[cb.dataset.viewKey];
   });
+  _viewSettingsOverlay.querySelectorAll("[name='vs-theme']").forEach(r => {
+    r.checked = r.value === _themeSnapshot;
+  });
+  _viewSettingsOverlay.querySelectorAll("[name='vs-ruler']").forEach(r => {
+    r.checked = r.value === rulerMode;
+  });
+  document.getElementById("vs-notes-font-mono").checked = _notesFontSnapshot === "mono";
   _viewSettingsOverlay.hidden = false;
 });
 
 _viewSettingsOverlay.addEventListener("change", e => {
   const cb = e.target.closest("[data-view-key]");
-  if (!cb) return;
-  viewState[cb.dataset.viewKey] = cb.checked;
-  applyViewState();
+  if (cb) {
+    viewState[cb.dataset.viewKey] = cb.checked;
+    applyViewState();
+    return;
+  }
+  if (e.target.name === "vs-theme") { setTheme(e.target.value); return; }
+  if (e.target.name === "vs-ruler") { setRulerMode(e.target.value); return; }
+  if (e.target.id === "vs-notes-font-mono") {
+    document.body.setAttribute("data-notes-font", e.target.checked ? "mono" : "");
+  }
 });
 
 document.getElementById("view-settings-cancel").addEventListener("click", () => {
   Object.assign(viewState, _viewStateSnapshot);
   applyViewState();
+  setTheme(_themeSnapshot, { silent: true });
+  setRulerMode(_rulerSnapshot);
+  document.body.setAttribute("data-notes-font", _notesFontSnapshot || "");
   _viewSettingsOverlay.hidden = true;
 });
 
@@ -2291,6 +2298,20 @@ _autoOpenEl.onclick = () => {
 };
 
 updateAutoOpenLabel();
+
+const _showDemoEl = document.getElementById("toggle-show-demo");
+
+function updateShowDemoLabel() {
+  _showDemoEl.textContent = `Demo on New Project: ${demoCookieIsSet() ? "Off" : "On"}`;
+}
+
+_showDemoEl.onclick = () => {
+  if (demoCookieIsSet()) localStorage.removeItem("demo_sequence_seen");
+  else setDemoCookie();
+  updateShowDemoLabel();
+};
+
+updateShowDemoLabel();
 
 const _skipAutoOpen = sessionStorage.getItem("skipAutoOpen");
 sessionStorage.removeItem("skipAutoOpen");
