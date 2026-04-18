@@ -1,3 +1,8 @@
+
+
+---
+
+
 I've read through the file. Here's a quick orientation:
 
 src/demos_js/Layout_Demo/index.js (~1215 lines) — a DAW-style timeline UI with a clear layered architecture:
@@ -100,3 +105,23 @@ Per-track volume/pan during playback — the sliders exist but aren't wired to a
 Of these, 3 is the prerequisite for everything else feeling real. Without playback, trim and move are just aesthetic. I'd prioritize wiring up the Web Audio API so recorded audio actually plays back through the existing track/gain/pan structure — then trim and move become immediately satisfying to use.
 
 ---
+
+git switch -c my_branch_name
+
+-- making commits in the UI
+
+git switch main
+git merge my_branch_name
+git push
+git branch -d my_branch_name
+
+---
+
+git switch -c my_branch_name
+
+-- making commits in the UI
+
+git switch main
+git merge my_branch_name
+git push
+git branch -d my_branch_name
