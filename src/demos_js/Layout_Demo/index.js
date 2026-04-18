@@ -1982,6 +1982,7 @@ document.addEventListener("mousemove", (e) => {
 
 document.getElementById("menu-new-project").addEventListener("click", () => {
   if (_dirty && !confirm("Start a new project? All unsaved work will be lost.")) return;
+  sessionStorage.setItem("skipAutoOpen", "1");
   location.reload();
 });
 
@@ -2130,7 +2131,9 @@ _autoOpenEl.onclick = () => {
 
 updateAutoOpenLabel();
 
-if (localStorage.getItem("autoOpenPreviousProject") === "1") {
+const _skipAutoOpen = sessionStorage.getItem("skipAutoOpen");
+sessionStorage.removeItem("skipAutoOpen");
+if (localStorage.getItem("autoOpenPreviousProject") === "1" && !_skipAutoOpen) {
   const raw = localStorage.getItem("previousProjectData");
   if (raw) {
     try {
