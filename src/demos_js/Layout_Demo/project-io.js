@@ -89,6 +89,7 @@ function buildPlaceholderWav() {
 function deserializeProject(data) {
   // ----- Reset DOM and state -----
 
+  audioEngineClearBuffers();
   tracks.forEach(t => { t.controlRow.remove(); t.timelineRow.remove(); });
   tracks.length = 0;
 
@@ -246,14 +247,16 @@ async function saveProject() {
     await jsonWriter.write(JSON.stringify(data, null, 2));
     await jsonWriter.close();
 
-    // Write placeholder WAV for each clip that doesn't already have a real file
-    const wav = buildPlaceholderWav();
+    // Write WAV for each clip — real audio if available, placeholder otherwise
     for (const track of tracks) {
       for (const clip of track.clips) {
         const filename  = `clip-${clip.id}.wav`;
         const wavHandle = await projectFolderHandle.getFileHandle(filename, { create: true });
         const wavWriter = await wavHandle.createWritable();
-        await wavWriter.write(wav);
+        const payload   = audioEngineHasBuffer(clip.id)
+          ? audioEngineEncodeWav(audioEngineGetBuffer(clip.id))
+          : buildPlaceholderWav();
+        await wavWriter.write(payload);
         await wavWriter.close();
       }
     }
@@ -287,6 +290,24 @@ async function openProject() {
 
     localStorage.setItem("previousProjectData", JSON.stringify(data));
     deserializeProject(data);
+
+    // Decode each clip's WAV from the project folder into the audio engine
+    for (const savedTrack of (data.tracks ?? [])) {
+      for (const savedClip of (savedTrack.clips ?? [])) {
+        if (!savedClip.file) continue;
+        try {
+          const wavHandle   = await folderHandle.getFileHandle(savedClip.file);
+          const wavFile     = await wavHandle.getFile();
+          const arrayBuffer = await wavFile.arrayBuffer();
+          if (arrayBuffer.byteLength <= 44) continue; // placeholder — no samples
+          const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
+          audioEngineStoreBuffer(savedClip.id, audioBuffer);
+        } catch {
+          // file missing or undecodable — clip is silent
+        }
+      }
+    }
+
     clearDirty();
   } catch (err) {
     if (err.name !== "AbortError") {

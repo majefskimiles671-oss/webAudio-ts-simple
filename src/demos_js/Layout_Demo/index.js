@@ -2095,8 +2095,12 @@ document.getElementById("menu-import-wav").addEventListener("click", () => {
     const arrayBuffer = await file.arrayBuffer();
     const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
     const fileName = file.name.replace(/\.wav$/i, "");
-    const track = createTrack(fileName, { prepend: true });
+    const track = createTrack(fileName);
     tracks.unshift(track);
+    if (recordingLaneTrack) {
+      recordingLaneTrack.controlRow.after(track.controlRow);
+      recordingLaneTrack.timelineRow.after(track.timelineRow);
+    }
     addClipToTrack(track.timelineRow, 0, audioBuffer.duration);
     audioEngineStoreBuffer(track.clips[0].id, audioBuffer);
     syncTimelineMinWidth();
