@@ -80,11 +80,45 @@
 // Shared DOM Referneces -----
 // ============================================================
 
-// Close menu on item click by momentarily dropping pointer-events (kills :hover)
+// ----- Accessibility - Helpers -----
+const _ariaAnnouncer = document.getElementById("aria-announcer");
+function announce(msg) {
+  _ariaAnnouncer.textContent = "";
+  requestAnimationFrame(() => { _ariaAnnouncer.textContent = msg; });
+}
+
+// ----- Accessibility - Menu keyboard navigation -----
+document.querySelectorAll(".menu").forEach((menu) => {
+  const btn = menu.querySelector("button.menu-label");
+  const items = Array.from(menu.querySelectorAll("[role='menuitem']"));
+
+  function openMenu() { menu.classList.add("keyboard-open"); items[0]?.focus(); }
+  function closeMenu() { menu.classList.remove("keyboard-open"); btn.focus(); }
+
+  btn.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") { e.preventDefault(); openMenu(); }
+  });
+
+  items.forEach((item, i) => {
+    item.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+      else if (e.key === "Escape") { e.preventDefault(); closeMenu(); }
+      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); item.click(); closeMenu(); }
+    });
+  });
+
+  menu.addEventListener("focusout", (e) => {
+    if (!menu.contains(e.relatedTarget)) menu.classList.remove("keyboard-open");
+  });
+});
+
+// Close menu on item click — drop pointer-events briefly (kills :hover) and clear keyboard-open
 document.querySelector(".menu-bar").addEventListener("click", (e) => {
   const item = e.target.closest(".menu-pop div");
   if (!item) return;
   const menu = item.closest(".menu");
+  menu.classList.remove("keyboard-open");
   menu.style.pointerEvents = "none";
   setTimeout(() => { menu.style.pointerEvents = ""; }, 200);
 });
@@ -577,9 +611,10 @@ function createTrack(label, { prepend = false } = {}) {
   soloBtn.addEventListener("click", () => {
     const allSoloBtns = Array.from(document.querySelectorAll(".solo-btn"));
     const isActive = soloBtn.classList.contains("active");
-    allSoloBtns.forEach((b) => { b.classList.remove("active"); b.disabled = false; });
+    allSoloBtns.forEach((b) => { b.classList.remove("active"); b.setAttribute("aria-pressed", "false"); b.disabled = false; });
     if (!isActive) {
       soloBtn.classList.add("active");
+      soloBtn.setAttribute("aria-pressed", "true");
       allSoloBtns.forEach((b) => { if (b !== soloBtn) b.disabled = true; });
     }
     updateSoloMask();
@@ -590,9 +625,11 @@ function createTrack(label, { prepend = false } = {}) {
     const trackIdx = tracks.indexOf(track);
     if (trackIdx === -1) return;  // recording lane — not in tracks, protected
     markDirty();
+    const trackName = track.controlRow.querySelector(".track-title")?.textContent || "Track";
     tracks.splice(trackIdx, 1);
     track.controlRow.remove();
     track.timelineRow.remove();
+    announce(`${trackName} deleted`);
   });
 
   if (prepend) {
@@ -679,6 +716,7 @@ function createRecordingLane() {
   track.timelineRow.classList.add("recording-lane");
   recordingLaneTrack = track;
   showTrackNameTooltip(name, definition);
+  announce(`Recording to new track: ${name}`);
 }
 
 function promoteRecordingLane() {
@@ -944,6 +982,7 @@ function updateTimeDisplay(s) {
 function renderTempo() {
   const el = document.getElementById("tempoDisplay");
   el.innerHTML = `${tempoBPM}`;
+  el.setAttribute("aria-valuenow", tempoBPM);
 }
 
 function renderTimeSignature() {
@@ -1081,6 +1120,7 @@ function scrubToMouseEvent(e) {
   setPlayheadPositionPx(clampedX);
 }
 
+let _lastAnnouncedTransportState = null;
 function syncTransportUI() {
   const state = getTransportState();
 
@@ -1098,6 +1138,12 @@ function syncTransportUI() {
   );
   returnToBeginningBtn.disabled = isTransportMoving();
   renderMarkerTransport();
+
+  if (state !== _lastAnnouncedTransportState) {
+    _lastAnnouncedTransportState = state;
+    const labels = { STOPPED: "Stopped", PLAY: "Playing", RECORD: "Recording", PLAY_RECORD: "Playing and recording" };
+    announce(labels[state] ?? state);
+  }
 
   // DEBUG OVERLAY
   if (document.body.classList.contains("debug")) {
@@ -1312,9 +1358,11 @@ markerDeleteBtn.addEventListener("click", () => {
   if (idx === -1) return;
   if (markers[idx].id === ORIGIN_MARKER_ID) return;
 
+  const deletedTime = formatTime(markers[idx].time);
   const deletedNote = markers[idx].note ?? "";
   markers.splice(idx, 1);
   markDirty();
+  announce(`Marker at ${deletedTime} deleted`);
 
   // Append deleted marker's notes to the previous marker
   if (idx > 0 && deletedNote) {
@@ -1351,6 +1399,7 @@ markerAddBtn.addEventListener("click", () => {
   renderMarkers();
   renderMarkerTransport();
   renderBottomPanel();
+  announce(`Marker added at ${formatTime(time)}`);
 });
 
 // ----- Marker Dropdown
