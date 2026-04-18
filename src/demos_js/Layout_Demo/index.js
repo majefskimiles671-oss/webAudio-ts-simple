@@ -2103,14 +2103,18 @@ const bottomPanel = document.getElementById("bottom-panel");
 const bottomPanelHandle = document.getElementById("bottom-panel-handle");
 const toggleBottomPanelBtn = document.getElementById("toggle-bottom-panel");
 
-toggleBottomPanelBtn.addEventListener("click", () => {
-  viewState.bottomPanel = !viewState.bottomPanel;
-  applyViewState();
-});
+if (toggleBottomPanelBtn) {
+  toggleBottomPanelBtn.addEventListener("click", () => {
+    viewState.bottomPanel = !viewState.bottomPanel;
+    applyViewState();
+  });
+}
 
 // ----- View Toggles - Event Handlers -----
 function makeViewToggle(menuId, stateKey) {
-  document.getElementById(menuId).addEventListener("click", () => {
+  const el = document.getElementById(menuId);
+  if (!el) return;
+  el.addEventListener("click", () => {
     viewState[stateKey] = !viewState[stateKey];
     applyViewState();
   });
