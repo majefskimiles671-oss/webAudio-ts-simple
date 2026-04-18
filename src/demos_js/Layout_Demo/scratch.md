@@ -117,6 +117,30 @@ git branch -d my_branch_name
 
 ---
 
+Given that vision, here's how an acoustic musician would actually use it:
+
+The core loop:
+You're noodling on guitar and stumble onto a chord progression you like. You hit record, play it through. Now you play it back and hum melodies over it — some stick, some don't. You record the one that does. Now you play both back together and they sound like something. You keep layering until the idea is fully formed in your head, then you're done with it.
+
+What they'd actually do session to session:
+
+"What does this melody sound like over a different chord?" — Record the same melody twice, each over a different guitar take underneath. Compare.
+
+"I want to play the B section with myself." — Record the A section, loop it, then perform the B section live on top while listening.
+
+"Does this riff work as a countermelody?" — Sing or hum the main melody as a clip, then play a guitar idea while it plays back to hear if they fit.
+
+"What was that thing I was doing earlier?" — Scroll back through clips from the session, find the take from 20 minutes ago, play it back.
+
+"This verse needs something under the chorus." — Solo the chorus track, listen bare, then record a new guitar part responding to it.
+
+The emotional core of the demo should probably be: you had an idea, you didn't lose it, and now you can play with it. Less about features, more about that feeling of being surprised by what you made.
+
+
+
+---
+---
+
 ```bash
 git switch -c update_demo_scripts
 ```

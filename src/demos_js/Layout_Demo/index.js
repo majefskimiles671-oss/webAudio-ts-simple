@@ -548,6 +548,7 @@ function applyTransportChange({ play, record }) {
 
   if (wasPlaying && !playing) {
     stopMeterAnimation();
+    audioEngineStop();
   }
 
   if (!wasRecording && recording) { onRecordStart(); startRecordingRange(); }
@@ -1891,6 +1892,7 @@ function onTransportStart() {
   playbackStartX = getPlayheadX(); // ← THIS is the fix
   startTime = performance.now();
   requestAnimationFrame(updatePlayhead);
+  audioEnginePlay(tracks.flatMap(t => t.clips), getPlayheadTime());
 }
 
 // -------- Update Playhead
@@ -2082,6 +2084,26 @@ document.getElementById("menu-new-project").addEventListener("click", () => {
 
 document.getElementById("menu-save-project").addEventListener("click", () => saveProject());
 document.getElementById("menu-open-project").addEventListener("click", () => openProject());
+
+document.getElementById("menu-import-wav").addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".wav,audio/wav";
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    const arrayBuffer = await file.arrayBuffer();
+    const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
+    const fileName = file.name.replace(/\.wav$/i, "");
+    const track = createTrack(fileName, { prepend: true });
+    tracks.unshift(track);
+    addClipToTrack(track.timelineRow, 0, audioBuffer.duration);
+    audioEngineStoreBuffer(track.clips[0].id, audioBuffer);
+    syncTimelineMinWidth();
+    markDirty();
+  };
+  input.click();
+});
 
 const bottomPanel = document.getElementById("bottom-panel");
 const bottomPanelHandle = document.getElementById("bottom-panel-handle");

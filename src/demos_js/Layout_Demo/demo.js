@@ -151,24 +151,9 @@ document.addEventListener("keydown", (e) => {
 
 const DEMO_SEQUENCE = [
   {
-    title: "Record & Mix the Chorus",
-    description: "Record a chorus section with two acoustic guitar parts and a lead vocal, navigate markers, then refine the mix with gain, solo, scrubbing, and scenes.",
-    run: () => runChorusDemo(),
-  },
-  {
-    title: "Recording & Arming",
-    description: "Record a long first take, then see how to arm and disarm the record button before committing to a second recording.",
-    run: () => runRecordingDemo(),
-  },
-  {
-    title: "Multiple Takes",
-    description: "Record three takes of the same part, solo each one to compare, then delete the weaker takes and keep the best.",
-    run: () => runTakesDemo(),
-  },
-  {
-    title: "Record & Add Notes",
-    description: "Name a track, record a clip, play it back, drop a marker, and write notes.",
-    run: () => runRecordAndNotesDemo(),
+    title: "Does This Riff Work as a Countermelody?",
+    description: "Hum a melody and record it. Play it back, then record a guitar riff on top to hear if the two ideas fit together.",
+    run: () => runCountermelodyDemo(),
   },
 ];
 
@@ -223,7 +208,7 @@ function showCompletionPopup() {
     <div class="demo-seq-card">
       <p class="demo-seq-eyebrow">All done!</p>
       <p class="demo-seq-title">You've seen everything.</p>
-      <p class="demo-seq-description">You can replay any demo from the View menu whenever you like.</p>
+      <p class="demo-seq-description">You can replay the demo from the Settings menu whenever you like.</p>
       <div class="demo-seq-actions">
         <button class="demo-seq-run">Got it</button>
       </div>
