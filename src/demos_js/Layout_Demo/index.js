@@ -2048,6 +2048,23 @@ toggleBottomPanelBtn.addEventListener("click", () => {
   if (!nowHidden) renderBottomPanel();
 });
 
+// ----- View Toggles - Event Handlers -----
+function makeViewToggle(menuId, bodyClass, labelHide, labelShow) {
+  const el = document.getElementById(menuId);
+  el.addEventListener("click", () => {
+    const nowHidden = document.body.classList.toggle(bodyClass);
+    el.textContent = nowHidden ? labelShow : labelHide;
+  });
+}
+
+makeViewToggle("toggle-scenes",          "hide-scenes",           "Hide Scenes",              "Show Scenes");
+makeViewToggle("toggle-marker-transport","hide-marker-transport",  "Hide Marker Transport",    "Show Marker Transport");
+makeViewToggle("toggle-tempo",           "hide-tempo",            "Hide Tempo & Time Sig",    "Show Tempo & Time Sig");
+makeViewToggle("toggle-metronome",       "hide-metronome",        "Hide Metronome",           "Show Metronome");
+makeViewToggle("toggle-zoom",            "hide-zoom",             "Hide Zoom Slider",         "Show Zoom Slider");
+makeViewToggle("toggle-solo",            "hide-solo",             "Hide Solo Buttons",        "Show Solo Buttons");
+makeViewToggle("toggle-recording-lane",  "hide-recording-lane",   "Hide Recording Lane",      "Show Recording Lane");
+
 let _panelDragging = false;
 let _panelDragStartY = 0;
 let _panelDragStartHeight = 0;

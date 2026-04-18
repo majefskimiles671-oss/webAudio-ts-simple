@@ -1512,6 +1512,23 @@
             user-select: none;
         }
 
+        /* ----- View Toggles ----- */
+
+        body.hide-scenes #transport-scenes,
+        body.hide-scenes .track-scenes { display: none; }
+
+        body.hide-marker-transport .marker-transport { display: none; }
+
+        body.hide-tempo .global-time { display: none; }
+
+        body.hide-metronome .metronome-scan { display: none; }
+
+        body.hide-zoom .transport-zoom { display: none; }
+
+        body.hide-solo .solo-btn { display: none; }
+
+        body.hide-recording-lane .recording-lane { display: none; }
+
         /* ----- Accessibility ----- */
 
         .sr-only {
