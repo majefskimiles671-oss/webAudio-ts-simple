@@ -244,6 +244,7 @@ function applyViewState() {
 }
 
 //  Transport State
+let selectedTrack = null;
 let playing = false;
 let recording = false;
 let masterGain = 100;
@@ -566,6 +567,13 @@ function returnToBeginning() {
   timelineArea.scrollLeft = 0;
 }
 
+// ----- Track Selection
+function selectTrack(track) {
+  if (selectedTrack) selectedTrack.controlRow.classList.remove("selected");
+  selectedTrack = selectedTrack === track ? null : track;
+  if (selectedTrack) selectedTrack.controlRow.classList.add("selected");
+}
+
 // ----- Track Lookup Helpers
 function findTrackByControlRow(el) {
   return tracks.find(t => t.controlRow === el) ?? null;
@@ -671,10 +679,34 @@ function createTrack(label, { prepend = false } = {}) {
     if (trackIdx === -1) return;  // recording lane — not in tracks, protected
     markDirty();
     const trackName = track.controlRow.querySelector(".track-title")?.textContent || "Track";
+    if (selectedTrack === track) selectedTrack = null;
     tracks.splice(trackIdx, 1);
     track.controlRow.remove();
     track.timelineRow.remove();
     announce(`${trackName} deleted`);
+  });
+
+  // Click background of control row to select the track
+  controlRow.addEventListener("click", (e) => {
+    if (controlRow.classList.contains("recording-lane")) return;
+    if (e.target.closest("button, [contenteditable], gain-slider, pan-slider")) return;
+    selectTrack(track);
+  });
+
+  // Action bar buttons
+  controlFrag.querySelector(".track-action-info").addEventListener("click", (e) => {
+    e.stopPropagation();
+    showTrackInfo(track);
+  });
+
+  controlFrag.querySelector(".track-action-loop").addEventListener("click", (e) => {
+    e.stopPropagation();
+    showLoopEditor(track);
+  });
+
+  controlFrag.querySelector(".track-action-delete").addEventListener("click", (e) => {
+    e.stopPropagation();
+    deleteBtn.click();
   });
 
   if (prepend) {
@@ -2191,6 +2223,35 @@ document.getElementById("view-settings-cancel").addEventListener("click", () => 
 document.getElementById("view-settings-accept").addEventListener("click", () => {
   _viewSettingsOverlay.hidden = true;
   markDirty();
+});
+
+// ----- Track Info Modal -----
+function showTrackInfo(track) {
+  const totalSecs = track.clips.reduce((s, c) => s + c.durationSamples / SAMPLE_RATE, 0);
+  const hasAudio  = track.clips.some(c => audioEngineHasBuffer(c.id));
+  document.getElementById("track-info-body").innerHTML = `
+    <dt>Name</dt>      <dd>${track.name}</dd>
+    <dt>Clips</dt>     <dd>${track.clips.length}</dd>
+    <dt>Duration</dt>  <dd>${totalSecs.toFixed(2)} s</dd>
+    <dt>Gain</dt>      <dd>${track.gain}</dd>
+    <dt>Pan</dt>       <dd>${track.pan}</dd>
+    <dt>Audio</dt>     <dd>${hasAudio ? "Loaded" : "None"}</dd>
+  `;
+  document.getElementById("track-info-overlay").hidden = false;
+}
+
+document.getElementById("track-info-close").addEventListener("click", () => {
+  document.getElementById("track-info-overlay").hidden = true;
+});
+
+// ----- Loop Editor Panel -----
+function showLoopEditor(track) {
+  document.getElementById("loop-editor-track-name").textContent = `Loop Editor — ${track.name}`;
+  document.getElementById("loop-editor-panel").hidden = false;
+}
+
+document.getElementById("loop-editor-close").addEventListener("click", () => {
+  document.getElementById("loop-editor-panel").hidden = true;
 });
 
 let _panelDragging = false;

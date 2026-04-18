@@ -258,6 +258,12 @@ Rule - Add comments before code snippets in this format:
                     <button class="track-scene" aria-label="Scene E" aria-pressed="false">E</button>
                 </div>
 
+
+            </div>
+            <div class="track-action-bar">
+                <button class="track-action-btn track-action-info">Info</button>
+                <button class="track-action-btn track-action-loop">Loop Editor</button>
+                <button class="track-action-btn track-action-delete danger">Delete</button>
             </div>
         </div>
     </template>
@@ -338,6 +344,38 @@ Rule - Add comments before code snippets in this format:
         <div class="view-settings-actions">
             <button id="view-settings-cancel">Cancel</button>
             <button id="view-settings-accept" class="view-settings-accept-btn">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Track Info Modal -->
+<div id="track-info-overlay" class="view-settings-overlay" hidden>
+    <div class="view-settings-dialog">
+        <h2 class="view-settings-title" id="track-info-title">Track Info</h2>
+        <dl id="track-info-body" class="track-info-body"></dl>
+        <div class="view-settings-actions">
+            <button id="track-info-close" class="view-settings-accept-btn">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Loop Editor Panel -->
+<div id="loop-editor-panel" hidden>
+    <div class="loop-editor-header">
+        <span id="loop-editor-track-name">Loop Editor</span>
+        <button class="loop-editor-close-btn" id="loop-editor-close">✕</button>
+    </div>
+    <div class="loop-editor-body">
+        <div class="loop-editor-waveform"></div>
+        <div class="loop-editor-fields">
+            <label>Start <input type="range" min="0" max="100" value="0"></label>
+            <label>End <input type="range" min="0" max="100" value="100"></label>
+            <label>Crossfade <input type="range" min="0" max="100" value="0"></label>
+        </div>
+        <div class="loop-editor-transport">
+            <button>⏮</button>
+            <button>▶ Preview</button>
+            <button>⏹</button>
         </div>
     </div>
 </div>

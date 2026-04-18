@@ -2949,3 +2949,159 @@
             opacity: 0.35;
             cursor: not-allowed;
         }
+
+        /* ----- Track Selection ----- */
+
+        .control-row.selected > .row-inner {
+            border-left: 2px solid var(--accent-primary);
+            padding-left: 6px;
+        }
+
+        .track-action-bar {
+            display: none;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            gap: 4px;
+            padding: 4px 8px;
+            background: var(--bg-panel);
+            z-index: 2;
+        }
+
+        .control-row.selected .track-action-bar {
+            display: flex;
+        }
+
+        .track-action-btn {
+            flex: 1;
+            padding: 3px 0;
+            font-size: 11px;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .track-action-btn:hover {
+            background: var(--bg-surface);
+            border-color: var(--accent-primary);
+            color: var(--text-main);
+        }
+
+        .track-action-btn.danger:hover {
+            border-color: var(--accent-danger);
+            color: var(--accent-danger);
+        }
+
+        /* ----- Track Info Modal ----- */
+
+        .track-info-body {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 4px 12px;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .track-info-body dt { color: var(--text-muted); }
+        .track-info-body dd { margin: 0; }
+
+        /* ----- Loop Editor Panel ----- */
+
+        #loop-editor-panel {
+            position: fixed;
+            top: 120px;
+            left: 240px;
+            width: 360px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+            z-index: 5000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #loop-editor-panel[hidden] { display: none; }
+
+        .loop-editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .loop-editor-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .loop-editor-close-btn:hover { color: var(--text-main); }
+
+        .loop-editor-body {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .loop-editor-waveform {
+            height: 80px;
+            background: var(--bg-surface);
+            border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .loop-editor-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .loop-editor-fields label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .loop-editor-fields input[type=range] {
+            flex: 1;
+            accent-color: var(--accent-primary);
+        }
+
+        .loop-editor-transport {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .loop-editor-transport button {
+            padding: 4px 12px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .loop-editor-transport button:hover { border-color: var(--accent-primary); }
