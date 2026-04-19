@@ -60,6 +60,12 @@ function serializeProject() {
       timeSample: Math.round(m.time * SAMPLE_RATE),
       note:       m.note ?? "",
     })),
+    video: videoFile
+      ? {
+          filename: "video" + (videoFile.name.match(/\.[^.]+$/) ?? [""])[0],
+          opacity:  parseInt(document.getElementById("video-opacity-slider").value),
+        }
+      : null,
   };
 }
 
@@ -97,6 +103,7 @@ function buildPlaceholderWav() {
 function deserializeProject(data) {
   // ----- Reset DOM and state -----
 
+  removeVideo();
   audioEngineClearBuffers();
   tracks.forEach(t => { t.controlRow.remove(); t.timelineRow.remove(); });
   tracks.length = 0;
@@ -244,6 +251,17 @@ function deserializeProject(data) {
 // Save / Open (File System Access API) -----
 // ============================================================
 
+async function loadVideoFromFolder(folderHandle, data) {
+  if (!data.video?.filename) return;
+  try {
+    const vidHandle = await folderHandle.getFileHandle(data.video.filename);
+    const file = await vidHandle.getFile();
+    loadVideoFile(file, { opacity: data.video.opacity ?? 45 });
+  } catch {
+    // video file missing — skip silently
+  }
+}
+
 async function saveProject() {
   try {
     if (!projectId) projectId = crypto.randomUUID();
@@ -276,6 +294,14 @@ async function saveProject() {
       }
     }
 
+    // Write video file if one is loaded
+    if (videoFile && data.video) {
+      const vidHandle = await projectFolderHandle.getFileHandle(data.video.filename, { create: true });
+      const vidWriter = await vidHandle.createWritable();
+      await vidWriter.write(videoFile);
+      await vidWriter.close();
+    }
+
     clearDirty();
   } catch (err) {
     if (err.name !== "AbortError") {
@@ -287,8 +313,10 @@ async function saveProject() {
 
 async function reconnectProjectFolder() {
   const folderHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  let projectData;
   try {
-    await folderHandle.getFileHandle('project.json');
+    const jsonHandle = await folderHandle.getFileHandle('project.json');
+    projectData = JSON.parse(await (await jsonHandle.getFile()).text());
   } catch {
     alert("This folder doesn't contain a BareTrack project.");
     return false;
@@ -309,6 +337,7 @@ async function reconnectProjectFolder() {
       }
     }
   }
+  await loadVideoFromFolder(folderHandle, projectData);
   clearDirty();
   return true;
 }
@@ -351,6 +380,8 @@ async function openProject() {
         }
       }
     }
+
+    await loadVideoFromFolder(folderHandle, data);
 
     clearDirty();
   } catch (err) {

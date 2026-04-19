@@ -253,6 +253,7 @@ let playbackStartX = 0; // px offset where playback begins
 
 // State - Video Backdrop - Truth Layer -----
 let videoEl = null;
+let videoFile = null; // original File object, used by project-io to write the video on save
 let _videoDriftFrame = 0;
 
 // ============================================================
@@ -574,13 +575,16 @@ function returnToBeginning() {
 }
 
 // Authority - Video Backdrop - Meaning Layer -----
-function loadVideoFile(file) {
+function loadVideoFile(file, { opacity = 45 } = {}) {
   const el = document.getElementById("timeline-video");
   if (el.src) URL.revokeObjectURL(el.src);
   el.src = URL.createObjectURL(file);
   el.muted = true;
+  el.style.opacity = opacity / 100;
   el.currentTime = currentTimeSeconds;
   videoEl = el;
+  videoFile = file;
+  document.getElementById("video-opacity-slider").value = opacity;
   document.body.classList.add("has-video");
 }
 
@@ -589,6 +593,7 @@ function removeVideo() {
   URL.revokeObjectURL(videoEl.src);
   videoEl.src = "";
   videoEl = null;
+  videoFile = null;
   document.body.classList.remove("has-video");
 }
 
@@ -2357,6 +2362,7 @@ document.getElementById("video-remove-btn").addEventListener("click", removeVide
 
 document.getElementById("video-opacity-slider").addEventListener("input", (e) => {
   document.getElementById("timeline-video").style.opacity = e.target.value / 100;
+  markDirty();
 });
 
 const bottomPanel = document.getElementById("bottom-panel");
