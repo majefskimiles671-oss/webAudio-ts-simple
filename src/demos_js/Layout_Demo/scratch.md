@@ -142,14 +142,14 @@ The emotional core of the demo should probably be: you had an idea, you didn't l
 ---
 
 ```bash
-git switch -c looping
+git switch -c mixdown
 ```
 
 -- making commits in the UI
 
 ```bash
 git switch main
-git merge looping
+git merge mixdown
 git push
-git branch -d looping
+git branch -d mixdown
 ```

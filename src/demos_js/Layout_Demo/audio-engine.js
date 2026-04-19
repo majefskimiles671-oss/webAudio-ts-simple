@@ -67,6 +67,10 @@ function audioEngineEncodeWav(audioBuffer) {
   return new Uint8Array(buf);
 }
 
+function audioEngineCreateBuffer(numChannels, numSamples) {
+  return _audioCtx.createBuffer(numChannels, numSamples, SAMPLE_RATE);
+}
+
 // clips: array of { id, startSample, durationSamples }
 // playheadSeconds: current playhead position in seconds
 // SAMPLE_RATE is a global from index.js, available by call time

@@ -21,20 +21,79 @@ function sanitizeFilename(name) {
   return name.replace(/[/\\:*?"<>|]/g, '_').trim() || 'track';
 }
 
+function uniqueFilename(base, usedNames) {
+  let name = `${base}.wav`;
+  if (!usedNames.has(name)) { usedNames.add(name); return name; }
+  let n = 2;
+  while (usedNames.has(`${base}_${n}.wav`)) n++;
+  name = `${base}_${n}.wav`;
+  usedNames.add(name);
+  return name;
+}
+
 // ============================================================
 // Authority (Meaning Layer) -----
 // ============================================================
 
+function renderTrackGroupToStereo(trackList) {
+  let totalSamples = 0;
+  for (const track of trackList) {
+    for (const clip of track.clips) {
+      const end = clip.startSample + clip.durationSamples;
+      if (end > totalSamples) totalSamples = end;
+    }
+  }
+  if (totalSamples === 0) return null;
+
+  const out  = audioEngineCreateBuffer(2, totalSamples);
+  const outL = out.getChannelData(0);
+  const outR = out.getChannelData(1);
+
+  for (const track of trackList) {
+    const gainFactor = track.gain / 100;
+    const panAngle   = ((track.pan + 100) / 200) * (Math.PI / 2);
+    const panL       = Math.cos(panAngle) * gainFactor;
+    const panR       = Math.sin(panAngle) * gainFactor;
+
+    for (const clip of track.clips) {
+      const src = audioEngineGetBuffer(clip.id);
+      if (!src) continue;
+
+      let chL, chR;
+      if (clip.durationSamples > src.length) {
+        const loopStart = clip.loopStartSamples ?? 0;
+        const loopEnd   = clip.loopEndSamples   ?? src.length;
+        const rendered  = audioEngineRenderLoop(src, loopStart, loopEnd, clip.durationSamples);
+        chL = rendered.getChannelData(0);
+        chR = rendered.numberOfChannels > 1 ? rendered.getChannelData(1) : chL;
+      } else {
+        chL = src.getChannelData(0);
+        chR = src.numberOfChannels > 1 ? src.getChannelData(1) : chL;
+      }
+
+      const start = clip.startSample;
+      const len   = Math.min(clip.durationSamples, totalSamples - start);
+      for (let i = 0; i < len; i++) {
+        outL[start + i] += chL[i] * panL;
+        outR[start + i] += chR[i] * panR;
+      }
+    }
+  }
+
+  return out;
+}
+
 async function exportMixdown({ scenes, modes, folderHandle }) {
   const sceneMap = getSceneTrackMap();
   const writtenFiles = [];
-  const wav = buildPlaceholderWav();
 
   for (const letter of scenes) {
     const sceneTracks = sceneMap[letter];
 
     if (modes.includes('stereo')) {
       const filename = `Scene-${letter}.wav`;
+      const rendered = renderTrackGroupToStereo(sceneTracks);
+      const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
       const fh = await folderHandle.getFileHandle(filename, { create: true });
       const w = await fh.createWritable();
       await w.write(wav);
@@ -45,8 +104,11 @@ async function exportMixdown({ scenes, modes, folderHandle }) {
     if (modes.includes('stems')) {
       // Individual stems — one WAV per track in a scene subfolder
       const subDir = await folderHandle.getDirectoryHandle(`Scene-${letter}`, { create: true });
+      const usedNames = new Set();
       for (const track of sceneTracks) {
-        const filename = `${sanitizeFilename(track.name)}.wav`;
+        const filename = uniqueFilename(sanitizeFilename(track.name), usedNames);
+        const rendered = renderTrackGroupToStereo([track]);
+        const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
         const fh = await subDir.getFileHandle(filename, { create: true });
         const w = await fh.createWritable();
         await w.write(wav);
@@ -61,10 +123,11 @@ async function exportMixdown({ scenes, modes, folderHandle }) {
 
 async function exportAllTracks({ modes, folderHandle }) {
   const writtenFiles = [];
-  const wav = buildPlaceholderWav();
 
   if (modes.includes('stereo')) {
     const filename = 'All Tracks.wav';
+    const rendered = renderTrackGroupToStereo(tracks);
+    const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
     const fh = await folderHandle.getFileHandle(filename, { create: true });
     const w = await fh.createWritable();
     await w.write(wav);
@@ -74,8 +137,11 @@ async function exportAllTracks({ modes, folderHandle }) {
 
   if (modes.includes('stems')) {
     // Stems written flat into the chosen folder (no subfolder — no scene context)
+    const usedNames = new Set();
     for (const track of tracks) {
-      const filename = `${sanitizeFilename(track.name)}.wav`;
+      const filename = uniqueFilename(sanitizeFilename(track.name), usedNames);
+      const rendered = renderTrackGroupToStereo([track]);
+      const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
       const fh = await folderHandle.getFileHandle(filename, { create: true });
       const w = await fh.createWritable();
       await w.write(wav);
