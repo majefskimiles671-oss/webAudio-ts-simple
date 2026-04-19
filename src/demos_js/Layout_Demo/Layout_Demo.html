@@ -230,24 +230,23 @@ Rule - Add comments before code snippets in this format:
         <div class="control-row">
             <div class="row-inner">
                 <div class="track-controls">
-                    <div class="track-title" contenteditable="true"></div>
-                    <button class="solo-btn" aria-label="Solo" aria-pressed="false">S</button>
                     <button class="delete-btn" aria-label="Delete track">
                         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
                             <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
                             <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
                         </svg>
                     </button>
+                    <div class="track-title" contenteditable="true"></div>
                 </div>
                 <div class="track-sliders">
                     <div class="gain-meter-stack">
-                        <gain-slider class="gain-slider" min="0" max="100" value="80"></gain-slider>
                         <div class="track-meter" aria-hidden="true">
                             <div class="tm-ch"></div>
                             <div class="tm-ch"></div>
                         </div>
+                        <gain-slider class="gain-slider" min="0" max="100" value="80"></gain-slider>
                     </div>
-                    <pan-slider class="pan-slider" min="-100" max="100" value="0"></pan-slider>
+                    <button class="solo-btn" aria-label="Solo" aria-pressed="false">S</button>
                 </div>
 
                 <div class="track-scenes" role="group" aria-label="Track scenes">
@@ -261,9 +260,7 @@ Rule - Add comments before code snippets in this format:
 
             </div>
             <div class="track-action-bar">
-                <button class="track-action-btn track-action-info">Info</button>
-                <button class="track-action-btn track-action-loop">Loop Editor</button>
-                <button class="track-action-btn track-action-delete danger">Delete</button>
+                <pan-slider class="pan-slider" min="-100" max="100" value="0"></pan-slider>
             </div>
         </div>
     </template>
@@ -379,6 +376,12 @@ Rule - Add comments before code snippets in this format:
             <button id="loop-stop-btn">⏹</button>
         </div>
     </div>
+</div>
+
+<div id="clip-popup" hidden>
+  <button id="clip-popup-loop-btn">Loop Edit</button>
+  <button id="clip-popup-info-btn">Info</button>
+  <button id="clip-popup-delete-btn">Delete</button>
 </div>
 
 <script src="./audio-engine.js"></script>

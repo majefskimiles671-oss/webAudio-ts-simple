@@ -581,6 +581,9 @@ function findTrackByControlRow(el) {
 function findTrackByTimelineRow(el) {
   return tracks.find(t => t.timelineRow === el) ?? null;
 }
+function findTrackByClipId(clipId) {
+  return tracks.find(t => t.clips.some(c => c.id === clipId)) ?? null;
+}
 
 // ----- Track Management
 function createTrack(label, { prepend = false } = {}) {
@@ -691,22 +694,6 @@ function createTrack(label, { prepend = false } = {}) {
     if (controlRow.classList.contains("recording-lane")) return;
     if (e.target.closest("button, [contenteditable], gain-slider, pan-slider")) return;
     selectTrack(track);
-  });
-
-  // Action bar buttons
-  controlFrag.querySelector(".track-action-info").addEventListener("click", (e) => {
-    e.stopPropagation();
-    showTrackInfo(track);
-  });
-
-  controlFrag.querySelector(".track-action-loop").addEventListener("click", (e) => {
-    e.stopPropagation();
-    showLoopEditor(track);
-  });
-
-  controlFrag.querySelector(".track-action-delete").addEventListener("click", (e) => {
-    e.stopPropagation();
-    deleteBtn.click();
   });
 
   if (prepend) {
@@ -1704,13 +1691,57 @@ recordBtn.onclick = () => {
 
 
 // ----- Clip Selection Handlers
+const _clipPopup = document.getElementById("clip-popup");
+let _clipPopupClipId = null;
+
+function showClipPopup(clipId, x, y) {
+  _clipPopupClipId = clipId;
+  document.getElementById("clip-popup-loop-btn").hidden = !audioEngineHasBuffer(clipId);
+  _clipPopup.style.left = `${Math.min(x + 8, window.innerWidth  - 130)}px`;
+  _clipPopup.style.top  = `${Math.min(y + 8, window.innerHeight -  60)}px`;
+  _clipPopup.hidden = false;
+}
+
+function hideClipPopup() {
+  _clipPopup.hidden = true;
+  _clipPopupClipId  = null;
+}
+
 timelineArea.addEventListener("click", (e) => {
   const waveform = e.target.closest(".waveform");
   if (waveform) {
     selectClip(waveform.dataset.clipId);
+    showClipPopup(waveform.dataset.clipId, e.clientX, e.clientY);
   } else {
     deselectClip();
+    hideClipPopup();
   }
+});
+
+document.addEventListener("click", (e) => {
+  if (!_clipPopup.hidden && !_clipPopup.contains(e.target) && !e.target.closest(".waveform")) {
+    hideClipPopup();
+  }
+});
+
+document.getElementById("clip-popup-loop-btn").addEventListener("click", () => {
+  if (!_clipPopupClipId) return;
+  const track = findTrackByClipId(_clipPopupClipId);
+  const clip  = track?.clips.find(c => c.id === _clipPopupClipId);
+  if (track && clip) showLoopEditor(track, clip);
+  hideClipPopup();
+});
+
+document.getElementById("clip-popup-info-btn").addEventListener("click", () => {
+  if (!_clipPopupClipId) return;
+  const track = findTrackByClipId(_clipPopupClipId);
+  if (track) showTrackInfo(track);
+  hideClipPopup();
+});
+
+document.getElementById("clip-popup-delete-btn").addEventListener("click", () => {
+  deleteSelectedClip();
+  hideClipPopup();
 });
 
 document.addEventListener("keydown", (e) => {
@@ -1718,7 +1749,7 @@ document.addEventListener("keydown", (e) => {
     || document.activeElement?.tagName === "TEXTAREA"
     || document.activeElement?.isContentEditable;
 
-  if (e.key === "Escape") deselectClip();
+  if (e.key === "Escape") { deselectClip(); hideClipPopup(); }
 
   if ((e.key === "Delete" || e.key === "Backspace") && !editable) deleteSelectedClip();
 
@@ -2121,20 +2152,28 @@ document.getElementById("menu-import-wav").addEventListener("click", () => {
   const input = document.createElement("input");
   input.type = "file";
   input.accept = ".wav,audio/wav";
+  input.multiple = true;
   input.onchange = async () => {
-    const file = input.files[0];
-    if (!file) return;
-    const arrayBuffer = await file.arrayBuffer();
-    const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
-    const fileName = file.name.replace(/\.wav$/i, "");
-    const track = createTrack(fileName);
+    const files = Array.from(input.files);
+    if (!files.length) return;
+
+    const firstName = files[0].name.replace(/\.wav$/i, "");
+    const track = createTrack(files.length > 1 ? `${firstName} +${files.length - 1}` : firstName);
     tracks.unshift(track);
     if (recordingLaneTrack) {
       recordingLaneTrack.controlRow.after(track.controlRow);
       recordingLaneTrack.timelineRow.after(track.timelineRow);
     }
-    addClipToTrack(track.timelineRow, 0, audioBuffer.duration);
-    audioEngineStoreBuffer(track.clips[0].id, audioBuffer);
+
+    let startSeconds = 0;
+    for (const file of files) {
+      const arrayBuffer = await file.arrayBuffer();
+      const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
+      addClipToTrack(track.timelineRow, startSeconds, audioBuffer.duration);
+      audioEngineStoreBuffer(track.clips[track.clips.length - 1].id, audioBuffer);
+      startSeconds += audioBuffer.duration;
+    }
+
     syncTimelineMinWidth();
     markDirty();
   };
@@ -2341,9 +2380,8 @@ function _loopEndToDurInputs(clip) {
   document.getElementById("loop-dur-beats").value = beats;
 }
 
-function showLoopEditor(track) {
-  const clip = track.clips.find(c => audioEngineHasBuffer(c.id));
-  if (!clip) return;
+function showLoopEditor(track, clip) {
+  if (!clip || !audioEngineHasBuffer(clip.id)) return;
 
   _loopEditorTrack = track;
   _loopEditorClip  = clip;
