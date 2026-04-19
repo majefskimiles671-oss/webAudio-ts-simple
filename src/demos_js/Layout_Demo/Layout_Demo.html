@@ -229,7 +229,8 @@ Rule - Add comments before code snippets in this format:
     <template id="control-row-template">
         <div class="control-row">
             <div class="row-inner">
-                <div class="track-controls">
+
+                <div class="track-row-1">
                     <button class="delete-btn" aria-label="Delete track">
                         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
                             <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
@@ -237,16 +238,16 @@ Rule - Add comments before code snippets in this format:
                         </svg>
                     </button>
                     <div class="track-title" contenteditable="true"></div>
-                </div>
-                <div class="track-sliders">
-                    <div class="gain-meter-stack">
-                        <div class="track-meter" aria-hidden="true">
-                            <div class="tm-ch"></div>
-                            <div class="tm-ch"></div>
-                        </div>
-                        <gain-slider class="gain-slider" min="0" max="100" value="80"></gain-slider>
-                    </div>
                     <button class="solo-btn" aria-label="Solo" aria-pressed="false">S</button>
+                </div>
+
+                <div class="track-row-2">
+                    <div class="track-meter" aria-hidden="true">
+                        <div class="tm-ch"></div>
+                        <div class="tm-ch"></div>
+                    </div>
+                    <gain-slider class="gain-slider" min="0" max="100" value="80"></gain-slider>
+                    <pan-slider class="pan-slider" min="-100" max="100" value="0"></pan-slider>
                 </div>
 
                 <div class="track-scenes" role="group" aria-label="Track scenes">
@@ -257,10 +258,6 @@ Rule - Add comments before code snippets in this format:
                     <button class="track-scene" aria-label="Scene E" aria-pressed="false">E</button>
                 </div>
 
-
-            </div>
-            <div class="track-action-bar">
-                <pan-slider class="pan-slider" min="-100" max="100" value="0"></pan-slider>
             </div>
         </div>
     </template>

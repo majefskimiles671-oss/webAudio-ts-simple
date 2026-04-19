@@ -32,6 +32,8 @@ class PanSlider extends HTMLElement {
   }
 
   _render() {
+    this.setAttribute("tabindex", "0");
+
     this.innerHTML = `
       <span class="ps-label">L</span>
       <div class="ps-track">
@@ -42,6 +44,14 @@ class PanSlider extends HTMLElement {
       <span class="ps-label">R</span>`;
 
     const track = this.querySelector(".ps-track");
+    const step  = (this._max - this._min) * 0.05;
+
+    this.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      this.value = this._value + (e.key === "ArrowRight" ? step : -step);
+      this.dispatchEvent(new Event("input", { bubbles: true }));
+    });
 
     this.addEventListener("mousedown", (e) => {
       _activePanDrag = this;

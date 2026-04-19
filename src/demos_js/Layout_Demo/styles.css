@@ -476,34 +476,36 @@
             text-overflow: clip;
         }
 
-        .track-controls {
+        .track-row-1 {
             display: flex;
+            align-items: center;
             gap: 6px;
-            align-items: center;
-        }
-
-        /* Gain + Pan side-by-side */
-        .track-sliders {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .gain-meter-stack {
-            flex: 3;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
             min-width: 0;
         }
 
-        .track-sliders gain-slider {
-            width: 100%;
+        .track-row-1 .solo-btn {
+            margin-left: auto;
         }
 
-        .track-sliders pan-slider {
+        .track-row-2 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .track-row-2 .track-meter {
+            flex-shrink: 0;
+            width: 32px;
+        }
+
+        .track-row-2 gain-slider {
             flex: 2;
-            width: auto;
+            min-width: 0;
+        }
+
+        .track-row-2 pan-slider {
+            flex: 1;
             min-width: 0;
         }
 
@@ -661,6 +663,12 @@
             transform: translate(-50%, -50%);
         }
 
+        pan-slider:focus-visible {
+            outline: 2px solid var(--accent-primary);
+            outline-offset: 2px;
+            border-radius: 3px;
+        }
+
         pan-slider:hover .ps-thumb,
         pan-slider[data-dragging] .ps-thumb {
             background: var(--accent-highlight);
@@ -668,9 +676,9 @@
 
         .track-scenes {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             align-items: center;
-            margin-top: 8px;
+            justify-content: flex-end;
         }
 
         .track-scene {
@@ -949,6 +957,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            gap: 4px;
         }
 
         /* Timeline rows: no horizontal padding, fixed height, positioning context for clips */
@@ -2953,35 +2962,6 @@
             padding-left: 6px;
         }
 
-        .track-action-bar {
-            display: flex;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            gap: 4px;
-            padding: 4px 8px;
-            background: var(--bg-app);
-            z-index: 2;
-        }
-
-        .track-action-bar pan-slider {
-            flex: 0 0 50%;
-        }
-
-
-        .track-action-info {
-            flex: 0;
-            padding: 2px;
-            background: none;
-            border: none;
-            border-radius: 3px;
-            color: var(--text-muted);
-            cursor: pointer;
-            line-height: 0;
-        }
-
-        .track-action-info:hover { color: var(--text-main); }
 
         /* ----- Track Info Modal ----- */
 
