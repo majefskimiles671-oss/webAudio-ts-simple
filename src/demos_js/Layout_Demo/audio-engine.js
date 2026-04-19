@@ -172,14 +172,24 @@ function audioEngineSetMasterGain(value) {
 // ---- Microphone recording
 
 let _micStream      = null;
+let _micAnalyser    = null;
 let _mediaRecorder  = null;
 let _recordedChunks = [];
 
 async function audioEngineEnsureMicStream() {
   if (!_micStream) {
     _micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    if (_audioCtx.state === "suspended") _audioCtx.resume();
+    const src = _audioCtx.createMediaStreamSource(_micStream);
+    _micAnalyser = _audioCtx.createAnalyser();
+    src.connect(_micAnalyser);
   }
   return _micStream;
+}
+
+function audioEngineGetInputLevel() {
+  if (!_micAnalyser) return 0;
+  return _getRMS(_micAnalyser);
 }
 
 function audioEngineStartRecording() {

@@ -834,7 +834,7 @@ async function onRecordStop() {
     const clip = clipTrack.clips[clipTrack.clips.length - 1];
     if (clip) {
       audioEngineStoreBuffer(clip.id, audioBuffer);
-      updateClipWaveform(clip.id, audioBuffer);
+      updateClipWaveform(clip.id, audioBuffer, clipTrack.timelineRow);
     }
   }
 
@@ -1150,8 +1150,8 @@ function renderMarkerTransport() {
   display.classList.toggle("disabled", recording);
 }
 
-function updateClipWaveform(clipId, audioBuffer) {
-  const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+function updateClipWaveform(clipId, audioBuffer, root = document) {
+  const waveform = root.querySelector(`.waveform[data-clip-id="${clipId}"]`);
   if (!waveform) return;
   const canvas = waveform.querySelector(".waveform-canvas");
   if (!canvas) return;
@@ -2106,10 +2106,17 @@ function updatePlayhead() {
   requestAnimationFrame(updatePlayhead);
 }
 
+let _inputMeterLevel = 0;
+
 function updateMeter() {
   if (recording) {
-    meterBar.style.width = `${20 + Math.random() * 80}%`;
+    const target = _rmsToLevel(audioEngineGetInputLevel());
+    const alpha = target > _inputMeterLevel ? 0.45 : 0.07;
+    _inputMeterLevel += (target - _inputMeterLevel) * alpha;
+  } else {
+    _inputMeterLevel *= 0.88;
   }
+  meterBar.style.width = `${_inputMeterLevel * 100}%`;
   requestAnimationFrame(updateMeter);
 }
 

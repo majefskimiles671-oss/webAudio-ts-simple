@@ -31,14 +31,20 @@ function serializeProject() {
       gain:   track.gain,
       pan:    track.pan,
       scenes: [...track.scenes],
-      clips:  track.clips.map(clip => ({
-        id:              clip.id,
-        file:            `clip-${clip.id}.wav`,
-        startSample:     clip.startSample,
-        durationSamples: clip.durationSamples,
-        loopStartSamples: clip.loopStartSamples ?? 0,
-        loopEndSamples:   clip.loopEndSamples   ?? clip.durationSamples,
-      })),
+      clips:  track.clips.map(clip => {
+        const canvas = document.querySelector(`.waveform[data-clip-id="${clip.id}"] .waveform-canvas`);
+        const amplitudesRaw = canvas?.dataset?.amplitudes;
+        const amplitudes = amplitudesRaw ? JSON.parse(amplitudesRaw) : undefined;
+        return {
+          id:              clip.id,
+          file:            `clip-${clip.id}.wav`,
+          startSample:     clip.startSample,
+          durationSamples: clip.durationSamples,
+          loopStartSamples: clip.loopStartSamples ?? 0,
+          loopEndSamples:   clip.loopEndSamples   ?? clip.durationSamples,
+          amplitudes,
+        };
+      }),
     })),
     chordPanel: (typeof cdGetPanelState === "function") ? cdGetPanelState() : undefined,
     chords: (typeof chords !== "undefined" ? chords : []).map(c => ({
@@ -175,7 +181,11 @@ function deserializeProject(data) {
       waveform.style.left  = `${secondsToPixels(startSeconds)}px`;
       waveform.style.width = `${computeWaveformWidth(durationSeconds)}px`;
 
-      canvas.dataset.amplitudes = JSON.stringify(generateWaveformData(256));
+      canvas.dataset.amplitudes = JSON.stringify(
+        (Array.isArray(clip.amplitudes) && clip.amplitudes.length > 0)
+          ? clip.amplitudes
+          : generateWaveformData(256)
+      );
       drawDummyWaveform(canvas);
 
       waveform.appendChild(canvas);
