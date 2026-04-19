@@ -306,6 +306,25 @@ Rule - Add comments before code snippets in this format:
 
 <div id="aria-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
+<div id="shortcut-help-overlay" class="shortcut-help-overlay" hidden
+     role="dialog" aria-modal="true" aria-labelledby="shortcut-help-title">
+  <div class="shortcut-help-panel">
+    <div class="shortcut-help-header">
+      <span id="shortcut-help-title">Keyboard Shortcuts</span>
+      <button id="shortcut-help-close" aria-label="Close keyboard shortcuts">✕</button>
+    </div>
+    <dl class="shortcut-list">
+      <dt>Space</dt>               <dd>Play / Pause</dd>
+      <dt>R</dt>                   <dd>Toggle recording</dd>
+      <dt>. or Home</dt>           <dd>Return to beginning</dd>
+      <dt>Delete / Backspace</dt>  <dd>Delete selected clip</dd>
+      <dt>Escape</dt>              <dd>Deselect / close panel</dd>
+      <dt>⌘S / Ctrl+S</dt>        <dd>Save project</dd>
+      <dt>?</dt>                   <dd>Show / hide this help</dd>
+    </dl>
+  </div>
+</div>
+
 <div id="view-settings-overlay" class="view-settings-overlay" hidden>
     <div class="view-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="view-settings-title">
         <h2 class="view-settings-title" id="view-settings-title">View Settings</h2>
@@ -378,7 +397,21 @@ Rule - Add comments before code snippets in this format:
 <div id="clip-popup" hidden>
   <button id="clip-popup-loop-btn">Loop Edit</button>
   <button id="clip-popup-info-btn">Info</button>
+  <button id="clip-popup-duplicate-btn">Duplicate</button>
   <button id="clip-popup-delete-btn">Delete</button>
+</div>
+
+<div id="duplicate-dialog" hidden>
+  <div id="duplicate-dialog-card">
+    <p id="duplicate-dialog-title">Duplicate Clip</p>
+    <label id="duplicate-dialog-label">Number of copies
+      <input id="duplicate-dialog-input" type="number" min="1" max="99" value="1">
+    </label>
+    <div id="duplicate-dialog-actions">
+      <button id="duplicate-dialog-cancel">Cancel</button>
+      <button id="duplicate-dialog-ok">Duplicate</button>
+    </div>
+  </div>
 </div>
 
 <script src="./audio-engine.js"></script>

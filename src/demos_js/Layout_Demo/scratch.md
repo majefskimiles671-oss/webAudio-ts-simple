@@ -92,7 +92,7 @@ session.curvatureSamples // how many mouse path samples collected
 
 ---
 
-After recording2, the most natural workflow toward a shareable recording2 is:
+After recording, the most natural workflow toward a shareable recording2 is:
 
 Trim/crop clips — recording2s rarely start and end cleanly. The ability to drag the edges of a clip to cut out silence or mistakes is probably the single most-wanted editing feature.
 

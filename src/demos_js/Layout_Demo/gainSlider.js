@@ -44,6 +44,12 @@ class GainSlider extends HTMLElement {
       e.preventDefault();
     });
 
+    this.querySelector(".gs-track").addEventListener("dblclick", (e) => {
+      this.value = parseFloat(this.getAttribute("value") ?? 80);
+      this.dispatchEvent(new Event("input", { bubbles: true }));
+      e.preventDefault();
+    });
+
     this._update();
   }
 

@@ -142,6 +142,11 @@ function audioEngineStop() {
   _trackMixers.clear();
 }
 
+function audioEngineSetTrackGain(trackId, gain) {
+  const mixer = _trackMixers.get(trackId);
+  if (mixer) mixer.mixerGain.gain.value = gain;
+}
+
 function _getRMS(analyser) {
   const buf = new Float32Array(analyser.fftSize);
   analyser.getFloatTimeDomainData(buf);
@@ -178,20 +183,23 @@ async function audioEngineEnsureMicStream() {
 }
 
 function audioEngineStartRecording() {
-  if (!_micStream) return;
-  _recordedChunks = [];
+  if (!_micStream || _mediaRecorder) return; // idempotent
+  const chunks = [];
+  _recordedChunks = chunks;
   _mediaRecorder = new MediaRecorder(_micStream);
-  _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) _recordedChunks.push(e.data); };
+  _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
   _mediaRecorder.start();
 }
 
 function audioEngineStopRecording() {
   return new Promise(resolve => {
     if (!_mediaRecorder) { resolve(null); return; }
-    _mediaRecorder.onstop = async () => {
-      const blob = new Blob(_recordedChunks, { type: _mediaRecorder.mimeType });
-      _mediaRecorder  = null;
-      _recordedChunks = [];
+    const recorder = _mediaRecorder;
+    const chunks   = _recordedChunks;
+    _mediaRecorder  = null;
+    _recordedChunks = [];
+    recorder.onstop = async () => {
+      const blob = new Blob(chunks, { type: recorder.mimeType });
       try {
         const ab = await blob.arrayBuffer();
         resolve(await _audioCtx.decodeAudioData(ab));
@@ -199,7 +207,7 @@ function audioEngineStopRecording() {
         resolve(null);
       }
     };
-    _mediaRecorder.stop();
+    recorder.stop();
   });
 }
 
@@ -208,8 +216,20 @@ let _previewSource = null;
 function audioEnginePreviewLoop(buffer, loopStartSeconds, loopEndSeconds) {
   audioEngineStopPreview();
   if (_audioCtx.state === "suspended") _audioCtx.resume();
+
+  // If loop end exceeds actual audio, build a zero-padded buffer so the
+  // silence tail is included in the loop rather than being silently clipped.
+  let playBuffer = buffer;
+  if (loopEndSeconds > buffer.duration) {
+    const paddedLen = Math.ceil(loopEndSeconds * buffer.sampleRate);
+    playBuffer = _audioCtx.createBuffer(buffer.numberOfChannels, paddedLen, buffer.sampleRate);
+    for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+      playBuffer.getChannelData(ch).set(buffer.getChannelData(ch));
+    }
+  }
+
   const src = _audioCtx.createBufferSource();
-  src.buffer    = buffer;
+  src.buffer    = playBuffer;
   src.loop      = true;
   src.loopStart = loopStartSeconds;
   src.loopEnd   = loopEndSeconds;
@@ -233,7 +253,8 @@ function audioEngineRenderLoop(srcBuffer, loopStartSamples, loopEndSamples, outp
     const src  = srcBuffer.getChannelData(ch);
     const dest = out.getChannelData(ch);
     for (let i = 0; i < outputSamples; i++) {
-      dest[i] = src[loopStartSamples + (i % loopLen)];
+      const srcIdx = loopStartSamples + (i % loopLen);
+      dest[i] = srcIdx < src.length ? src[srcIdx] : 0;
     }
   }
   return out;
