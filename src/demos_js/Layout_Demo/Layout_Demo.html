@@ -320,6 +320,7 @@ Rule - Add comments before code snippets in this format:
       <dt>Delete / Backspace</dt>  <dd>Delete selected clip</dd>
       <dt>Escape</dt>              <dd>Deselect / close panel</dd>
       <dt>⌘S / Ctrl+S</dt>        <dd>Save project</dd>
+      <dt>C</dt>                   <dd>Toggle chord diagrams</dd>
       <dt>?</dt>                   <dd>Show / hide this help</dd>
     </dl>
   </div>
@@ -383,7 +384,7 @@ Rule - Add comments before code snippets in this format:
         <div class="loop-editor-fields">
             <label>Start <input id="loop-start-bars" type="number" min="0" value="0"> bars <input id="loop-start-beats" type="number" min="0" value="0"> beats</label>
             <label>Offset <input id="loop-start-slider" type="range" min="-100" max="100" value="0"> <button id="loop-offset-reset" type="button">↺</button></label>
-            <label>Duration <input id="loop-dur-bars" type="number" min="0" value="2"> bars <input id="loop-dur-beats" type="number" min="0" value="0"> beats</label>
+            <label>Duration <input id="loop-dur-bars" type="number" min="0" value="1"> bars <input id="loop-dur-beats" type="number" min="0" value="0"> beats</label>
             <label>Export Duration <input id="loop-export-bars" type="number" min="1" value="4"> bars <button id="loop-export-btn" type="button">↗ Export Loop</button></label>
         </div>
         <div class="loop-editor-transport">
@@ -392,6 +393,7 @@ Rule - Add comments before code snippets in this format:
             <button id="loop-stop-btn">⏹</button>
         </div>
     </div>
+    <div class="loop-editor-resize-handle"></div>
 </div>
 
 <div id="clip-popup" hidden>

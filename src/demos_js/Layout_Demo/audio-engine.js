@@ -222,6 +222,17 @@ function audioEngineStopRecording() {
 }
 
 let _previewSource = null;
+let _previewStartContextTime = 0;
+let _previewLoopStartSec     = 0;
+let _previewLoopEndSec       = 0;
+
+function audioEngineGetPreviewPosition() {
+  if (!_previewSource) return -1;
+  const loopLen = _previewLoopEndSec - _previewLoopStartSec;
+  if (loopLen <= 0) return -1;
+  const elapsed = _audioCtx.currentTime - _previewStartContextTime;
+  return _previewLoopStartSec + (elapsed % loopLen);
+}
 
 function audioEnginePreviewLoop(buffer, loopStartSeconds, loopEndSeconds) {
   audioEngineStopPreview();
@@ -245,7 +256,10 @@ function audioEnginePreviewLoop(buffer, loopStartSeconds, loopEndSeconds) {
   src.loopEnd   = loopEndSeconds;
   src.connect(_audioCtx.destination);
   src.start(0, loopStartSeconds);
-  _previewSource = src;
+  _previewSource           = src;
+  _previewStartContextTime = _audioCtx.currentTime;
+  _previewLoopStartSec     = loopStartSeconds;
+  _previewLoopEndSec       = loopEndSeconds;
 }
 
 function audioEngineStopPreview() {

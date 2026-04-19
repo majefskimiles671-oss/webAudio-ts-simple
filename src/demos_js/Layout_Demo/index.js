@@ -1857,6 +1857,11 @@ document.addEventListener("keydown", (e) => {
     overlay.hidden = !overlay.hidden;
     if (!overlay.hidden) document.getElementById("shortcut-help-close").focus();
   }
+
+  if (e.key === "c" && !editable) {
+    viewState.chordDiagrams = !viewState.chordDiagrams;
+    applyViewState();
+  }
 });
 
 document.getElementById("shortcut-help-close").addEventListener("click", () => {
@@ -2407,8 +2412,11 @@ document.getElementById("track-info-close").addEventListener("click", () => {
 });
 
 // ----- Loop Editor Panel -----
-let _loopEditorTrack = null;
-let _loopEditorClip  = null;
+let _loopEditorTrack      = null;
+let _loopEditorClip       = null;
+let _loopPreviewing       = false;
+let _loopEditorAmplitudes = null;
+let _loopEditorAnimFrame  = null;
 
 function _analyzeAudioBuffer(audioBuffer, numPoints) {
   const ch   = audioBuffer.getChannelData(0);
@@ -2421,7 +2429,7 @@ function _analyzeAudioBuffer(audioBuffer, numPoints) {
   });
 }
 
-function _drawLoopEditorWaveform(canvas, amplitudes, startFrac, endFrac) {
+function _drawLoopEditorWaveform(canvas, amplitudes, startFrac, endFrac, playheadFrac) {
   const ctx  = canvas.getContext("2d");
   const w    = canvas.width;
   const h    = canvas.height;
@@ -2462,11 +2470,58 @@ function _drawLoopEditorWaveform(canvas, amplitudes, startFrac, endFrac) {
   ctx.moveTo(endFrac * w, 0);   ctx.lineTo(endFrac * w, h);
   ctx.stroke();
 
+  if (playheadFrac != null && playheadFrac >= 0 && playheadFrac <= 1) {
+    const px = playheadFrac * w;
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(px, 0);
+    ctx.lineTo(px, h);
+    ctx.stroke();
+  }
+
   ctx.globalAlpha = 1;
 }
 
 function _stopLoopPreview() {
+  _loopPreviewing = false;
   audioEngineStopPreview();
+  if (_loopEditorAnimFrame) {
+    cancelAnimationFrame(_loopEditorAnimFrame);
+    _loopEditorAnimFrame = null;
+  }
+  if (_loopEditorClip && _loopEditorAmplitudes) {
+    const canvas = document.getElementById("loop-editor-canvas");
+    const buf    = audioEngineGetBuffer(_loopEditorClip.id);
+    _drawLoopEditorWaveform(canvas, _loopEditorAmplitudes,
+      _loopEditorClip.loopStartSamples / buf.length,
+      Math.min(1, _loopEditorClip.loopEndSamples / buf.length));
+  }
+}
+
+function _loopEditorTick() {
+  if (!_loopPreviewing || !_loopEditorClip) { _loopEditorAnimFrame = null; return; }
+  const canvas = document.getElementById("loop-editor-canvas");
+  const buf    = audioEngineGetBuffer(_loopEditorClip.id);
+  const posSec = audioEngineGetPreviewPosition();
+  _drawLoopEditorWaveform(canvas, _loopEditorAmplitudes,
+    _loopEditorClip.loopStartSamples / buf.length,
+    Math.min(1, _loopEditorClip.loopEndSamples / buf.length),
+    posSec >= 0 ? posSec / buf.duration : null);
+  _loopEditorAnimFrame = requestAnimationFrame(_loopEditorTick);
+}
+
+function _startLoopPreview() {
+  if (!_loopEditorClip) return;
+  const buf = audioEngineGetBuffer(_loopEditorClip.id);
+  _loopPreviewing = true;
+  audioEnginePreviewLoop(
+    buf,
+    _loopEditorClip.loopStartSamples / SAMPLE_RATE,
+    _loopEditorClip.loopEndSamples   / SAMPLE_RATE
+  );
+  if (!_loopEditorAnimFrame) _loopEditorAnimFrame = requestAnimationFrame(_loopEditorTick);
 }
 
 function _loopStartInputsToSamples(clip) {
@@ -2514,24 +2569,28 @@ function showLoopEditor(track, clip) {
   _loopEditorClip  = clip;
 
   clip.loopStartSamples ??= 0;
-  clip.loopEndSamples   ??= clip.durationSamples;
+  if (clip.loopEndSamples == null) {
+    clip.loopEndSamples = Math.min(
+      clip.durationSamples,
+      Math.round(beatsPerBar * secondsPerBeat() * SAMPLE_RATE)
+    );
+  }
 
   document.getElementById("loop-start-beats").max = beatsPerBar - 1;
   document.getElementById("loop-dur-beats").max   = beatsPerBar - 1;
   _loopStartToInputs(clip);
   _loopEndToDurInputs(clip);
   document.getElementById("loop-editor-track-name").textContent = `Loop Editor — ${track.name}`;
+  document.getElementById("loop-editor-panel").hidden = false;
 
   const buf = audioEngineGetBuffer(clip.id);
   const startFrac = clip.loopStartSamples / buf.length;
   const endFrac   = Math.min(1, clip.loopEndSamples / buf.length);
   const canvas = document.getElementById("loop-editor-canvas");
-  canvas.width  = canvas.parentElement.clientWidth || 600;
-  canvas.height = 80;
-  const amplitudes = _analyzeAudioBuffer(buf, canvas.width);
-  _drawLoopEditorWaveform(canvas, amplitudes, startFrac, endFrac);
-
-  document.getElementById("loop-editor-panel").hidden = false;
+  canvas.width  = canvas.parentElement.clientWidth  || 600;
+  canvas.height = canvas.parentElement.clientHeight || 80;
+  _loopEditorAmplitudes = _analyzeAudioBuffer(buf, canvas.width);
+  _drawLoopEditorWaveform(canvas, _loopEditorAmplitudes, startFrac, endFrac);
 }
 
 function _updateLoopRegion() {
@@ -2544,9 +2603,12 @@ function _updateLoopRegion() {
   const startFrac = clip.loopStartSamples / buf2.length;
   const endFrac   = Math.min(1, clip.loopEndSamples / buf2.length);
   const canvas    = document.getElementById("loop-editor-canvas");
-  const amplitudes = _analyzeAudioBuffer(buf2, canvas.width);
-  _drawLoopEditorWaveform(canvas, amplitudes, startFrac, endFrac);
+  if (!_loopEditorAmplitudes || _loopEditorAmplitudes.length !== canvas.width) {
+    _loopEditorAmplitudes = _analyzeAudioBuffer(buf2, canvas.width);
+  }
+  if (!_loopPreviewing) _drawLoopEditorWaveform(canvas, _loopEditorAmplitudes, startFrac, endFrac);
   markDirty();
+  if (_loopPreviewing) _startLoopPreview();
 }
 
 ["loop-start-bars", "loop-start-beats", "loop-start-slider",
@@ -2575,13 +2637,14 @@ document.getElementById("loop-export-btn").addEventListener("click", () => {
     outputSamples
   );
 
-  const newTrack = createTrack(`${_loopEditorTrack.name} (loop)`, { prepend: true });
+  const newTrack = createTrack(`Loop ${_loopEditorTrack.name}`, { prepend: true });
   tracks.unshift(newTrack);
   addClipToTrack(newTrack.timelineRow, 0, outBuffer.duration);
   const newClip = newTrack.clips[0];
   audioEngineStoreBuffer(newClip.id, outBuffer);
   updateClipWaveform(newClip.id, outBuffer);
   syncTimelineMinWidth();
+  syncTimelineOverlay();
   markDirty();
 
   _stopLoopPreview();
@@ -2589,26 +2652,60 @@ document.getElementById("loop-export-btn").addEventListener("click", () => {
 });
 
 document.getElementById("loop-preview-btn").addEventListener("click", () => {
-  if (!_loopEditorClip) return;
-  const buf = audioEngineGetBuffer(_loopEditorClip.id);
-  audioEnginePreviewLoop(
-    buf,
-    _loopEditorClip.loopStartSamples / SAMPLE_RATE,
-    _loopEditorClip.loopEndSamples   / SAMPLE_RATE
-  );
+  _startLoopPreview();
 });
 
 document.getElementById("loop-stop-btn").addEventListener("click", _stopLoopPreview);
 
 document.getElementById("loop-rewind-btn").addEventListener("click", () => {
   _stopLoopPreview();
-  document.getElementById("loop-preview-btn").click();
+  _startLoopPreview();
 });
 
 document.getElementById("loop-editor-close").addEventListener("click", () => {
   _stopLoopPreview();
   document.getElementById("loop-editor-panel").hidden = true;
 });
+
+{
+  const _lePanel = document.getElementById("loop-editor-panel");
+  const _leHandle = _lePanel.querySelector(".loop-editor-resize-handle");
+  let _leResizing = false, _leStartX, _leStartY, _leStartW, _leStartH;
+
+  _leHandle.addEventListener("mousedown", e => {
+    _leResizing = true;
+    _leStartX = e.clientX;
+    _leStartY = e.clientY;
+    _leStartW = _lePanel.offsetWidth;
+    _leStartH = _lePanel.offsetHeight;
+    e.preventDefault();
+  });
+
+  document.addEventListener("mousemove", e => {
+    if (!_leResizing) return;
+    _lePanel.style.width  = Math.max(260, _leStartW + (e.clientX - _leStartX)) + "px";
+    _lePanel.style.height = Math.max(220, _leStartH + (e.clientY - _leStartY)) + "px";
+    const canvas = document.getElementById("loop-editor-canvas");
+    const newH = canvas.parentElement.clientHeight;
+    if (newH > 0 && canvas.height !== newH) canvas.height = newH;
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (!_leResizing) return;
+    _leResizing = false;
+    if (_loopEditorClip) {
+      const canvas = document.getElementById("loop-editor-canvas");
+      const wf = canvas.parentElement;
+      canvas.width  = wf.clientWidth  || 600;
+      canvas.height = wf.clientHeight || 80;
+      const buf = audioEngineGetBuffer(_loopEditorClip.id);
+      _loopEditorAmplitudes = _analyzeAudioBuffer(buf, canvas.width);
+      const startFrac = _loopEditorClip.loopStartSamples / buf.length;
+      const endFrac   = Math.min(1, _loopEditorClip.loopEndSamples / buf.length);
+      if (!_loopPreviewing) _drawLoopEditorWaveform(canvas, _loopEditorAmplitudes, startFrac, endFrac);
+    }
+  });
+}
 
 let _panelDragging = false;
 let _panelDragStartY = 0;

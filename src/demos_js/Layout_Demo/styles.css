@@ -2151,8 +2151,9 @@
         #chord-diagrams-dialog {
             position: fixed;
             top: 80px;
-            left: 200px;
-            width: 360px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 700px;
             min-width: 200px;
             min-height: 120px;
             background: var(--bg-panel);
@@ -3056,8 +3057,12 @@
         #loop-editor-panel {
             position: fixed;
             top: 120px;
-            left: 240px;
-            width: 360px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 900px;
+            min-width: 260px;
+            height: 490px;
+            min-height: 220px;
             background: var(--bg-panel);
             border: 1px solid var(--border-subtle);
             border-radius: 8px;
@@ -3097,10 +3102,14 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
         }
 
         .loop-editor-waveform {
-            height: 80px;
+            flex: 1;
+            min-height: 60px;
             background: var(--bg-surface);
             border-radius: 4px;
             border: 1px solid var(--border-subtle);
@@ -3148,6 +3157,17 @@
         }
 
         .loop-editor-transport button:hover { border-color: var(--accent-primary); }
+
+        .loop-editor-resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 14px;
+            height: 14px;
+            cursor: nwse-resize;
+            background: linear-gradient(135deg, transparent 40%, var(--border-subtle) 40%);
+            border-radius: 0 0 8px 0;
+        }
 
         /* ----- Clip Popup ----- */
 
