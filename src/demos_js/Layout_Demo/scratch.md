@@ -142,14 +142,14 @@ The emotional core of the demo should probably be: you had an idea, you didn't l
 ---
 
 ```bash
-git switch -c update_demo_scripts
+git switch -c looping
 ```
 
 -- making commits in the UI
 
 ```bash
 git switch main
-git merge update_demo_scripts
+git merge looping
 git push
-git branch -d update_demo_scripts
+git branch -d looping
 ```
