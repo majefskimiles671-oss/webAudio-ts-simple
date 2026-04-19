@@ -35,7 +35,7 @@ function uniqueFilename(base, usedNames) {
 // Authority (Meaning Layer) -----
 // ============================================================
 
-function renderTrackGroupToStereo(trackList) {
+function renderTrackGroupToStereo(trackList, raw = false) {
   let totalSamples = 0;
   for (const track of trackList) {
     for (const clip of track.clips) {
@@ -50,10 +50,10 @@ function renderTrackGroupToStereo(trackList) {
   const outR = out.getChannelData(1);
 
   for (const track of trackList) {
-    const gainFactor = track.gain / 100;
-    const panAngle   = ((track.pan + 100) / 200) * (Math.PI / 2);
-    const panL       = Math.cos(panAngle) * gainFactor;
-    const panR       = Math.sin(panAngle) * gainFactor;
+    const gainFactor = raw ? 1 : track.gain / 100;
+    const panAngle   = raw ? Math.PI / 4 : ((track.pan + 100) / 200) * (Math.PI / 2);
+    const panL       = raw ? 1 : Math.cos(panAngle) * gainFactor;
+    const panR       = raw ? 1 : Math.sin(panAngle) * gainFactor;
 
     for (const clip of track.clips) {
       const src = audioEngineGetBuffer(clip.id);
@@ -107,7 +107,7 @@ async function exportMixdown({ scenes, modes, folderHandle }) {
       const usedNames = new Set();
       for (const track of sceneTracks) {
         const filename = uniqueFilename(sanitizeFilename(track.name), usedNames);
-        const rendered = renderTrackGroupToStereo([track]);
+        const rendered = renderTrackGroupToStereo([track], true);
         const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
         const fh = await subDir.getFileHandle(filename, { create: true });
         const w = await fh.createWritable();

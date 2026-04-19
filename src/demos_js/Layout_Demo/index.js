@@ -129,7 +129,7 @@ controlsScrollCol.addEventListener("input", (e) => {
   if (gs) {
     markDirty();
     const track = findTrackByControlRow(gs.closest(".control-row"));
-    if (track) track.gain = gs.value;
+    if (track) { track.gain = gs.value; syncTrackMutes(); }
     return;
   }
   const ps = e.target.closest("pan-slider");
@@ -2010,19 +2010,14 @@ function onTransportStart() {
   playbackStartX = getPlayheadX(); // ← THIS is the fix
   startTime = performance.now();
   requestAnimationFrame(updatePlayhead);
-  const activeScene = document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim();
-  const soloedControlRow = document.querySelector(".solo-btn.active")?.closest(".control-row");
-  const soloedTrack = soloedControlRow ? tracks.find(t => t.controlRow === soloedControlRow) : null;
-  let audibleTracks = soloedTrack ? [soloedTrack]
-                   : activeScene  ? tracks.filter(t => t.scenes.includes(activeScene))
-                   : tracks;
   audioEnginePlay(
-    audibleTracks.map(t => ({
+    tracks.map(t => ({
       id: t.id,
       clips: t.clips.map(clip => ({ ...clip, gain: t.gain / 100, pan: t.pan / 100 })),
     })),
     getPlayheadTime()
   );
+  syncTrackMutes();
   if (recording) audioEngineStartRecording(); // record was armed before play — start now
 }
 
