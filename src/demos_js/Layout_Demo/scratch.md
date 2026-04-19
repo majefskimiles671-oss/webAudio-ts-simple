@@ -142,15 +142,15 @@ The emotional core of the demo should probably be: you had an idea, you didn't l
 ---
 
 ```bash
-git switch -c miles_loop_ui
+git switch -c miles_movie
 ```
 
 ```bash
 git switch main
-git merge miles_loop_ui
+git merge miles_movie
 ```
 
 ```bash
 git push
-git branch -d miles_loop_ui
+git branch -d miles_movie
 ```
