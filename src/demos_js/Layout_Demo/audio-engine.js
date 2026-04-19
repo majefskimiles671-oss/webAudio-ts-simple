@@ -142,6 +142,11 @@ function audioEngineStop() {
   _trackMixers.clear();
 }
 
+function audioEngineSetTrackGain(trackId, gain) {
+  const mixer = _trackMixers.get(trackId);
+  if (mixer) mixer.mixerGain.gain.value = gain;
+}
+
 function _getRMS(analyser) {
   const buf = new Float32Array(analyser.fftSize);
   analyser.getFloatTimeDomainData(buf);

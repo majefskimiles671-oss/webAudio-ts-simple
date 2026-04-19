@@ -660,6 +660,7 @@ function createTrack(label, { prepend = false } = {}) {
         .map(b => b.textContent.trim());
       markDirty();
       updateSceneMask();
+      syncTrackMutes();
     });
   });
 
@@ -674,6 +675,7 @@ function createTrack(label, { prepend = false } = {}) {
       allSoloBtns.forEach((b) => { if (b !== soloBtn) b.disabled = true; });
     }
     updateSoloMask();
+    syncTrackMutes();
   });
 
   const deleteBtn = controlFrag.querySelector(".delete-btn");
@@ -1671,6 +1673,7 @@ transportToggles.forEach((btn) => {
     transportToggles.forEach((b) => b.classList.remove("active"));
     if (!wasActive) btn.classList.add("active");
     updateSceneMask();
+    syncTrackMutes();
   });
 });
 
@@ -1679,6 +1682,7 @@ document.addEventListener("keydown", (e) => {
     document.querySelectorAll("#transport-scenes .transport-scene.active")
       .forEach((btn) => btn.classList.remove("active"));
     updateSceneMask();
+    syncTrackMutes();
   }
 });
 
@@ -1991,6 +1995,17 @@ function _renderMasterMeter() {
 }
 
 //  Transport Transitions
+function syncTrackMutes() {
+  const activeScene    = document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim();
+  const soloedControlRow = document.querySelector(".solo-btn.active")?.closest(".control-row");
+  const soloedTrack    = soloedControlRow ? tracks.find(t => t.controlRow === soloedControlRow) : null;
+  for (const track of tracks) {
+    const audible  = soloedTrack ? track === soloedTrack
+                                 : (!activeScene || track.scenes.includes(activeScene));
+    audioEngineSetTrackGain(track.id, audible ? track.gain / 100 : 0);
+  }
+}
+
 function onTransportStart() {
   playbackStartX = getPlayheadX(); // ← THIS is the fix
   startTime = performance.now();
@@ -1998,8 +2013,9 @@ function onTransportStart() {
   const activeScene = document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim();
   const soloedControlRow = document.querySelector(".solo-btn.active")?.closest(".control-row");
   const soloedTrack = soloedControlRow ? tracks.find(t => t.controlRow === soloedControlRow) : null;
-  let audibleTracks = activeScene ? tracks.filter(t => t.scenes.includes(activeScene)) : tracks;
-  if (soloedTrack) audibleTracks = audibleTracks.filter(t => t === soloedTrack);
+  let audibleTracks = soloedTrack ? [soloedTrack]
+                   : activeScene  ? tracks.filter(t => t.scenes.includes(activeScene))
+                   : tracks;
   audioEnginePlay(
     audibleTracks.map(t => ({
       id: t.id,
