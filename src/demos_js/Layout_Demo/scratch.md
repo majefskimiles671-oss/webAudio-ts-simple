@@ -30,22 +30,22 @@ Snapping for markers. [Menu option for toggling marker snapping]
 
 For some reason, hitting record then play doesn't start playing(please figure out if
 the play/record button is even needed or good).  Play button controls movement of
-playhead, record button controls whether recording2 happens when playing
+playhead, record button controls whether recording happens when playing
 [Please figure out every use case and design accordingly!]
 
 Add delete button to each track(maybe want to add highlight selection of waveform div
 so each piece can be deleted[may need more UI to pop up in waveform div to allow this])
 
-When recording2 starts
+When recording starts
  - scroll to top of page
  - add new timeline-row to timeline-column
 
  
 
-After recording2[transitioning from recording2 to !recording2]
- - the empty track we just made at the top of the timeline-column will accept the UI change representing the recording2 the user just made.
- - set the waveform-canvas.width to the proper width according to the duration of the recording2
- - place waveform UI horizontally at the beginning point of recording2 (I'm not sure which element should be moved, specifically. There may need to be css changes to the tracks) 
+After recording[transitioning from recording to !recording]
+ - the empty track we just made at the top of the timeline-column will accept the UI change representing the recording the user just made.
+ - set the waveform-canvas.width to the proper width according to the duration of the recording
+ - place waveform UI horizontally at the beginning point of recording (I'm not sure which element should be moved, specifically. There may need to be css changes to the tracks) 
 
  @src/demos_js/Layout_Demo/styles.css  
  @src/demos_js/Layout_Demo/index.js
@@ -60,9 +60,9 @@ session.curvatureSamples // how many mouse path samples collected
 
 ### Demos - each script should be in it's own file
 *** Please combine these items into 1 or 2 scripts that tell a story of creating a chorus with 2 acoustic guitar parts and 1 vocal part ***
- - recording2
+ - recording
     - simple case: change track name to "Vox 1" then record one clip in a track
-    - multiple clips into the same track (add a marker on the fly before each recording2 piece)
+    - multiple clips into the same track (add a marker on the fly before each recording piece)
  - Markers
     - Adding both ways
     - deleting
@@ -83,7 +83,7 @@ session.curvatureSamples // how many mouse path samples collected
     - global scenes, select deselect during playback and while stopped
 
 ### Demo Record and add notes - do these in the order written
- - change track name in the recording2 lane
+ - change track name in the recording lane
  - record for 10 seconds
  - hit return to beginning
  - start play back and wait 2 seconds
@@ -92,9 +92,9 @@ session.curvatureSamples // how many mouse path samples collected
 
 ---
 
-After recording, the most natural workflow toward a shareable recording2 is:
+After recording, the most natural workflow toward a shareable recording is:
 
-Trim/crop clips — recording2s rarely start and end cleanly. The ability to drag the edges of a clip to cut out silence or mistakes is probably the single most-wanted editing feature.
+Trim/crop clips — recordings rarely start and end cleanly. The ability to drag the edges of a clip to cut out silence or mistakes is probably the single most-wanted editing feature.
 
 Move clips — nudge a clip left or right to fix timing, or slide it to a different position after trimming.
 
@@ -142,14 +142,14 @@ The emotional core of the demo should probably be: you had an idea, you didn't l
 ---
 
 ```bash
-git switch -c recording2
+git switch -c miles_loop_ui
 ```
 
 -- making commits in the UI
 
 ```bash
 git switch main
-git merge recording2
+git merge miles_loop_ui
 git push
-git branch -d recording2
+git branch -d miles_loop_ui
 ```
