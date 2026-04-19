@@ -92,7 +92,7 @@ session.curvatureSamples // how many mouse path samples collected
 
 ---
 
-After recording, the most natural workflow toward a shareable mixdown is:
+After recording, the most natural workflow toward a shareable recording is:
 
 Trim/crop clips — recordings rarely start and end cleanly. The ability to drag the edges of a clip to cut out silence or mistakes is probably the single most-wanted editing feature.
 
@@ -142,14 +142,14 @@ The emotional core of the demo should probably be: you had an idea, you didn't l
 ---
 
 ```bash
-git switch -c mixdown
+git switch -c recording
 ```
 
 -- making commits in the UI
 
 ```bash
 git switch main
-git merge mixdown
+git merge recording
 git push
-git branch -d mixdown
+git branch -d recording
 ```
