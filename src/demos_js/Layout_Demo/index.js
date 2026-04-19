@@ -1205,13 +1205,6 @@ function rerenderWaveforms() {
     waveform.style.left = `${secondsToPixels(startSeconds)}px`;
     waveform.style.width = `${width}px`;
 
-    const clipId = waveform.dataset.clipId;
-    if (clipId && audioEngineHasBuffer(clipId)) {
-      const buf = audioEngineGetBuffer(clipId);
-      const amplitudes = _analyzeAudioBuffer(buf, Math.max(64, width));
-      canvas.dataset.amplitudes = JSON.stringify(amplitudes);
-    }
-
     drawDummyWaveform(canvas);
   });
 }
@@ -1788,6 +1781,58 @@ document.getElementById("clip-popup-info-btn").addEventListener("click", () => {
   const track = findTrackByClipId(_clipPopupClipId);
   if (track) showTrackInfo(track);
   hideClipPopup();
+});
+
+document.getElementById("clip-popup-duplicate-btn").addEventListener("click", () => {
+  if (!_clipPopupClipId) return;
+  hideClipPopup();
+  const input = document.getElementById("duplicate-dialog-input");
+  input.value = 1;
+  document.getElementById("duplicate-dialog").hidden = false;
+  input.focus();
+  input.select();
+});
+
+function _executeDuplicate() {
+  const dialog = document.getElementById("duplicate-dialog");
+  const count  = Math.max(1, Math.min(99, parseInt(document.getElementById("duplicate-dialog-input").value) || 1));
+  dialog.hidden = true;
+
+  const clipId = selectedClipId;
+  if (!clipId) return;
+  const track = findTrackByClipId(clipId);
+  if (!track) return;
+  const srcClip = track.clips.find(c => c.id === clipId);
+  if (!srcClip) return;
+
+  const audioBuffer = audioEngineHasBuffer(clipId) ? audioEngineGetBuffer(clipId) : null;
+
+  let tailSample = srcClip.startSample + srcClip.durationSamples;
+  for (let i = 0; i < count; i++) {
+    const startSeconds    = tailSample / SAMPLE_RATE;
+    const durationSeconds = srcClip.durationSamples / SAMPLE_RATE;
+    addClipToTrack(track.timelineRow, startSeconds, durationSeconds);
+    const newClip = track.clips[track.clips.length - 1];
+    newClip.loopStartSamples = srcClip.loopStartSamples;
+    newClip.loopEndSamples   = srcClip.loopEndSamples;
+    if (audioBuffer) {
+      audioEngineStoreBuffer(newClip.id, audioBuffer);
+      updateClipWaveform(newClip.id, audioBuffer);
+    }
+    tailSample += srcClip.durationSamples;
+  }
+  markDirty();
+}
+
+document.getElementById("duplicate-dialog-ok").addEventListener("click", _executeDuplicate);
+
+document.getElementById("duplicate-dialog-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter")  { e.preventDefault(); _executeDuplicate(); }
+  if (e.key === "Escape") { e.preventDefault(); document.getElementById("duplicate-dialog").hidden = true; }
+});
+
+document.getElementById("duplicate-dialog-cancel").addEventListener("click", () => {
+  document.getElementById("duplicate-dialog").hidden = true;
 });
 
 document.getElementById("clip-popup-delete-btn").addEventListener("click", () => {

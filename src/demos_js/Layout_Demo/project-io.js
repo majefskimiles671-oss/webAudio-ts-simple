@@ -164,6 +164,7 @@ function deserializeProject(data) {
       const waveform = document.createElement("div");
       waveform.className    = "waveform";
       waveform.dataset.clipId = clip.id;
+      waveform.dataset.startSeconds = startSeconds;
 
       const canvas = document.createElement("canvas");
       canvas.className = "waveform-canvas";

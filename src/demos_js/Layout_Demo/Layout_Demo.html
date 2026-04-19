@@ -378,7 +378,21 @@ Rule - Add comments before code snippets in this format:
 <div id="clip-popup" hidden>
   <button id="clip-popup-loop-btn">Loop Edit</button>
   <button id="clip-popup-info-btn">Info</button>
+  <button id="clip-popup-duplicate-btn">Duplicate</button>
   <button id="clip-popup-delete-btn">Delete</button>
+</div>
+
+<div id="duplicate-dialog" hidden>
+  <div id="duplicate-dialog-card">
+    <p id="duplicate-dialog-title">Duplicate Clip</p>
+    <label id="duplicate-dialog-label">Number of copies
+      <input id="duplicate-dialog-input" type="number" min="1" max="99" value="1">
+    </label>
+    <div id="duplicate-dialog-actions">
+      <button id="duplicate-dialog-cancel">Cancel</button>
+      <button id="duplicate-dialog-ok">Duplicate</button>
+    </div>
+  </div>
 </div>
 
 <script src="./audio-engine.js"></script>
