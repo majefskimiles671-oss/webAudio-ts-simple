@@ -616,7 +616,63 @@ function findTrackByClipId(clipId) {
 }
 
 // ----- Track Management
+
+function isNameUnique(name, excludeTrack = null) {
+  return !tracks.some(t => t !== excludeTrack && t.name === name);
+}
+
+function promptUniqueName(conflictingName, excludeTrack) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById("unique-name-overlay");
+    const msg     = document.getElementById("unique-name-message");
+    const input   = document.getElementById("unique-name-input");
+    const accept  = document.getElementById("unique-name-accept");
+    const cancel  = document.getElementById("unique-name-cancel");
+
+    msg.textContent = `"${conflictingName}" is already used by another track. Enter a unique name:`;
+    input.value = conflictingName;
+    accept.disabled = true;
+    overlay.hidden = false;
+    input.focus();
+    input.select();
+
+    function onInput() {
+      const val = input.value.trim();
+      accept.disabled = val === "" || !isNameUnique(val, excludeTrack);
+    }
+
+    function onAccept() {
+      cleanup();
+      resolve(input.value.trim());
+    }
+
+    function onCancel() {
+      cleanup();
+      resolve(null);
+    }
+
+    function onKeydown(e) {
+      if (e.key === "Enter" && !accept.disabled) onAccept();
+      if (e.key === "Escape") onCancel();
+    }
+
+    function cleanup() {
+      overlay.hidden = true;
+      input.removeEventListener("input", onInput);
+      accept.removeEventListener("click", onAccept);
+      cancel.removeEventListener("click", onCancel);
+      input.removeEventListener("keydown", onKeydown);
+    }
+
+    input.addEventListener("input", onInput);
+    accept.addEventListener("click", onAccept);
+    cancel.addEventListener("click", onCancel);
+    input.addEventListener("keydown", onKeydown);
+  });
+}
+
 function createTrack(label, { prepend = false } = {}) {
+  label = label.slice(0, 30);
   // State object is created first so all event listeners can close over it.
   // controlRow and timelineRow are assigned after DOM construction.
   const track = {
@@ -678,9 +734,20 @@ function createTrack(label, { prepend = false } = {}) {
   title.addEventListener("blur", () => {
     const t = title.textContent.trim();
     const finalName = t === "" ? label : t;
-    title.textContent = finalName;
-    track.name = finalName;
-    markDirty();
+    if (isNameUnique(finalName, track)) {
+      title.textContent = finalName;
+      track.name = finalName;
+      markDirty();
+    } else {
+      title.textContent = track.name;
+      promptUniqueName(finalName, track).then(newName => {
+        if (newName !== null) {
+          title.textContent = newName;
+          track.name = newName;
+          markDirty();
+        }
+      });
+    }
   });
 
   controlFrag.querySelectorAll(".track-scene").forEach((btn) => {
@@ -2328,7 +2395,15 @@ document.getElementById("menu-import-wav").addEventListener("click", () => {
     if (!files.length) return;
 
     const firstName = files[0].name.replace(/\.wav$/i, "");
-    const track = createTrack(files.length > 1 ? `${firstName} +${files.length - 1}` : firstName, { prepend: true });
+    let trackLabel = (files.length > 1 ? `${firstName} +${files.length - 1}` : firstName).slice(0, 30);
+
+    if (!isNameUnique(trackLabel)) {
+      const newName = await promptUniqueName(trackLabel, null);
+      if (newName === null) return;
+      trackLabel = newName;
+    }
+
+    const track = createTrack(trackLabel, { prepend: true });
     tracks.unshift(track);
 
     let startSeconds = 0;
@@ -2678,7 +2753,7 @@ document.getElementById("loop-offset-reset").addEventListener("click", () => {
   _updateLoopRegion();
 });
 
-document.getElementById("loop-export-btn").addEventListener("click", () => {
+document.getElementById("loop-export-btn").addEventListener("click", async () => {
   if (!_loopEditorClip || !_loopEditorTrack) return;
   const clip    = _loopEditorClip;
   const loopLen = clip.loopEndSamples - clip.loopStartSamples;
@@ -2694,7 +2769,14 @@ document.getElementById("loop-export-btn").addEventListener("click", () => {
     outputSamples
   );
 
-  const newTrack = createTrack(`Loop ${_loopEditorTrack.name}`, { prepend: true });
+  let newTrackLabel = `Loop ${_loopEditorTrack.name}`.slice(0, 30);
+  if (!isNameUnique(newTrackLabel)) {
+    const newName = await promptUniqueName(newTrackLabel, null);
+    if (newName === null) return;
+    newTrackLabel = newName;
+  }
+
+  const newTrack = createTrack(newTrackLabel, { prepend: true });
   tracks.unshift(newTrack);
   addClipToTrack(newTrack.timelineRow, 0, outBuffer.duration);
   const newClip = newTrack.clips[0];

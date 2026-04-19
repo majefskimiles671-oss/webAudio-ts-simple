@@ -8,6 +8,11 @@
 let projectId = null;
 let projectFolderHandle = null;
 
+function updateProjectNameDisplay() {
+  const el = document.getElementById("project-name-display");
+  if (el) el.textContent = projectFolderHandle?.name ?? "";
+}
+
 // ============================================================
 // Helpers (Pure Computation Layer) -----
 // ============================================================
@@ -269,6 +274,7 @@ async function saveProject() {
     if (!projectFolderHandle) {
       const parent = await window.showDirectoryPicker({ mode: "readwrite" });
       projectFolderHandle = await parent.getDirectoryHandle(projectId, { create: true });
+      updateProjectNameDisplay();
     }
 
     // Write project.json
@@ -322,6 +328,7 @@ async function reconnectProjectFolder() {
     return false;
   }
   projectFolderHandle = folderHandle;
+  updateProjectNameDisplay();
   for (const track of tracks) {
     for (const clip of track.clips) {
       try {
@@ -359,6 +366,7 @@ async function openProject() {
 
     projectId            = data.id ?? folderHandle.name;
     projectFolderHandle  = folderHandle;
+    updateProjectNameDisplay();
 
     localStorage.setItem("previousProjectData", JSON.stringify(data));
     deserializeProject(data);

@@ -1570,11 +1570,21 @@
             padding: 0 12px;
             background: var(--bg-app);
             border-bottom: 1px solid var(--border-subtle);
-
-
             position: relative;
             z-index: 100;
+        }
 
+        .project-name-display {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            color: var(--text-muted);
+            pointer-events: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 40%;
         }
 
         .menu-label {
@@ -2790,6 +2800,29 @@
             border-color: var(--accent-primary);
             color: #000;
             font-weight: 600;
+        }
+
+        .view-settings-accept-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .unique-name-message {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0 0 4px 0;
+        }
+
+        .unique-name-input {
+            width: 100%;
+            box-sizing: border-box;
+            margin: 8px 0 16px;
+            padding: 6px 10px;
+            background: var(--bg-track);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 13px;
         }
 
 /* Debug CSS */

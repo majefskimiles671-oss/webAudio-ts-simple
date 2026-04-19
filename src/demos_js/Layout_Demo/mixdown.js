@@ -35,6 +35,19 @@ function uniqueFilename(base, usedNames) {
 // Authority (Meaning Layer) -----
 // ============================================================
 
+async function getExportFolder() {
+  let mixdownDir;
+  if (projectFolderHandle) {
+    mixdownDir = await projectFolderHandle.getDirectoryHandle("mixdown", { create: true });
+  } else {
+    const baseDir = await window.showDirectoryPicker({ mode: "readwrite" });
+    mixdownDir = await baseDir.getDirectoryHandle("mixdown", { create: true });
+  }
+  const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+  const handle = await mixdownDir.getDirectoryHandle(timestamp, { create: true });
+  return { handle, displayPath: `mixdown/${timestamp}` };
+}
+
 function renderTrackGroupToStereo(trackList, raw = false) {
   let totalSamples = 0;
   for (const track of trackList) {
@@ -86,9 +99,34 @@ function renderTrackGroupToStereo(trackList, raw = false) {
 async function exportMixdown({ scenes, modes, folderHandle }) {
   const sceneMap = getSceneTrackMap();
   const writtenFiles = [];
+  const manifest = {};
+
+  // Assign each unique track a filename once, across all selected scenes
+  const trackFilenames = new Map(); // track.id → filename
+  if (modes.includes('stems')) {
+    const usedNames = new Set();
+    for (const letter of scenes) {
+      for (const track of sceneMap[letter]) {
+        if (!trackFilenames.has(track.id)) {
+          trackFilenames.set(track.id, uniqueFilename(sanitizeFilename(track.name), usedNames));
+        }
+      }
+    }
+    for (const [trackId, filename] of trackFilenames) {
+      const track = tracks.find(t => t.id === trackId);
+      const rendered = renderTrackGroupToStereo([track], true);
+      const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
+      const fh = await folderHandle.getFileHandle(filename, { create: true });
+      const w = await fh.createWritable();
+      await w.write(wav);
+      await w.close();
+      writtenFiles.push(filename);
+    }
+  }
 
   for (const letter of scenes) {
     const sceneTracks = sceneMap[letter];
+    const entry = {};
 
     if (modes.includes('stereo')) {
       const filename = `Scene-${letter}.wav`;
@@ -99,30 +137,28 @@ async function exportMixdown({ scenes, modes, folderHandle }) {
       await w.write(wav);
       await w.close();
       writtenFiles.push(filename);
+      entry.stereo = filename;
     }
 
     if (modes.includes('stems')) {
-      // Individual stems — one WAV per track in a scene subfolder
-      const subDir = await folderHandle.getDirectoryHandle(`Scene-${letter}`, { create: true });
-      const usedNames = new Set();
-      for (const track of sceneTracks) {
-        const filename = uniqueFilename(sanitizeFilename(track.name), usedNames);
-        const rendered = renderTrackGroupToStereo([track], true);
-        const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
-        const fh = await subDir.getFileHandle(filename, { create: true });
-        const w = await fh.createWritable();
-        await w.write(wav);
-        await w.close();
-        writtenFiles.push(`Scene-${letter}/${filename}`);
-      }
+      entry.stems = sceneTracks.map(t => trackFilenames.get(t.id));
     }
+
+    manifest[`Scene ${letter}`] = entry;
   }
+
+  const manifestFh = await folderHandle.getFileHandle("scenes.json", { create: true });
+  const manifestW = await manifestFh.createWritable();
+  await manifestW.write(JSON.stringify(manifest, null, 2));
+  await manifestW.close();
+  writtenFiles.push("scenes.json");
 
   return writtenFiles;
 }
 
 async function exportAllTracks({ modes, folderHandle }) {
   const writtenFiles = [];
+  const entry = {};
 
   if (modes.includes('stereo')) {
     const filename = 'All Tracks.wav';
@@ -133,11 +169,12 @@ async function exportAllTracks({ modes, folderHandle }) {
     await w.write(wav);
     await w.close();
     writtenFiles.push(filename);
+    entry.stereo = filename;
   }
 
   if (modes.includes('stems')) {
-    // Stems written flat into the chosen folder (no subfolder — no scene context)
     const usedNames = new Set();
+    const stemFiles = [];
     for (const track of tracks) {
       const filename = uniqueFilename(sanitizeFilename(track.name), usedNames);
       const rendered = renderTrackGroupToStereo([track]);
@@ -147,8 +184,17 @@ async function exportAllTracks({ modes, folderHandle }) {
       await w.write(wav);
       await w.close();
       writtenFiles.push(filename);
+      stemFiles.push(filename);
     }
+    entry.stems = stemFiles;
   }
+
+  const manifest = { "All Tracks": entry };
+  const manifestFh = await folderHandle.getFileHandle("scenes.json", { create: true });
+  const manifestW = await manifestFh.createWritable();
+  await manifestW.write(JSON.stringify(manifest, null, 2));
+  await manifestW.close();
+  writtenFiles.push("scenes.json");
 
   return writtenFiles;
 }
@@ -199,7 +245,7 @@ function showMixdownDialog() {
         </div>
         <div class="mixdown-actions">
           <button class="mixdown-cancel">Cancel</button>
-          <button class="mixdown-primary">Export All Tracks…</button>
+          <button class="mixdown-primary">${projectFolderHandle ? "Export" : "Choose Folder…"}</button>
         </div>
       </div>`;
 
@@ -216,10 +262,10 @@ function showMixdownDialog() {
       const modes = Array.from(overlay.querySelectorAll('input[name="mx-mode"]:checked'))
         .map(cb => cb.value);
       try {
-        const folderHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        const { handle: folderHandle, displayPath } = await getExportFolder();
         overlay.remove();
         const files = await exportAllTracks({ modes, folderHandle });
-        showMixdownDone(files, folderHandle.name);
+        showMixdownDone(files, displayPath);
       } catch (err) {
         if (err.name !== 'AbortError') { console.error('Export failed:', err); alert('Export failed. See console for details.'); }
       }
@@ -254,7 +300,7 @@ function showMixdownDialog() {
       </div>
       <div class="mixdown-actions">
         <button class="mixdown-cancel">Cancel</button>
-        <button class="mixdown-primary">Choose Folder…</button>
+        <button class="mixdown-primary">${projectFolderHandle ? "Export" : "Choose Folder…"}</button>
       </div>
     </div>`;
 
@@ -278,10 +324,10 @@ function showMixdownDialog() {
     const modes = Array.from(overlay.querySelectorAll('input[name="mx-mode"]:checked'))
       .map(cb => cb.value);
     try {
-      const folderHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      const { handle: folderHandle, displayPath } = await getExportFolder();
       overlay.remove();
       const files = await exportMixdown({ scenes, modes, folderHandle });
-      showMixdownDone(files, folderHandle.name);
+      showMixdownDone(files, displayPath);
     } catch (err) {
       if (err.name !== 'AbortError') { console.error('Export failed:', err); alert('Export failed. See console for details.'); }
     }

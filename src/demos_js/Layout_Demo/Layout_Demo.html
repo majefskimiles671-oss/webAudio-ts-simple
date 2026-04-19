@@ -95,6 +95,7 @@ Rule - Add comments before code snippets in this format:
             </div>
         </div>
 
+        <span id="project-name-display" class="project-name-display"></span>
         <span id="unsaved-indicator" role="status" hidden>Unsaved changes</span>
     </nav>
 
@@ -380,6 +381,19 @@ Rule - Add comments before code snippets in this format:
         <dl id="track-info-body" class="track-info-body"></dl>
         <div class="view-settings-actions">
             <button id="track-info-close" class="view-settings-accept-btn">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Unique Track Name Modal -->
+<div id="unique-name-overlay" class="view-settings-overlay" hidden>
+    <div class="view-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="unique-name-title">
+        <h2 class="view-settings-title" id="unique-name-title">Duplicate Track Name</h2>
+        <p id="unique-name-message" class="unique-name-message"></p>
+        <input id="unique-name-input" class="unique-name-input" type="text" maxlength="30" autocomplete="off" spellcheck="false">
+        <div class="view-settings-actions">
+            <button id="unique-name-cancel">Cancel</button>
+            <button id="unique-name-accept" class="view-settings-accept-btn" disabled>Accept</button>
         </div>
     </div>
 </div>
