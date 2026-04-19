@@ -831,7 +831,10 @@ async function onRecordStop() {
     ?? (recordingLaneTrack?.timelineRow === row ? recordingLaneTrack : null);
   if (audioBuffer && clipTrack) {
     const clip = clipTrack.clips[clipTrack.clips.length - 1];
-    if (clip) audioEngineStoreBuffer(clip.id, audioBuffer);
+    if (clip) {
+      audioEngineStoreBuffer(clip.id, audioBuffer);
+      updateClipWaveform(clip.id, audioBuffer);
+    }
   }
 
   // Synchronous promoteRecordingLane() in applyTransportChange bailed (no waveform yet).
@@ -1146,6 +1149,16 @@ function renderMarkerTransport() {
   display.classList.toggle("disabled", recording);
 }
 
+function updateClipWaveform(clipId, audioBuffer) {
+  const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+  if (!waveform) return;
+  const canvas = waveform.querySelector(".waveform-canvas");
+  if (!canvas) return;
+  const amplitudes = _analyzeAudioBuffer(audioBuffer, Math.max(64, canvas.width));
+  canvas.dataset.amplitudes = JSON.stringify(amplitudes);
+  drawDummyWaveform(canvas);
+}
+
 function drawDummyWaveform(canvas) {
   const amplitudes = JSON.parse(canvas.dataset.amplitudes || "[]");
   if (!amplitudes.length) return;
@@ -1189,6 +1202,13 @@ function rerenderWaveforms() {
     canvas.width = width;
     waveform.style.left = `${secondsToPixels(startSeconds)}px`;
     waveform.style.width = `${width}px`;
+
+    const clipId = waveform.dataset.clipId;
+    if (clipId && audioEngineHasBuffer(clipId)) {
+      const buf = audioEngineGetBuffer(clipId);
+      const amplitudes = _analyzeAudioBuffer(buf, Math.max(64, width));
+      canvas.dataset.amplitudes = JSON.stringify(amplitudes);
+    }
 
     drawDummyWaveform(canvas);
   });

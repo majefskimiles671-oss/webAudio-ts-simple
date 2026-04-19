@@ -292,6 +292,7 @@ async function reconnectProjectFolder() {
         if (arrayBuffer.byteLength <= 44) continue;
         const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
         audioEngineStoreBuffer(clip.id, audioBuffer);
+        updateClipWaveform(clip.id, audioBuffer);
       } catch {
         // file missing or undecodable — clip stays silent
       }
@@ -333,6 +334,7 @@ async function openProject() {
           if (arrayBuffer.byteLength <= 44) continue; // placeholder — no samples
           const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
           audioEngineStoreBuffer(savedClip.id, audioBuffer);
+          updateClipWaveform(savedClip.id, audioBuffer);
         } catch {
           // file missing or undecodable — clip is silent
         }
