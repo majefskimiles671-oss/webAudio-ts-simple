@@ -4,6 +4,18 @@
 const _audioCtx = new AudioContext();
 const _buffers = new Map(); // clipId (string) → AudioBuffer
 let _activeSources = [];
+const _trackMixers = new Map(); // trackId → { mixerGain, analyserL, analyserR }
+
+// Master chain — persists for the lifetime of the context.
+// All track mixers connect here; master gain controls output level.
+const _masterGainNode  = _audioCtx.createGain();
+const _masterSplitter  = _audioCtx.createChannelSplitter(2);
+const _masterAnalyserL = _audioCtx.createAnalyser();
+const _masterAnalyserR = _audioCtx.createAnalyser();
+_masterGainNode.connect(_masterSplitter);
+_masterSplitter.connect(_masterAnalyserL, 0);
+_masterSplitter.connect(_masterAnalyserR, 1);
+_masterGainNode.connect(_audioCtx.destination);
 
 function audioEngineDecodeWav(arrayBuffer) {
   return _audioCtx.decodeAudioData(arrayBuffer);
@@ -71,37 +83,51 @@ function audioEngineCreateBuffer(numChannels, numSamples) {
   return _audioCtx.createBuffer(numChannels, numSamples, SAMPLE_RATE);
 }
 
-// clips: array of { id, startSample, durationSamples, gain?, pan? }
+// trackGroups: array of { id, clips: [{ id, startSample, durationSamples, gain?, pan? }] }
 // gain: 0..1, pan: -1..1 (optional, defaults to 1 and 0)
-// playheadSeconds: current playhead position in seconds
 // SAMPLE_RATE is a global from index.js, available by call time
-function audioEnginePlay(clips, playheadSeconds) {
+function audioEnginePlay(trackGroups, playheadSeconds) {
   audioEngineStop();
   if (_audioCtx.state === "suspended") _audioCtx.resume();
   const now = _audioCtx.currentTime;
-  for (const clip of clips) {
-    const buffer = _buffers.get(clip.id);
-    if (!buffer) continue;
-    const clipStart = clip.startSample / SAMPLE_RATE;
-    const clipEnd   = (clip.startSample + clip.durationSamples) / SAMPLE_RATE;
-    if (playheadSeconds >= clipEnd) continue;
-    const src = _audioCtx.createBufferSource();
-    src.buffer = buffer;
-    const gainNode = _audioCtx.createGain();
-    gainNode.gain.value = clip.gain ?? 1;
-    const panner = _audioCtx.createStereoPanner();
-    panner.pan.value = clip.pan ?? 0;
-    src.connect(gainNode).connect(panner).connect(_audioCtx.destination);
-    let when, offset;
-    if (playheadSeconds <= clipStart) {
-      when   = now + (clipStart - playheadSeconds);
-      offset = 0;
-    } else {
-      when   = now;
-      offset = playheadSeconds - clipStart;
+
+  for (const { id: trackId, clips } of trackGroups) {
+    const mixerGain = _audioCtx.createGain();
+    const splitter  = _audioCtx.createChannelSplitter(2);
+    const analyserL = _audioCtx.createAnalyser();
+    const analyserR = _audioCtx.createAnalyser();
+
+    mixerGain.connect(splitter);
+    splitter.connect(analyserL, 0); // L channel → analyserL (metering only)
+    splitter.connect(analyserR, 1); // R channel → analyserR (metering only)
+    mixerGain.connect(_masterGainNode);
+
+    _trackMixers.set(trackId, { mixerGain, analyserL, analyserR });
+
+    for (const clip of clips) {
+      const buffer = _buffers.get(clip.id);
+      if (!buffer) continue;
+      const clipStart = clip.startSample / SAMPLE_RATE;
+      const clipEnd   = (clip.startSample + clip.durationSamples) / SAMPLE_RATE;
+      if (playheadSeconds >= clipEnd) continue;
+      const src = _audioCtx.createBufferSource();
+      src.buffer = buffer;
+      const gainNode = _audioCtx.createGain();
+      gainNode.gain.value = clip.gain ?? 1;
+      const panner = _audioCtx.createStereoPanner();
+      panner.pan.value = clip.pan ?? 0;
+      src.connect(gainNode).connect(panner).connect(mixerGain);
+      let when, offset;
+      if (playheadSeconds <= clipStart) {
+        when   = now + (clipStart - playheadSeconds);
+        offset = 0;
+      } else {
+        when   = now;
+        offset = playheadSeconds - clipStart;
+      }
+      src.start(when, offset);
+      _activeSources.push(src);
     }
-    src.start(when, offset);
-    _activeSources.push(src);
   }
 }
 
@@ -110,6 +136,32 @@ function audioEngineStop() {
     try { src.stop(); } catch {}
   }
   _activeSources = [];
+  for (const { mixerGain } of _trackMixers.values()) {
+    try { mixerGain.disconnect(); } catch {}
+  }
+  _trackMixers.clear();
+}
+
+function _getRMS(analyser) {
+  const buf = new Float32Array(analyser.fftSize);
+  analyser.getFloatTimeDomainData(buf);
+  let sum = 0;
+  for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+  return Math.sqrt(sum / buf.length);
+}
+
+function audioEngineGetTrackLevel(trackId) {
+  const m = _trackMixers.get(trackId);
+  if (!m) return { L: 0, R: 0 };
+  return { L: _getRMS(m.analyserL), R: _getRMS(m.analyserR) };
+}
+
+function audioEngineGetMasterLevel() {
+  return { L: _getRMS(_masterAnalyserL), R: _getRMS(_masterAnalyserR) };
+}
+
+function audioEngineSetMasterGain(value) {
+  _masterGainNode.gain.value = value;
 }
 
 let _previewSource = null;

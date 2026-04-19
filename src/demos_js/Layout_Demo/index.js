@@ -1815,6 +1815,11 @@ function stopMeterAnimation() {
   // Leave RAF running so meters decay to 0 naturally
 }
 
+function _rmsToLevel(rms) {
+  if (rms < 1e-6) return 0;
+  return Math.max(0, Math.min(1, (20 * Math.log10(rms) + 60) / 60));
+}
+
 function _meterTick() {
   let anyActive = false;
 
@@ -1822,19 +1827,9 @@ function _meterTick() {
     if (!track.meterEl) continue;
 
     if (_meterPlaying) {
-      // Periodically pick a new target level
-      if (track.meterTicksToNext <= 0) {
-        track.meterTicksToNext = 8 + Math.floor(Math.random() * 18);
-        const vL = (Math.random() - 0.5) * 0.55;
-        const vR = (Math.random() - 0.5) * 0.45;
-        track.meterTargetL = Math.max(0.05, Math.min(1, track.meterBase + vL));
-        track.meterTargetR = Math.max(0.05, Math.min(1, track.meterBase + vR));
-        // Occasional transient hit
-        if (Math.random() < 0.12) {
-          track.meterTargetL = Math.min(1, track.meterBase + 0.25 + Math.random() * 0.25);
-        }
-      }
-      track.meterTicksToNext--;
+      const { L, R } = audioEngineGetTrackLevel(track.id);
+      track.meterTargetL = _rmsToLevel(L);
+      track.meterTargetR = _rmsToLevel(R);
 
       // Fast attack, slower release
       const aL = track.meterTargetL > track.meterL ? 0.45 : 0.07;
@@ -1907,11 +1902,9 @@ let _masterPeakL = 0, _masterPeakR = 0;
 let _masterPeakFramesL = 0, _masterPeakFramesR = 0;
 
 function _updateMasterMeter() {
-  const gainFactor = masterGain / 100;
-
-  // Drive from the highest active track level
-  const rawL = tracks.length > 0 ? Math.max(...tracks.map(t => t.meterL)) * gainFactor : 0;
-  const rawR = tracks.length > 0 ? Math.max(...tracks.map(t => t.meterR)) * gainFactor : 0;
+  const { L, R } = audioEngineGetMasterLevel();
+  const rawL = _rmsToLevel(L);
+  const rawR = _rmsToLevel(R);
 
   _masterL += (rawL - _masterL) * (rawL > _masterL ? 0.6 : 0.1);
   _masterR += (rawR - _masterR) * (rawR > _masterR ? 0.6 : 0.1);
@@ -1956,9 +1949,15 @@ function onTransportStart() {
   startTime = performance.now();
   requestAnimationFrame(updatePlayhead);
   const activeScene = document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim();
-  const audibleTracks = activeScene ? tracks.filter(t => t.scenes.includes(activeScene)) : tracks;
+  const soloedControlRow = document.querySelector(".solo-btn.active")?.closest(".control-row");
+  const soloedTrack = soloedControlRow ? tracks.find(t => t.controlRow === soloedControlRow) : null;
+  let audibleTracks = activeScene ? tracks.filter(t => t.scenes.includes(activeScene)) : tracks;
+  if (soloedTrack) audibleTracks = audibleTracks.filter(t => t === soloedTrack);
   audioEnginePlay(
-    audibleTracks.flatMap(t => t.clips.map(clip => ({ ...clip, gain: t.gain / 100, pan: t.pan / 100 }))),
+    audibleTracks.map(t => ({
+      id: t.id,
+      clips: t.clips.map(clip => ({ ...clip, gain: t.gain / 100, pan: t.pan / 100 })),
+    })),
     getPlayheadTime()
   );
 }
@@ -2584,6 +2583,7 @@ document.querySelectorAll(".master-meter-bar").forEach(bar => {
 // Master gain slider
 document.getElementById("master-gain-slider").addEventListener("input", (e) => {
   masterGain = e.target.value;
+  audioEngineSetMasterGain(e.target.value / 100);
 });
 
 updateMeter();
