@@ -251,6 +251,10 @@ let startTime = 0;
 let recordStartX = null;
 let playbackStartX = 0; // px offset where playback begins
 
+// State - Video Backdrop - Truth Layer -----
+let videoEl = null;
+let _videoDriftFrame = 0;
+
 // ============================================================
 // Helpers (Pure Computation Layer) -----
 // ============================================================
@@ -262,6 +266,7 @@ function jumpPlayheadToTime(seconds) {
   if (playing) {
     playbackStartX = px;
     startTime = performance.now();
+    if (videoEl) videoEl.currentTime = seconds;
   }
 }
 
@@ -549,6 +554,7 @@ function applyTransportChange({ play, record }) {
   if (wasPlaying && !playing) {
     stopMeterAnimation();
     audioEngineStop();
+    if (videoEl) { videoEl.pause(); videoEl.currentTime = currentTimeSeconds; }
   }
 
   if (!wasRecording && recording) { onRecordStart(); startRecordingRange(); }
@@ -564,6 +570,26 @@ function applyTransportChange({ play, record }) {
 function returnToBeginning() {
   setPlayheadPositionPx(0);
   timelineArea.scrollLeft = 0;
+  if (videoEl) videoEl.currentTime = 0;
+}
+
+// Authority - Video Backdrop - Meaning Layer -----
+function loadVideoFile(file) {
+  const el = document.getElementById("timeline-video");
+  if (el.src) URL.revokeObjectURL(el.src);
+  el.src = URL.createObjectURL(file);
+  el.muted = true;
+  el.currentTime = currentTimeSeconds;
+  videoEl = el;
+  document.body.classList.add("has-video");
+}
+
+function removeVideo() {
+  if (!videoEl) return;
+  URL.revokeObjectURL(videoEl.src);
+  videoEl.src = "";
+  videoEl = null;
+  document.body.classList.remove("has-video");
 }
 
 // ----- Track Selection
@@ -1077,6 +1103,7 @@ function setPlayheadPositionPx(px) {
   playhead.style.transform = `translateX(${px}px)`;
   rulerPlayhead.style.transform = `translateX(${px}px)`;
   currentTimeSeconds = pixelsToSeconds(px);
+  if (videoEl && !playing) videoEl.currentTime = currentTimeSeconds;
   timer.textContent = formatTime(currentTimeSeconds);
   updateTimeDisplay(currentTimeSeconds);
   renderMetronomeScan();
@@ -2068,6 +2095,7 @@ function syncTrackMutes() {
 function onTransportStart() {
   playbackStartX = getPlayheadX(); // ← THIS is the fix
   startTime = performance.now();
+  if (videoEl) { videoEl.currentTime = getPlayheadTime(); videoEl.play().catch(() => {}); }
   requestAnimationFrame(updatePlayhead);
   audioEnginePlay(
     tracks.map(t => ({
@@ -2108,6 +2136,14 @@ function updatePlayhead() {
   timer.textContent = formatTime(elapsed);
   renderTimelineLayer();
   renderMetronomeScan();
+
+  if (videoEl && ++_videoDriftFrame >= 90) {
+    _videoDriftFrame = 0;
+    if (Math.abs(videoEl.currentTime - currentTimeSeconds) > 0.15) {
+      videoEl.currentTime = currentTimeSeconds;
+    }
+  }
+
   requestAnimationFrame(updatePlayhead);
 }
 
@@ -2306,6 +2342,21 @@ document.getElementById("menu-import-wav").addEventListener("click", () => {
     markDirty();
   };
   input.click();
+});
+
+// Event Handlers - Video Backdrop - Intent Layer -----
+document.getElementById("menu-load-video").addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "video/*";
+  input.onchange = () => { if (input.files[0]) loadVideoFile(input.files[0]); };
+  input.click();
+});
+
+document.getElementById("video-remove-btn").addEventListener("click", removeVideo);
+
+document.getElementById("video-opacity-slider").addEventListener("input", (e) => {
+  document.getElementById("timeline-video").style.opacity = e.target.value / 100;
 });
 
 const bottomPanel = document.getElementById("bottom-panel");
@@ -2812,6 +2863,18 @@ document.getElementById("master-gain-slider").addEventListener("input", (e) => {
   masterGain = e.target.value;
   audioEngineSetMasterGain(e.target.value / 100);
 });
+
+// DOM Sync - Video Backdrop - Synchronization Layer -----
+// Keep video sized to the visible area of #timeline-area so it doesn't scroll.
+(function () {
+  const vid = document.getElementById("timeline-video");
+  function syncVideoSize() {
+    vid.style.width  = timelineArea.clientWidth  + "px";
+    vid.style.height = timelineArea.clientHeight + "px";
+  }
+  syncVideoSize();
+  new ResizeObserver(syncVideoSize).observe(timelineArea);
+})();
 
 updateMeter();
 syncTimelineOverlayWidth();

@@ -66,6 +66,7 @@ Rule - Add comments before code snippets in this format:
                 <div id="menu-open-project" role="menuitem" tabindex="-1">Open Project</div>
                 <div id="menu-save-project" role="menuitem" tabindex="-1">Save Project</div>
                 <div id="menu-import-wav" role="menuitem" tabindex="-1">Import WAV…</div>
+                <div id="menu-load-video" role="menuitem" tabindex="-1">Load Video…</div>
                 <hr />
                 <div id="menu-export-mixdown" role="menuitem" tabindex="-1">Export Mixdown…</div>
             </div>
@@ -169,7 +170,14 @@ Rule - Add comments before code snippets in this format:
             </div>
         </div>
 
-        <!-- Group 5: Zoom controls (right-aligned) -->
+        <!-- Group 5: Video backdrop controls (visible only when video loaded) -->
+        <div id="video-transport-group">
+            <span class="video-transport-label">Video</span>
+            <input id="video-opacity-slider" type="range" min="0" max="100" value="45" title="Video opacity">
+            <button id="video-remove-btn" aria-label="Remove video" title="Remove video">✕</button>
+        </div>
+
+        <!-- Group 6: Zoom controls (right-aligned) -->
         <div class="transport-zoom">
             <div class="zoom-container">
                 <div class="zoom-slider-wrap">
@@ -200,6 +208,9 @@ Rule - Add comments before code snippets in this format:
 
 
         <div id="timeline-area">
+            <div id="video-sticky-anchor">
+                <video id="timeline-video" muted playsinline></video>
+            </div>
             <div id="timeline-inner">
 
                 <!-- TIMELINE RULER NOW LIVES INSIDE SCROLLING SPACE -->

@@ -3240,3 +3240,65 @@
         #duplicate-dialog-ok {
           background: var(--accent-primary); color: #fff;
         }
+
+        /* Video Backdrop ----- */
+
+        /* Sticky anchor keeps the video pinned to the visible area of #timeline-area
+           regardless of horizontal/vertical scroll position. */
+        #video-sticky-anchor {
+            position: sticky;
+            left: 0;
+            top: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #timeline-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            /* width/height set by ResizeObserver in JS to match #timeline-area viewport */
+            object-fit: contain;
+            pointer-events: none;
+            opacity: 0.45;
+            display: none;
+        }
+
+        body.has-video #timeline-video {
+            display: block;
+        }
+
+        /* Keep track content above the video backdrop */
+        #timeline-inner {
+            z-index: 1;
+        }
+
+        #video-transport-group {
+            flex: 0 0 auto;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 0 4px;
+        }
+
+        body.has-video #video-transport-group {
+            display: flex;
+        }
+
+        .video-transport-label {
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        #video-opacity-slider {
+            width: 64px;
+        }
+
+        #video-remove-btn {
+            font-size: 11px;
+            padding: 3px 7px !important;
+        }
