@@ -1850,6 +1850,65 @@
             animation: tnt-shrink 20s linear forwards;
         }
 
+        /* Audio Reconnect Banner */
+
+        #audio-reconnect-banner {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+
+            animation: tnt-in 200ms ease forwards;
+        }
+
+        .arb-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .arb-btn {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--accent-primary);
+            background: transparent;
+            color: var(--accent-primary);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .arb-btn:hover {
+            background: var(--accent-primary);
+            color: var(--bg-panel);
+        }
+
+        .arb-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 2px 4px;
+            line-height: 1;
+            border-radius: 3px;
+        }
+
+        .arb-close:hover {
+            color: var(--text-main);
+            background: var(--bg-surface);
+        }
+
         /* Bottom Panel */
 
         #bottom-panel {

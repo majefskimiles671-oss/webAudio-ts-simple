@@ -274,6 +274,33 @@ async function saveProject() {
   }
 }
 
+async function reconnectProjectFolder() {
+  const folderHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  try {
+    await folderHandle.getFileHandle('project.json');
+  } catch {
+    alert("This folder doesn't contain a BareTrack project.");
+    return false;
+  }
+  projectFolderHandle = folderHandle;
+  for (const track of tracks) {
+    for (const clip of track.clips) {
+      try {
+        const wavHandle   = await folderHandle.getFileHandle(`clip-${clip.id}.wav`);
+        const wavFile     = await wavHandle.getFile();
+        const arrayBuffer = await wavFile.arrayBuffer();
+        if (arrayBuffer.byteLength <= 44) continue;
+        const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
+        audioEngineStoreBuffer(clip.id, audioBuffer);
+      } catch {
+        // file missing or undecodable — clip stays silent
+      }
+    }
+  }
+  clearDirty();
+  return true;
+}
+
 async function openProject() {
   try {
     const folderHandle = await window.showDirectoryPicker({ mode: "readwrite" });

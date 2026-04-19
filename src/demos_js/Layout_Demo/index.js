@@ -1955,7 +1955,12 @@ function onTransportStart() {
   playbackStartX = getPlayheadX(); // ← THIS is the fix
   startTime = performance.now();
   requestAnimationFrame(updatePlayhead);
-  audioEnginePlay(tracks.flatMap(t => t.clips), getPlayheadTime());
+  const activeScene = document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim();
+  const audibleTracks = activeScene ? tracks.filter(t => t.scenes.includes(activeScene)) : tracks;
+  audioEnginePlay(
+    audibleTracks.flatMap(t => t.clips.map(clip => ({ ...clip, gain: t.gain / 100, pan: t.pan / 100 }))),
+    getPlayheadTime()
+  );
 }
 
 // -------- Update Playhead
@@ -2628,11 +2633,34 @@ if (localStorage.getItem("autoOpenPreviousProject") === "1" && !_skipAutoOpen) {
   const raw = localStorage.getItem("previousProjectData");
   if (raw) {
     try {
-      deserializeProject(JSON.parse(raw));
+      const parsed = JSON.parse(raw);
+      deserializeProject(parsed);
       markDirty(); // file handle is lost on reload — prompt user to re-save
+      if (parsed.id && tracks.some(t => t.clips.length > 0)) showAudioReconnectBanner(parsed.id);
     } catch (e) {
       console.warn("Failed to restore previous project:", e);
     }
   }
+}
+
+function showAudioReconnectBanner(projectId) {
+  document.getElementById('audio-reconnect-banner')?.remove();
+  const banner = document.createElement('div');
+  banner.id = 'audio-reconnect-banner';
+  banner.innerHTML = `
+    <span class="arb-text">Audio files not loaded — folder: <code>${projectId ?? 'unknown'}</code></span>
+    <button class="arb-btn">Reconnect folder</button>
+    <button class="arb-close" aria-label="Dismiss">&#x2715;</button>
+  `;
+  document.body.appendChild(banner);
+  banner.querySelector('.arb-btn').addEventListener('click', async () => {
+    try {
+      const ok = await reconnectProjectFolder();
+      if (ok) banner.remove();
+    } catch (err) {
+      if (err.name !== 'AbortError') console.error('Reconnect failed:', err);
+    }
+  });
+  banner.querySelector('.arb-close').addEventListener('click', () => banner.remove());
 }
 

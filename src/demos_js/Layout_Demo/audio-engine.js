@@ -71,7 +71,8 @@ function audioEngineCreateBuffer(numChannels, numSamples) {
   return _audioCtx.createBuffer(numChannels, numSamples, SAMPLE_RATE);
 }
 
-// clips: array of { id, startSample, durationSamples }
+// clips: array of { id, startSample, durationSamples, gain?, pan? }
+// gain: 0..1, pan: -1..1 (optional, defaults to 1 and 0)
 // playheadSeconds: current playhead position in seconds
 // SAMPLE_RATE is a global from index.js, available by call time
 function audioEnginePlay(clips, playheadSeconds) {
@@ -86,7 +87,11 @@ function audioEnginePlay(clips, playheadSeconds) {
     if (playheadSeconds >= clipEnd) continue;
     const src = _audioCtx.createBufferSource();
     src.buffer = buffer;
-    src.connect(_audioCtx.destination);
+    const gainNode = _audioCtx.createGain();
+    gainNode.gain.value = clip.gain ?? 1;
+    const panner = _audioCtx.createStereoPanner();
+    panner.pan.value = clip.pan ?? 0;
+    src.connect(gainNode).connect(panner).connect(_audioCtx.destination);
     let when, offset;
     if (playheadSeconds <= clipStart) {
       when   = now + (clipStart - playheadSeconds);
