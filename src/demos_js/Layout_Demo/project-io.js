@@ -31,11 +31,12 @@ function serializeProject() {
       noteValue: timeSignature.noteValue,
     },
     tracks: tracks.map(track => ({
-      id:     track.id,
-      name:   track.name,
-      gain:   track.gain,
-      pan:    track.pan,
-      scenes: [...track.scenes],
+      id:      track.id,
+      name:    track.name,
+      gain:    track.gain,
+      pan:     track.pan,
+      opacity: track.opacity,
+      scenes:  [...track.scenes],
       clips:  track.clips.map(clip => {
         const canvas = document.querySelector(`.waveform[data-clip-id="${clip.id}"] .waveform-canvas`);
         const amplitudesRaw = canvas?.dataset?.amplitudes;
@@ -155,6 +156,12 @@ function deserializeProject(data) {
     track.pan = saved.pan ?? 0;
     const panEl = track.controlRow.querySelector("pan-slider");
     if (panEl) panEl.value = track.pan;
+
+    // Opacity
+    track.opacity = saved.opacity ?? 100;
+    const opEl = track.controlRow.querySelector(".row-opacity-slider");
+    if (opEl) opEl.value = track.opacity;
+    track.timelineRow.style.opacity = track.opacity / 100;
 
     // Scene assignments
     track.scenes = saved.scenes ?? [];

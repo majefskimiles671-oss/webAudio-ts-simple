@@ -137,6 +137,16 @@ controlsScrollCol.addEventListener("input", (e) => {
     markDirty();
     const track = findTrackByControlRow(ps.closest(".control-row"));
     if (track) track.pan = ps.value;
+    return;
+  }
+  const os = e.target.closest(".row-opacity-slider");
+  if (os) {
+    markDirty();
+    const track = findTrackByControlRow(os.closest(".control-row"));
+    if (track) {
+      track.opacity = parseInt(os.value);
+      track.timelineRow.style.opacity = track.opacity / 100;
+    }
   }
 });
 const timelineArea = document.getElementById("timeline-area");
@@ -680,6 +690,7 @@ function createTrack(label, { prepend = false } = {}) {
     name:        label,
     gain:        80,
     pan:         0,
+    opacity:     100,
     scenes:      [],
     clips:       [],
     controlRow:  null,  // assigned below
@@ -790,7 +801,7 @@ function createTrack(label, { prepend = false } = {}) {
 
   // Click background of control row to select the track
   controlRow.addEventListener("click", (e) => {
-    if (e.target.closest("button, [contenteditable], gain-slider, pan-slider")) return;
+    if (e.target.closest("button, [contenteditable], gain-slider, pan-slider, .row-opacity-slider")) return;
     selectTrack(track);
   });
 

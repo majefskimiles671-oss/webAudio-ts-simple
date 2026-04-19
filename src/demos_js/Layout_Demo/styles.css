@@ -509,6 +509,11 @@
             min-width: 0;
         }
 
+        .track-row-2 .row-opacity-slider {
+            width: 48px;
+            flex-shrink: 0;
+        }
+
         .solo-btn {
             padding: 2px 6px;
             font-weight: bold;
