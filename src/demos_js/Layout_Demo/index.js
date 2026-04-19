@@ -806,18 +806,37 @@ function promoteRecordingLane() {
 
 function onRecordStart() {
   recordingTrackRow = recordingLaneTrack.timelineRow;
+  if (playing) audioEngineStartRecording(); // armed while playing — start immediately
+  // if not playing, onTransportStart() will call audioEngineStartRecording() when play begins
   timelineArea.scrollTop = 0;
   controlsScrollCol.scrollTop = 0;
 }
 
-function onRecordStop() {
+async function onRecordStop() {
   if (!recordingTrackRow) return;
 
-  const endTime = getPlayheadTime();
-  const duration = Math.max(0, endTime - recordStartTime);
-
-  addClipToTrack(recordingTrackRow, recordStartTime, duration);
+  const startTime = recordStartTime;          // capture before clearRecordingRange() nulls it
+  const endTime   = getPlayheadTime();
+  const duration  = Math.max(0, endTime - startTime);
+  const row       = recordingTrackRow;
   recordingTrackRow = null;
+
+  const audioBuffer = await audioEngineStopRecording();
+
+  addClipToTrack(row, startTime, duration);
+
+  // Use row reference to find the track — it may have been promoted to `tracks`
+  // by the synchronous applyTransportChange IDLE transition before this await resumed.
+  const clipTrack = findTrackByTimelineRow(row)
+    ?? (recordingLaneTrack?.timelineRow === row ? recordingLaneTrack : null);
+  if (audioBuffer && clipTrack) {
+    const clip = clipTrack.clips[clipTrack.clips.length - 1];
+    if (clip) audioEngineStoreBuffer(clip.id, audioBuffer);
+  }
+
+  // Synchronous promoteRecordingLane() in applyTransportChange bailed (no waveform yet).
+  // Now that the clip exists, promote only if transport is already idle.
+  if (getTransportState() === "IDLE") promoteRecordingLane();
 }
 
 // ============================================================
@@ -1684,8 +1703,16 @@ playBtn.onclick = () => {
   applyTransportChange({ play: !playing, record: playing ? false : recording });
 };
 
-recordBtn.onclick = () => {
+recordBtn.onclick = async () => {
   recordInteraction("transport");
+  if (!recording) {
+    try {
+      await audioEngineEnsureMicStream();
+    } catch {
+      alert("Microphone access denied — cannot record.");
+      return;
+    }
+  }
   applyTransportChange({ play: playing, record: !recording });
 };
 
@@ -1960,6 +1987,7 @@ function onTransportStart() {
     })),
     getPlayheadTime()
   );
+  if (recording) audioEngineStartRecording(); // record was armed before play — start now
 }
 
 // -------- Update Playhead
