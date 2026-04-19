@@ -145,11 +145,12 @@ The emotional core of the demo should probably be: you had an idea, you didn't l
 git switch -c miles_loop_ui
 ```
 
--- making commits in the UI
-
 ```bash
 git switch main
 git merge miles_loop_ui
+```
+
+```bash
 git push
 git branch -d miles_loop_ui
 ```
