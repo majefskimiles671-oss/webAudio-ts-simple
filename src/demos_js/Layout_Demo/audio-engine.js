@@ -124,3 +124,17 @@ function audioEngineStopPreview() {
     _previewSource = null;
   }
 }
+
+function audioEngineRenderLoop(srcBuffer, loopStartSamples, loopEndSamples, outputSamples) {
+  const numChannels = srcBuffer.numberOfChannels;
+  const out = _audioCtx.createBuffer(numChannels, outputSamples, srcBuffer.sampleRate);
+  const loopLen = loopEndSamples - loopStartSamples;
+  for (let ch = 0; ch < numChannels; ch++) {
+    const src  = srcBuffer.getChannelData(ch);
+    const dest = out.getChannelData(ch);
+    for (let i = 0; i < outputSamples; i++) {
+      dest[i] = src[loopStartSamples + (i % loopLen)];
+    }
+  }
+  return out;
+}

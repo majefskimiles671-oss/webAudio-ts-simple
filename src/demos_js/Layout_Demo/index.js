@@ -2392,6 +2392,30 @@ document.getElementById("loop-offset-reset").addEventListener("click", () => {
   _updateLoopRegion();
 });
 
+document.getElementById("loop-export-btn").addEventListener("click", () => {
+  if (!_loopEditorClip || !_loopEditorTrack) return;
+  const clip    = _loopEditorClip;
+  const loopLen = clip.loopEndSamples - clip.loopStartSamples;
+  if (loopLen <= 0) return;
+
+  const exportBars  = Math.max(1, +document.getElementById("loop-export-bars").value || 4);
+  const outputSamples = Math.round(exportBars * beatsPerBar * secondsPerBeat() * SAMPLE_RATE);
+
+  const outBuffer = audioEngineRenderLoop(
+    audioEngineGetBuffer(clip.id),
+    clip.loopStartSamples,
+    clip.loopEndSamples,
+    outputSamples
+  );
+
+  const newTrack = createTrack(`${_loopEditorTrack.name} (loop)`, { prepend: true });
+  tracks.unshift(newTrack);
+  addClipToTrack(newTrack.timelineRow, 0, outBuffer.duration);
+  audioEngineStoreBuffer(newTrack.clips[0].id, outBuffer);
+  syncTimelineMinWidth();
+  markDirty();
+});
+
 document.getElementById("loop-preview-btn").addEventListener("click", () => {
   if (!_loopEditorClip) return;
   const buf = audioEngineGetBuffer(_loopEditorClip.id);
