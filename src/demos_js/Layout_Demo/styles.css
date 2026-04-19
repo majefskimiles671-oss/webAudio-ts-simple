@@ -711,9 +711,6 @@
             pointer-events: none;
         }
 
-        .recording-lane.control-row .track-meter {
-            display: none;
-        }
 
         .tm-ch {
             height: 4px;
@@ -1024,61 +1021,6 @@
             width: 100%;
             height: 100%;
         }
-
-        /* Recording Lane */
-
-        /* Recording lane — strip controls, center the name */
-        .recording-lane.control-row .solo-btn,
-        .recording-lane.control-row .delete-btn,
-        .recording-lane.control-row .gain-slider,
-        .recording-lane.control-row .pan-slider,
-        .recording-lane.control-row .track-scenes {
-            display: none;
-        }
-
-        .recording-lane.control-row .row-inner {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 2px;
-            padding-right: 8px;  /* no meter, restore symmetric padding */
-        }
-
-        .recording-lane.control-row .row-inner::before {
-            content: "Recording for track:";
-            font-size: 10px;
-            color: var(--text-muted);
-            font-style: normal;
-            letter-spacing: 0.03em;
-            opacity: 0.8;
-        }
-
-        .recording-lane.control-row .track-title {
-            font-style: italic;
-            opacity: 0.75;
-        }
-
-        .recording-lane.control-row,
-        .recording-lane.timeline-row {
-            border-left: 3px solid var(--accent-danger);
-            background: color-mix(in oklab, var(--accent-danger) 8%, var(--bg-app));
-        }
-
-        .recording-lane.control-row {
-            border-bottom: 1px solid color-mix(in oklab, var(--accent-danger) 30%, transparent);
-        }
-
-        .recording-lane.timeline-row .row-inner {
-            background: repeating-linear-gradient(
-                -45deg,
-                transparent,
-                transparent 6px,
-                color-mix(in oklab, var(--accent-danger) 6%, transparent) 6px,
-                color-mix(in oklab, var(--accent-danger) 6%, transparent) 12px
-            );
-        }
-
 
 
 
@@ -1546,7 +1488,6 @@
 
         body.hide-solo .solo-btn { display: none; }
 
-        body.hide-recording-lane .recording-lane { display: none; }
 
         body.hide-master #bottom-panel-master { display: none; }
         body.hide-notes #bottom-panel-content { display: none; }

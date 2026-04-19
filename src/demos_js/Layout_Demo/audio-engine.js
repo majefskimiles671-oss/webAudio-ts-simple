@@ -164,6 +164,45 @@ function audioEngineSetMasterGain(value) {
   _masterGainNode.gain.value = value;
 }
 
+// ---- Microphone recording
+
+let _micStream      = null;
+let _mediaRecorder  = null;
+let _recordedChunks = [];
+
+async function audioEngineEnsureMicStream() {
+  if (!_micStream) {
+    _micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  }
+  return _micStream;
+}
+
+function audioEngineStartRecording() {
+  if (!_micStream) return;
+  _recordedChunks = [];
+  _mediaRecorder = new MediaRecorder(_micStream);
+  _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) _recordedChunks.push(e.data); };
+  _mediaRecorder.start();
+}
+
+function audioEngineStopRecording() {
+  return new Promise(resolve => {
+    if (!_mediaRecorder) { resolve(null); return; }
+    _mediaRecorder.onstop = async () => {
+      const blob = new Blob(_recordedChunks, { type: _mediaRecorder.mimeType });
+      _mediaRecorder  = null;
+      _recordedChunks = [];
+      try {
+        const ab = await blob.arrayBuffer();
+        resolve(await _audioCtx.decodeAudioData(ab));
+      } catch {
+        resolve(null);
+      }
+    };
+    _mediaRecorder.stop();
+  });
+}
+
 let _previewSource = null;
 
 function audioEnginePreviewLoop(buffer, loopStartSeconds, loopEndSeconds) {

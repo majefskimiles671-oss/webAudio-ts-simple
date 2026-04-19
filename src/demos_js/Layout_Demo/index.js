@@ -223,7 +223,6 @@ function applyViewState() {
     ["metronome",       "hide-metronome",        "toggle-metronome",       "Hide Metronome",        "Show Metronome"],
     ["zoom",            "hide-zoom",             "toggle-zoom",            "Hide Zoom Slider",      "Show Zoom Slider"],
     ["solo",            "hide-solo",             "toggle-solo",            "Hide Solo Buttons",     "Show Solo Buttons"],
-    ["recordingLane",   "hide-recording-lane",   "toggle-recording-lane",  "Hide Recording Lane",   "Show Recording Lane"],
     ["master",          "hide-master",           "toggle-master",          "Hide Master Controls",  "Show Master Controls"],
     ["notes",           "hide-notes",            "toggle-notes",           "Hide Marker Notes",     "Show Marker Notes"],
   ];
@@ -691,7 +690,6 @@ function createTrack(label, { prepend = false } = {}) {
 
   // Click background of control row to select the track
   controlRow.addEventListener("click", (e) => {
-    if (controlRow.classList.contains("recording-lane")) return;
     if (e.target.closest("button, [contenteditable], gain-slider, pan-slider")) return;
     selectTrack(track);
   });
@@ -776,8 +774,9 @@ function createRecordingLane() {
   trackCount += 1;
   const { name, definition } = pickTrackName();
   const track = createTrack(name, { prepend: true });
-  track.controlRow.classList.add("recording-lane");
-  track.timelineRow.classList.add("recording-lane");
+  // Staging only — keep rows in memory, insert into DOM on promotion
+  track.controlRow.remove();
+  track.timelineRow.remove();
   recordingLaneTrack = track;
   showTrackNameTooltip(name, definition);
   announce(`Recording to new track: ${name}`);
@@ -788,8 +787,8 @@ function promoteRecordingLane() {
   if (!recordingLaneTrack.timelineRow.querySelector(".waveform")) return;
 
   markDirty();
-  recordingLaneTrack.controlRow.classList.remove("recording-lane");
-  recordingLaneTrack.timelineRow.classList.remove("recording-lane");
+  controlsScrollCol.prepend(recordingLaneTrack.controlRow);
+  timelineCol.prepend(recordingLaneTrack.timelineRow);
   tracks.unshift(recordingLaneTrack);  // newest promoted track at front, matches DOM order
   recordingLaneTrack = null;
 
@@ -806,18 +805,31 @@ function promoteRecordingLane() {
 
 function onRecordStart() {
   recordingTrackRow = recordingLaneTrack.timelineRow;
+  audioEngineStartRecording();
   timelineArea.scrollTop = 0;
   controlsScrollCol.scrollTop = 0;
 }
 
-function onRecordStop() {
+async function onRecordStop() {
   if (!recordingTrackRow) return;
 
-  const endTime = getPlayheadTime();
+  const endTime  = getPlayheadTime();
   const duration = Math.max(0, endTime - recordStartTime);
-
-  addClipToTrack(recordingTrackRow, recordStartTime, duration);
+  const row      = recordingTrackRow;
   recordingTrackRow = null;
+
+  const audioBuffer = await audioEngineStopRecording();
+
+  addClipToTrack(row, recordStartTime, duration);
+
+  if (audioBuffer && recordingLaneTrack) {
+    const clip = recordingLaneTrack.clips[recordingLaneTrack.clips.length - 1];
+    if (clip) audioEngineStoreBuffer(clip.id, audioBuffer);
+  }
+
+  // Synchronous promoteRecordingLane() in applyTransportChange bailed (no waveform yet).
+  // Now that the clip exists, promote only if transport has since gone idle.
+  if (getTransportState() === "IDLE") promoteRecordingLane();
 }
 
 // ============================================================
@@ -1577,13 +1589,6 @@ function updateSceneMask() {
   controlRows.forEach((controlRow, i) => {
     const timelineRow = timelineRows[i];
 
-    // Recording lane is operational infrastructure — always visible
-    if (controlRow.classList.contains("recording-lane")) {
-      controlRow.classList.remove("not-in-scene");
-      timelineRow?.classList.remove("not-in-scene");
-      return;
-    }
-
     if (!activeBtn) {
       controlRow.classList.remove("not-in-scene");
       timelineRow?.classList.remove("not-in-scene");
@@ -1606,12 +1611,6 @@ function updateSoloMask() {
 
   controlRows.forEach((controlRow, i) => {
     const timelineRow = timelineRows[i];
-
-    if (controlRow.classList.contains("recording-lane")) {
-      controlRow.classList.remove("not-in-solo");
-      timelineRow?.classList.remove("not-in-solo");
-      return;
-    }
 
     if (!activeSolo) {
       controlRow.classList.remove("not-in-solo");
@@ -1684,8 +1683,16 @@ playBtn.onclick = () => {
   applyTransportChange({ play: !playing, record: playing ? false : recording });
 };
 
-recordBtn.onclick = () => {
+recordBtn.onclick = async () => {
   recordInteraction("transport");
+  if (!recording) {
+    try {
+      await audioEngineEnsureMicStream();
+    } catch {
+      alert("Microphone access denied — cannot record.");
+      return;
+    }
+  }
   applyTransportChange({ play: playing, record: !recording });
 };
 
@@ -2162,12 +2169,8 @@ document.getElementById("menu-import-wav").addEventListener("click", () => {
     if (!files.length) return;
 
     const firstName = files[0].name.replace(/\.wav$/i, "");
-    const track = createTrack(files.length > 1 ? `${firstName} +${files.length - 1}` : firstName);
+    const track = createTrack(files.length > 1 ? `${firstName} +${files.length - 1}` : firstName, { prepend: true });
     tracks.unshift(track);
-    if (recordingLaneTrack) {
-      recordingLaneTrack.controlRow.after(track.controlRow);
-      recordingLaneTrack.timelineRow.after(track.timelineRow);
-    }
 
     let startSeconds = 0;
     for (const file of files) {
