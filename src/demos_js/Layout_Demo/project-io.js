@@ -195,7 +195,7 @@ function deserializeProject(data) {
       canvas.className = "waveform-canvas";
       canvas.height    = 80;
       canvas.dataset.durationSeconds = durationSeconds;
-      canvas.width     = computeWaveformWidth(durationSeconds);
+      canvas.width     = Math.min(computeWaveformWidth(durationSeconds), MAX_CANVAS_PX);
 
       waveform.style.left  = `${secondsToPixels(startSeconds)}px`;
       waveform.style.width = `${computeWaveformWidth(durationSeconds)}px`;

@@ -159,6 +159,7 @@ const timelineInner = document.getElementById("timeline-inner");
 //  Constants
 const BASE_PPS = 100;
 const SCROLL_THRESHOLD = 120;
+const MAX_CANVAS_PX = 16383; // Chrome hardware canvas width limit
 
 //  Zoom State
 const zoomLevels = [0.25, 0.5, 1, 2, 4];
@@ -868,7 +869,7 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
   canvas.className = "waveform-canvas";
   canvas.height = 80;
   canvas.dataset.durationSeconds = durationSeconds;
-  canvas.width = computeWaveformWidth(durationSeconds);
+  canvas.width = Math.min(computeWaveformWidth(durationSeconds), MAX_CANVAS_PX);
 
   waveform.style.left = `${secondsToPixels(startSeconds)}px`;
   waveform.style.width = `${computeWaveformWidth(durationSeconds)}px`;
@@ -1022,21 +1023,21 @@ function renderTimelineRuler() {
 
   const borderSubtle = style.getPropertyValue("--border-subtle").trim();
 
-  const contentWidth = timelineInner.scrollWidth;
   const viewWidth = timelineArea.clientWidth;
+  const scrollLeft = timelineArea.scrollLeft;
 
   const rulerHeight = 32;
 
-  // Canvas sizing (authoritative)
+  // Canvas is viewport-wide and repositioned each render — never exceeds hardware canvas limit
   rulerCanvas.style.height = `${rulerHeight}px`;
-  rulerCanvas.width = contentWidth;
+  rulerCanvas.style.width  = `${viewWidth}px`;
+  rulerCanvas.style.left   = `${scrollLeft}px`;
+  rulerCanvas.width  = viewWidth;
   rulerCanvas.height = rulerHeight;
 
   const height = rulerCanvas.height;
 
-  rulerCtx.clearRect(0, 0, contentWidth, height);
-
-  const scrollLeft = timelineArea.scrollLeft;
+  rulerCtx.clearRect(0, 0, viewWidth, height);
   const startSeconds = pixelsToSeconds(scrollLeft);
   const endSeconds = pixelsToSeconds(scrollLeft + viewWidth);
 
@@ -1104,7 +1105,7 @@ function renderTimelineRuler() {
   // ==========================
 
   for (const tick of ticks) {
-    const x = secondsToPixels(tick.time);
+    const x = secondsToPixels(tick.time) - scrollLeft;
 
     if (tick.major) {
       rulerCtx.strokeStyle = textMain;
@@ -1538,7 +1539,7 @@ const timelineRuler = document.getElementById("timeline-ruler");
 
 // ---- Marker Handlers
 timelineRuler.addEventListener("click", (e) => {
-  const x = e.offsetX;
+  const x = e.clientX - timelineInner.getBoundingClientRect().left;
   const time = pixelsToSeconds(x);
 
   const nearby = findNearbyMarker(time);
@@ -2770,15 +2771,18 @@ document.getElementById("loop-export-btn").addEventListener("click", async () =>
   const loopLen = clip.loopEndSamples - clip.loopStartSamples;
   if (loopLen <= 0) return;
 
-  const exportBars  = Math.max(1, +document.getElementById("loop-export-bars").value || 4);
+  const srcBuffer = audioEngineGetBuffer(clip.id);
+  if (!srcBuffer) return;
+
+  const exportBars    = Math.max(1, +document.getElementById("loop-export-bars").value || 4);
   const outputSamples = Math.round(exportBars * beatsPerBar * secondsPerBeat() * SAMPLE_RATE);
 
-  const outBuffer = audioEngineRenderLoop(
-    audioEngineGetBuffer(clip.id),
-    clip.loopStartSamples,
-    clip.loopEndSamples,
-    outputSamples
-  );
+  const WARN_BYTES = 200 * 1024 * 1024;
+  const estimatedBytes = srcBuffer.numberOfChannels * outputSamples * 4;
+  if (estimatedBytes > WARN_BYTES) {
+    const mb = Math.round(estimatedBytes / 1024 / 1024);
+    if (!confirm(`This export will allocate ~${mb} MB. Your browser may crash on large values. Continue?`)) return;
+  }
 
   let newTrackLabel = `Loop ${_loopEditorTrack.name}`.slice(0, 30);
   if (!isNameUnique(newTrackLabel)) {
@@ -2787,18 +2791,23 @@ document.getElementById("loop-export-btn").addEventListener("click", async () =>
     newTrackLabel = newName;
   }
 
-  const newTrack = createTrack(newTrackLabel, { prepend: true });
-  tracks.unshift(newTrack);
-  addClipToTrack(newTrack.timelineRow, 0, outBuffer.duration);
-  const newClip = newTrack.clips[0];
-  audioEngineStoreBuffer(newClip.id, outBuffer);
-  updateClipWaveform(newClip.id, outBuffer);
-  syncTimelineMinWidth();
-  syncTimelineOverlay();
-  markDirty();
-
-  _stopLoopPreview();
-  document.getElementById("loop-editor-panel").hidden = true;
+  try {
+    const outBuffer = audioEngineRenderLoop(srcBuffer, clip.loopStartSamples, clip.loopEndSamples, outputSamples);
+    const newTrack = createTrack(newTrackLabel, { prepend: true });
+    tracks.unshift(newTrack);
+    addClipToTrack(newTrack.timelineRow, 0, outBuffer.duration);
+    const newClip = newTrack.clips[0];
+    audioEngineStoreBuffer(newClip.id, outBuffer);
+    updateClipWaveform(newClip.id, outBuffer);
+    syncTimelineMinWidth();
+    syncTimelineOverlay();
+    markDirty();
+    _stopLoopPreview();
+    document.getElementById("loop-editor-panel").hidden = true;
+  } catch (err) {
+    console.error("Loop export failed:", err);
+    alert(`Loop export failed: ${err.message || err}`);
+  }
 });
 
 document.getElementById("loop-preview-btn").addEventListener("click", () => {
