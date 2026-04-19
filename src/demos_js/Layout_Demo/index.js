@@ -2416,14 +2416,21 @@ function _drawLoopEditorWaveform(canvas, amplitudes, startFrac, endFrac) {
 
   ctx.clearRect(0, 0, w, h);
 
+  // filled waveform as a continuous outline path
   ctx.fillStyle = color;
   ctx.globalAlpha = 0.55;
+  ctx.beginPath();
+  ctx.moveTo(0, midY);
   for (let i = 0; i < n; i++) {
-    const x    = (i / n) * w;
-    const barW = Math.max(1, (w / n) - 1);
-    const barH = Math.max(1, amplitudes[i] * (h * 0.45));
-    ctx.fillRect(Math.round(x), Math.round(midY - barH), Math.ceil(barW), Math.round(barH * 2));
+    const x = (i / n) * w;
+    ctx.lineTo(x, midY - amplitudes[i] * h * 0.45);
   }
+  for (let i = n - 1; i >= 0; i--) {
+    const x = (i / n) * w;
+    ctx.lineTo(x, midY + amplitudes[i] * h * 0.45);
+  }
+  ctx.closePath();
+  ctx.fill();
 
   // dim regions outside the loop
   ctx.globalAlpha = 0.45;
@@ -2473,10 +2480,7 @@ function _loopDurToEndSamples(clip) {
   const bars  = Math.max(0, +document.getElementById("loop-dur-bars").value  || 0);
   const beats = Math.max(0, +document.getElementById("loop-dur-beats").value || 0);
   const totalBeats = Math.max(1, bars * beatsPerBar + beats);
-  return Math.min(
-    clip.loopStartSamples + Math.round(totalBeats * secondsPerBeat() * SAMPLE_RATE),
-    clip.durationSamples
-  );
+  return clip.loopStartSamples + Math.round(totalBeats * secondsPerBeat() * SAMPLE_RATE);
 }
 
 function _loopEndToDurInputs(clip) {
@@ -2503,12 +2507,13 @@ function showLoopEditor(track, clip) {
   _loopEndToDurInputs(clip);
   document.getElementById("loop-editor-track-name").textContent = `Loop Editor — ${track.name}`;
 
-  const startFrac = clip.loopStartSamples / clip.durationSamples;
-  const endFrac   = clip.loopEndSamples   / clip.durationSamples;
+  const buf = audioEngineGetBuffer(clip.id);
+  const startFrac = clip.loopStartSamples / buf.length;
+  const endFrac   = Math.min(1, clip.loopEndSamples / buf.length);
   const canvas = document.getElementById("loop-editor-canvas");
   canvas.width  = canvas.parentElement.clientWidth || 600;
   canvas.height = 80;
-  const amplitudes = _analyzeAudioBuffer(audioEngineGetBuffer(clip.id), 256);
+  const amplitudes = _analyzeAudioBuffer(buf, canvas.width);
   _drawLoopEditorWaveform(canvas, amplitudes, startFrac, endFrac);
 
   document.getElementById("loop-editor-panel").hidden = false;
@@ -2520,10 +2525,11 @@ function _updateLoopRegion() {
   clip.loopStartSamples = _loopStartInputsToSamples(clip);
   clip.loopEndSamples   = _loopDurToEndSamples(clip);
 
-  const startFrac = clip.loopStartSamples / clip.durationSamples;
-  const endFrac   = clip.loopEndSamples   / clip.durationSamples;
+  const buf2 = audioEngineGetBuffer(clip.id);
+  const startFrac = clip.loopStartSamples / buf2.length;
+  const endFrac   = Math.min(1, clip.loopEndSamples / buf2.length);
   const canvas    = document.getElementById("loop-editor-canvas");
-  const amplitudes = _analyzeAudioBuffer(audioEngineGetBuffer(clip.id), 256);
+  const amplitudes = _analyzeAudioBuffer(buf2, canvas.width);
   _drawLoopEditorWaveform(canvas, amplitudes, startFrac, endFrac);
   markDirty();
 }
@@ -2557,9 +2563,14 @@ document.getElementById("loop-export-btn").addEventListener("click", () => {
   const newTrack = createTrack(`${_loopEditorTrack.name} (loop)`, { prepend: true });
   tracks.unshift(newTrack);
   addClipToTrack(newTrack.timelineRow, 0, outBuffer.duration);
-  audioEngineStoreBuffer(newTrack.clips[0].id, outBuffer);
+  const newClip = newTrack.clips[0];
+  audioEngineStoreBuffer(newClip.id, outBuffer);
+  updateClipWaveform(newClip.id, outBuffer);
   syncTimelineMinWidth();
   markDirty();
+
+  _stopLoopPreview();
+  document.getElementById("loop-editor-panel").hidden = true;
 });
 
 document.getElementById("loop-preview-btn").addEventListener("click", () => {

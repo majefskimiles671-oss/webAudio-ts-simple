@@ -216,8 +216,20 @@ let _previewSource = null;
 function audioEnginePreviewLoop(buffer, loopStartSeconds, loopEndSeconds) {
   audioEngineStopPreview();
   if (_audioCtx.state === "suspended") _audioCtx.resume();
+
+  // If loop end exceeds actual audio, build a zero-padded buffer so the
+  // silence tail is included in the loop rather than being silently clipped.
+  let playBuffer = buffer;
+  if (loopEndSeconds > buffer.duration) {
+    const paddedLen = Math.ceil(loopEndSeconds * buffer.sampleRate);
+    playBuffer = _audioCtx.createBuffer(buffer.numberOfChannels, paddedLen, buffer.sampleRate);
+    for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+      playBuffer.getChannelData(ch).set(buffer.getChannelData(ch));
+    }
+  }
+
   const src = _audioCtx.createBufferSource();
-  src.buffer    = buffer;
+  src.buffer    = playBuffer;
   src.loop      = true;
   src.loopStart = loopStartSeconds;
   src.loopEnd   = loopEndSeconds;
@@ -241,7 +253,8 @@ function audioEngineRenderLoop(srcBuffer, loopStartSamples, loopEndSamples, outp
     const src  = srcBuffer.getChannelData(ch);
     const dest = out.getChannelData(ch);
     for (let i = 0; i < outputSamples; i++) {
-      dest[i] = src[loopStartSamples + (i % loopLen)];
+      const srcIdx = loopStartSamples + (i % loopLen);
+      dest[i] = srcIdx < src.length ? src[srcIdx] : 0;
     }
   }
   return out;
