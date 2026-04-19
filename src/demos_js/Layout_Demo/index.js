@@ -1845,7 +1845,10 @@ document.addEventListener("keydown", (e) => {
     || document.activeElement?.tagName === "TEXTAREA"
     || document.activeElement?.isContentEditable;
 
-  if (e.key === "Escape") { deselectClip(); hideClipPopup(); }
+  if (e.key === "Escape") {
+    deselectClip(); hideClipPopup();
+    document.getElementById("shortcut-help-overlay").hidden = true;
+  }
 
   if ((e.key === "Delete" || e.key === "Backspace") && !editable) deleteSelectedClip();
 
@@ -1853,6 +1856,25 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     applyTransportChange({ play: !playing, record: playing ? false : recording });
   }
+
+  if (e.key === "r" && !editable) recordBtn.click();
+
+  if ((e.key === "." || e.key === "Home") && !editable) returnToBeginning();
+
+  if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+    e.preventDefault();
+    saveProject();
+  }
+
+  if (e.key === "?" && !editable) {
+    const overlay = document.getElementById("shortcut-help-overlay");
+    overlay.hidden = !overlay.hidden;
+    if (!overlay.hidden) document.getElementById("shortcut-help-close").focus();
+  }
+});
+
+document.getElementById("shortcut-help-close").addEventListener("click", () => {
+  document.getElementById("shortcut-help-overlay").hidden = true;
 });
 
 // ----- Scrub Handlers
@@ -1961,7 +1983,8 @@ function _meterTick() {
 
     _renderTrackMeter(track);
 
-    if (track.meterL > 0.002 || track.meterR > 0.002) anyActive = true;
+    if (track.meterL > 0.002 || track.meterR > 0.002 ||
+        track.meterPeakL > 0.002 || track.meterPeakR > 0.002) anyActive = true;
   }
 
   _updateMasterMeter();
@@ -2278,10 +2301,13 @@ document.getElementById("menu-import-wav").addEventListener("click", () => {
       const arrayBuffer = await file.arrayBuffer();
       const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
       addClipToTrack(track.timelineRow, startSeconds, audioBuffer.duration);
-      audioEngineStoreBuffer(track.clips[track.clips.length - 1].id, audioBuffer);
+      const importedClip = track.clips[track.clips.length - 1];
+      audioEngineStoreBuffer(importedClip.id, audioBuffer);
+      updateClipWaveform(importedClip.id, audioBuffer);
       startSeconds += audioBuffer.duration;
     }
 
+    syncTimelineOverlay();
     syncTimelineMinWidth();
     markDirty();
   };
