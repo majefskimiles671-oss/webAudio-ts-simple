@@ -280,6 +280,14 @@ function jumpPlayheadToTime(seconds) {
     playbackStartX = px;
     startTime = performance.now();
     if (videoEl) videoEl.currentTime = seconds;
+    audioEnginePlay(
+      tracks.map(t => ({
+        id: t.id,
+        clips: t.clips.map(clip => ({ ...clip, gain: t.gain / 100, pan: t.pan / 100 })),
+      })),
+      seconds
+    );
+    syncTrackMutes();
   }
 }
 
