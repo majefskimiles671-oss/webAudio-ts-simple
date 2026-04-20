@@ -1,7 +1,8 @@
 // gainSlider.js
 // Helpers - Custom Gain Slider - Component -----
 
-// Single document-level drag handlers shared across all instances.
+// Memory Leak Prevention: single document-level drag handlers shared across all instances — one pair for the
+// lifetime of the page rather than per-element listeners that would need removal on every component teardown.
 let _activeDrag = null;
 
 document.addEventListener("mousemove", (e) => {

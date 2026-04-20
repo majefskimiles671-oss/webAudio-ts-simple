@@ -102,7 +102,8 @@ function audioEnginePlay(trackGroups, playheadSeconds) {
     splitter.connect(analyserR, 1); // R channel → analyserR (metering only)
     mixerGain.connect(_masterGainNode);
 
-    _trackMixers.set(trackId, { mixerGain, analyserL, analyserR });
+    // Memory Leak Prevention: store splitter so audioEngineStop() can disconnect it along with the analysers.
+    _trackMixers.set(trackId, { mixerGain, splitter, analyserL, analyserR });
 
     for (const clip of clips) {
       const buffer = _buffers.get(clip.id);
@@ -136,8 +137,12 @@ function audioEngineStop() {
     try { src.stop(); } catch {}
   }
   _activeSources = [];
-  for (const { mixerGain } of _trackMixers.values()) {
+  // Memory Leak Prevention: disconnect all nodes per mixer so the AudioContext can release them.
+  for (const { mixerGain, splitter, analyserL, analyserR } of _trackMixers.values()) {
     try { mixerGain.disconnect(); } catch {}
+    try { splitter.disconnect(); } catch {}
+    try { analyserL.disconnect(); } catch {}
+    try { analyserR.disconnect(); } catch {}
   }
   _trackMixers.clear();
 }
@@ -266,6 +271,19 @@ function audioEngineStopPreview() {
   if (_previewSource) {
     try { _previewSource.stop(); } catch {}
     _previewSource = null;
+  }
+}
+
+// Memory Leak Prevention: stops mic tracks to release the device and disconnects the analyser node.
+// Call this when closing a project or when the mic is no longer needed.
+function audioEngineCloseMicStream() {
+  if (_micStream) {
+    _micStream.getTracks().forEach(t => t.stop());
+    _micStream = null;
+  }
+  if (_micAnalyser) {
+    try { _micAnalyser.disconnect(); } catch {}
+    _micAnalyser = null;
   }
 }
 

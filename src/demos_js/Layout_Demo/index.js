@@ -496,6 +496,8 @@ function deleteSelectedClip() {
   const track = tracks.find(t => t.clips.some(c => c.id === selectedClipId));
   if (track) track.clips = track.clips.filter(c => c.id !== selectedClipId);
   document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`)?.remove();
+  // Memory Leak Prevention: free the decoded AudioBuffer so the audio engine's _buffers map doesn't hold it indefinitely.
+  audioEngineRemoveBuffer(selectedClipId);
   deselectClip();
   markDirty();
 }
@@ -715,17 +717,21 @@ function createTrack(label, { prepend = false } = {}) {
   title.textContent = label;
   title.spellcheck = false;
 
+  // Memory Leak Prevention: AbortController lets us remove all track event listeners in one call when the track is deleted.
+  const trackController = new AbortController();
+  const { signal } = trackController;
+
   title.addEventListener("focus", () => {
     const range = document.createRange();
     range.selectNodeContents(title);
     const sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
-  });
+  }, { signal });
 
   title.addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); title.blur(); }
-  });
+  }, { signal });
 
   title.addEventListener("input", () => {
     const text = title.textContent;
@@ -741,7 +747,7 @@ function createTrack(label, { prepend = false } = {}) {
       sel.removeAllRanges();
       sel.addRange(range);
     }
-  });
+  }, { signal });
 
   title.addEventListener("blur", () => {
     const t = title.textContent.trim();
@@ -760,7 +766,7 @@ function createTrack(label, { prepend = false } = {}) {
         }
       });
     }
-  });
+  }, { signal });
 
   controlFrag.querySelectorAll(".track-scene").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -770,7 +776,7 @@ function createTrack(label, { prepend = false } = {}) {
       markDirty();
       updateSceneMask();
       syncTrackMutes();
-    });
+    }, { signal });
   });
 
   const soloBtn = controlFrag.querySelector(".solo-btn");
@@ -785,7 +791,7 @@ function createTrack(label, { prepend = false } = {}) {
     }
     updateSoloMask();
     syncTrackMutes();
-  });
+  }, { signal });
 
   const deleteBtn = controlFrag.querySelector(".delete-btn");
   deleteBtn.addEventListener("click", () => {
@@ -795,6 +801,9 @@ function createTrack(label, { prepend = false } = {}) {
     const trackName = track.controlRow.querySelector(".track-title")?.textContent || "Track";
     if (selectedTrack === track) selectedTrack = null;
     tracks.splice(trackIdx, 1);
+    // Memory Leak Prevention: abort removes all track event listeners; ro.disconnect stops watching removed DOM rows.
+    trackController.abort();
+    ro.disconnect();
     track.controlRow.remove();
     track.timelineRow.remove();
     announce(`${trackName} deleted`);
@@ -804,7 +813,7 @@ function createTrack(label, { prepend = false } = {}) {
   controlRow.addEventListener("click", (e) => {
     if (e.target.closest("button, [contenteditable], gain-slider, pan-slider, .row-opacity-slider")) return;
     selectTrack(track);
-  });
+  }, { signal });
 
   if (prepend) {
     controlsScrollCol.prepend(controlFrag);
@@ -824,6 +833,7 @@ function createTrack(label, { prepend = false } = {}) {
   }
 
   /* ----- Height Sync ----- */
+  // Memory Leak Prevention: ro is disconnected in the delete handler above so it doesn't hold DOM refs after removal.
   const ro = new ResizeObserver(([e]) => {
     controlRow.style.height = `${e.contentRect.height}px`;
   });
