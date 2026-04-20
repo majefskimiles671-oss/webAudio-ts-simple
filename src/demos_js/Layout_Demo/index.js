@@ -1911,7 +1911,10 @@ document.getElementById("clip-popup-loop-btn").addEventListener("click", () => {
 document.getElementById("clip-popup-info-btn").addEventListener("click", () => {
   if (!_clipPopupClipId) return;
   const track = findTrackByClipId(_clipPopupClipId);
-  if (track) showTrackInfo(track);
+  if (track) {
+    const clip = track.clips.find(c => c.id === _clipPopupClipId);
+    if (clip) showClipInfo(clip, track);
+  }
   hideClipPopup();
 });
 
@@ -2575,23 +2578,27 @@ document.getElementById("view-settings-accept").addEventListener("click", () => 
   markDirty();
 });
 
-// ----- Track Info Modal -----
-function showTrackInfo(track) {
-  const totalSecs = track.clips.reduce((s, c) => s + c.durationSamples / SAMPLE_RATE, 0);
-  const hasAudio  = track.clips.some(c => audioEngineHasBuffer(c.id));
-  document.getElementById("track-info-body").innerHTML = `
-    <dt>Name</dt>      <dd>${track.name}</dd>
-    <dt>Clips</dt>     <dd>${track.clips.length}</dd>
-    <dt>Duration</dt>  <dd>${totalSecs.toFixed(2)} s</dd>
-    <dt>Gain</dt>      <dd>${track.gain}</dd>
-    <dt>Pan</dt>       <dd>${track.pan}</dd>
+// ----- Clip Info Modal -----
+function showClipInfo(clip, track) {
+  const startSecs    = clip.startSample / SAMPLE_RATE;
+  const durationSecs = clip.durationSamples / SAMPLE_RATE;
+  const hasAudio     = audioEngineHasBuffer(clip.id);
+  const hasLoop      = clip.loopStartSamples != null && clip.loopEndSamples != null;
+  const loopStart    = hasLoop ? (clip.loopStartSamples / SAMPLE_RATE).toFixed(3) : null;
+  const loopEnd      = hasLoop ? (clip.loopEndSamples   / SAMPLE_RATE).toFixed(3) : null;
+  document.getElementById("clip-info-body").innerHTML = `
+    <dt>Track</dt>     <dd>${track.name}</dd>
+    <dt>Start</dt>     <dd>${startSecs.toFixed(3)} s</dd>
+    <dt>Duration</dt>  <dd>${durationSecs.toFixed(3)} s</dd>
     <dt>Audio</dt>     <dd>${hasAudio ? "Loaded" : "None"}</dd>
+    ${hasLoop ? `<dt>Loop in</dt>  <dd>${loopStart} s</dd>
+    <dt>Loop out</dt> <dd>${loopEnd} s</dd>` : ""}
   `;
-  document.getElementById("track-info-overlay").hidden = false;
+  document.getElementById("clip-info-overlay").hidden = false;
 }
 
-document.getElementById("track-info-close").addEventListener("click", () => {
-  document.getElementById("track-info-overlay").hidden = true;
+document.getElementById("clip-info-close").addEventListener("click", () => {
+  document.getElementById("clip-info-overlay").hidden = true;
 });
 
 // ----- Loop Editor Panel -----

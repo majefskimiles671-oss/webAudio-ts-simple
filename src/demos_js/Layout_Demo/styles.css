@@ -3052,9 +3052,9 @@
         }
 
 
-        /* ----- Track Info Modal ----- */
+        /* ----- Clip Info Modal ----- */
 
-        .track-info-body {
+        .clip-info-body {
             display: grid;
             grid-template-columns: auto 1fr;
             gap: 4px 12px;
@@ -3062,8 +3062,8 @@
             margin: 0;
         }
 
-        .track-info-body dt { color: var(--text-muted); }
-        .track-info-body dd { margin: 0; }
+        .clip-info-body dt { color: var(--text-muted); }
+        .clip-info-body dd { margin: 0; }
 
         /* ----- Loop Editor Panel ----- */
 

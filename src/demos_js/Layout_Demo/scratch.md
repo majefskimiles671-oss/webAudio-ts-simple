@@ -137,6 +137,14 @@ What they'd actually do session to session:
 The emotional core of the demo should probably be: you had an idea, you didn't lose it, and now you can play with it. Less about features, more about that feeling of being surprised by what you made.
 
 
+---
+Sample rate — completely transparent. decodeAudioData (the browser's built-in decoder) automatically resamples whatever you feed it to the AudioContext's native rate before handing back an AudioBuffer. The import path at index.js:2462-2463 uses audioBuffer.duration (the post-decode duration in real seconds) to size the clip, so the timeline will be correct regardless of the source file's sample rate.
+
+Bits per sample — also transparent. decodeAudioData always decodes to internal float32, so 8-bit, 16-bit, 24-bit, and 32-bit float WAVs all work identically from the app's perspective.
+
+One latent caveat worth knowing: SAMPLE_RATE is hardcoded to 48000 at index.js:180, but the AudioContext uses the system's native rate (often 44100 on Macs). That mismatch doesn't cause audible problems (the browser resamples), but startSample/durationSamples stored on clips are in "48kHz ticks" rather than actual buffer samples — so they're a timeline unit, not a direct index into any buffer. That's already consistent throughout the code, just worth keeping in mind if you ever do sample-level math.
+
+Short answer: importing WAVs of any sample rate or bit depth just works.
 
 ---
 ---
