@@ -776,17 +776,6 @@
             width: 140px;
         }
 
-        .zoom-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .zoom-labels span {
-            cursor: default;
-        }
-
         #zoom-slider::-webkit-slider-runnable-track {
             height: 4px;
             background: var(--bg-panel);
@@ -817,40 +806,26 @@
             width: 140px;
         }
 
-        .zoom-labels {
-            position: relative;
-            height: 14px;
+        .zoom-ticks {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0 7px; /* matches half the thumb width so ticks align under each stop */
             margin-top: 4px;
+            height: 10px;
         }
 
-        .zoom-labels span {
-            position: absolute;
-            transform: translateX(-50%);
-            font-size: 11px;
-            color: var(--text-muted);
-            white-space: nowrap;
+        .zoom-ticks span {
+            width: 1px;
+            height: 5px;
+            background: var(--text-muted);
+            opacity: 0.45;
+            flex-shrink: 0;
         }
 
-        .zoom-labels span[data-pos="0"] {
-            left: 0%;
-            transform: translateX(0);
-        }
-
-        .zoom-labels span[data-pos="1"] {
-            left: 25%;
-        }
-
-        .zoom-labels span[data-pos="2"] {
-            left: 50%;
-        }
-
-        .zoom-labels span[data-pos="3"] {
-            left: 75%;
-        }
-
-        .zoom-labels span[data-pos="4"] {
-            left: 100%;
-            transform: translateX(-100%);
+        .zoom-ticks span.zoom-tick-center {
+            height: 9px;
+            opacity: 0.75;
         }
 
 

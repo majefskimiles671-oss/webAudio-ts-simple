@@ -162,8 +162,9 @@ const SCROLL_THRESHOLD = 120;
 const MAX_CANVAS_PX = 16383; // Chrome hardware canvas width limit
 
 //  Zoom State
-const zoomLevels = [0.25, 0.5, 1, 2, 4];
-let zoomIndex = 2; // default = 1x = zoomLevels[2]
+// 7 log-spaced levels (~×3.3 per step ≈ √10); center index 3 = 1×
+const zoomLevels = [0.03, 0.1, 0.3, 1, 3, 10, 30];
+let zoomIndex = 3; // default = 1x = zoomLevels[3]
 
 // Are state and view drivers at the same time
 let zoom = zoomLevels[zoomIndex];
@@ -1080,28 +1081,40 @@ function renderTimelineRuler() {
     const barLen = secondsPerBar();
     const beatLen = secondsPerBeat();
 
+    const barPxWidth = barLen * BASE_PPS * zoom;
+    const MIN_LABEL_PX = 46; // approx pixel width of a "Bar NNN" label
+    // Round up to nearest power-of-2 so skipped bars fall on musically clean boundaries
+    const rawEvery = Math.ceil(MIN_LABEL_PX / barPxWidth);
+    const labelEvery = rawEvery <= 1 ? 1 : Math.pow(2, Math.ceil(Math.log2(rawEvery)));
+    const showBeats = barPxWidth >= 20; // suppress beat ticks when bars are nearly touching
+    const showBeatLabels = zoom >= 10; // label beats as "1.2 1.3 1.4" at the two most extreme zoom-in levels
+
     const firstBar = Math.floor(startSeconds / barLen);
 
     let barTime = firstBar * barLen;
     let barNum = firstBar;
 
     while (barTime <= endSeconds) {
-      // Major bar tick
+      // Major bar tick — use "N.1" format when beat labels are shown for consistency
       ticks.push({
         time: barTime,
         major: true,
-        label: `Bar ${barNum + 1}`,
+        label: barNum % labelEvery === 0
+          ? (showBeatLabels ? `${barNum + 1}.1` : `Bar ${barNum + 1}`)
+          : null,
       });
 
       // Beat ticks
-      for (let b = 1; b < beatsPerBar; b++) {
-        const bt = barTime + b * beatLen;
-        if (bt >= startSeconds && bt <= endSeconds) {
-          ticks.push({
-            time: bt,
-            major: false,
-            label: null,
-          });
+      if (showBeats) {
+        for (let b = 1; b < beatsPerBar; b++) {
+          const bt = barTime + b * beatLen;
+          if (bt >= startSeconds && bt <= endSeconds) {
+            ticks.push({
+              time: bt,
+              major: false,
+              label: showBeatLabels ? `${barNum + 1}.${b + 1}` : null,
+            });
+          }
         }
       }
 
@@ -1133,6 +1146,10 @@ function renderTimelineRuler() {
       rulerCtx.moveTo(x + 0.5, height);
       rulerCtx.lineTo(x + 0.5, height - 6);
       rulerCtx.stroke();
+
+      if (tick.label) {
+        rulerCtx.fillText(tick.label, x + 2, height - 7);
+      }
     }
   }
 
@@ -1321,7 +1338,7 @@ function rerenderWaveforms() {
     const durationSeconds = parseFloat(canvas.dataset.durationSeconds);
     const width = computeWaveformWidth(durationSeconds);
 
-    canvas.width = width;
+    canvas.width = Math.min(width, MAX_CANVAS_PX); // cap canvas allocation; waveform div can be wider
     waveform.style.left = `${secondsToPixels(startSeconds)}px`;
     waveform.style.width = `${width}px`;
 
