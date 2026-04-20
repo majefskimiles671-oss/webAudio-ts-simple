@@ -219,7 +219,7 @@ async function _loadFFmpegScript() {
   });
 }
 
-async function exportVideo({ sceneLetter, folderHandle, onProgress }) {
+async function exportVideo({ sceneLetter, folderHandle, onProgress, phosphor = false }) {
   const sceneMap = getSceneTrackMap();
   const audioBuffer = renderTrackGroupToStereo(sceneMap[sceneLetter]);
   const wavBytes = audioBuffer ? audioEngineEncodeWav(audioBuffer) : buildPlaceholderWav();
@@ -238,13 +238,15 @@ async function exportVideo({ sceneLetter, folderHandle, onProgress }) {
   const ext = (videoFile.name.split('.').pop() || 'mp4').toLowerCase();
   await ffmpeg.writeFile(`input.${ext}`, new Uint8Array(await videoFile.arrayBuffer()));
   await ffmpeg.writeFile('audio.wav', new Uint8Array(wavBytes));
+  const videoArgs = phosphor
+    ? ['-vf', 'edgedetect=low=0.1:high=0.3,split[e][g];[g]gblur=sigma=2[gb];[e][gb]blend=all_mode=screen,colorchannelmixer=rr=1:gg=0.6:bb=0',
+       '-c:v', 'libx264', '-crf', '18', '-pix_fmt', 'yuv420p']
+    : ['-c:v', 'copy'];
+
   await ffmpeg.exec([
     '-i', `input.${ext}`,
     '-i', 'audio.wav',
-    '-vf', 'edgedetect=low=0.1:high=0.3,split[e][g];[g]gblur=sigma=2[gb];[e][gb]blend=all_mode=screen,colorchannelmixer=rr=1:gg=0.6:bb=0',
-    '-c:v', 'libx264',
-    '-crf', '18',
-    '-pix_fmt', 'yuv420p',
+    ...videoArgs,
     '-map', '0:v:0',
     '-map', '1:a:0',
     '-shortest',
@@ -263,6 +265,23 @@ async function exportVideo({ sceneLetter, folderHandle, onProgress }) {
 // ============================================================
 // Projection / Rendering (View Layer) -----
 // ============================================================
+
+function showVideoExportToast(msg) {
+  document.querySelector('.video-export-toast')?.remove();
+  const toast = document.createElement('div');
+  toast.className = 'video-export-toast';
+  toast.innerHTML = `<span class="video-export-toast-spinner"></span><span class="video-export-toast-msg">${msg}</span>`;
+  document.body.appendChild(toast);
+}
+
+function updateVideoExportToast(msg) {
+  const el = document.querySelector('.video-export-toast-msg');
+  if (el) el.textContent = msg;
+}
+
+function hideVideoExportToast() {
+  document.querySelector('.video-export-toast')?.remove();
+}
 
 function showMixdownDone(files, folderName) {
   document.querySelector('.mixdown-overlay')?.remove();
@@ -378,6 +397,9 @@ function showMixdownDialog() {
         </select>
         <button class="mixdown-export-video-btn"${videoEnabled ? '' : ' disabled'}>Export Video</button>
       </div>
+      <label class="mixdown-video-option">
+        <input type="checkbox" class="mx-phosphor"${videoEnabled ? '' : ' disabled'}> Phosphor filter
+      </label>
       ${!hasVideo ? '<p class="mixdown-video-notice">Load a video first (File → Load Video…)</p>' : ''}
     </div>`;
 
@@ -414,20 +436,23 @@ function showMixdownDialog() {
   if (videoEnabled) {
     exportVideoBtn.addEventListener('click', async () => {
       const sceneLetter = overlay.querySelector('.mixdown-scene-select').value;
+      const phosphor = overlay.querySelector('.mx-phosphor')?.checked ?? false;
       exportVideoBtn.disabled = true;
       try {
         const { handle: folderHandle, displayPath } = await getExportFolder();
+        overlay.remove();
+        showVideoExportToast('Loading FFmpeg…');
         const files = await exportVideo({
           sceneLetter,
           folderHandle,
-          onProgress: (msg) => { exportVideoBtn.textContent = msg; },
+          phosphor,
+          onProgress: (msg) => updateVideoExportToast(msg),
         });
-        overlay.remove();
+        hideVideoExportToast();
         showMixdownDone(files, displayPath);
       } catch (err) {
+        hideVideoExportToast();
         if (err.name !== 'AbortError') { console.error('Video export failed:', err); alert('Video export failed. See console for details.'); }
-        exportVideoBtn.disabled = false;
-        exportVideoBtn.textContent = 'Export Video';
       }
     });
   }
