@@ -1657,6 +1657,10 @@
             display: block;
         }
 
+        .menu.item-clicked .menu-pop {
+            display: none;
+        }
+
         .menu-pop div {
             padding: 6px 12px;
             white-space: nowrap;

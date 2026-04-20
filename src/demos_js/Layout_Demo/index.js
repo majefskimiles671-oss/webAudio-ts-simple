@@ -113,14 +113,14 @@ document.querySelectorAll(".menu").forEach((menu) => {
   });
 });
 
-// Close menu on item click — drop pointer-events briefly (kills :hover) and clear keyboard-open
+// Close menu on item click — add class that hides popup, clear it once mouse leaves
 document.querySelector(".menu-bar").addEventListener("click", (e) => {
   const item = e.target.closest(".menu-pop div");
   if (!item) return;
   const menu = item.closest(".menu");
   menu.classList.remove("keyboard-open");
-  menu.style.pointerEvents = "none";
-  setTimeout(() => { menu.style.pointerEvents = ""; }, 200);
+  menu.classList.add("item-clicked");
+  menu.addEventListener("mouseleave", () => menu.classList.remove("item-clicked"), { once: true });
 });
 
 const controlsScrollCol = document.getElementById("controls-scroll-column");
