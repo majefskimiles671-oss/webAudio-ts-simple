@@ -3288,6 +3288,18 @@
             z-index: 1;
         }
 
+        /* Video overlay mode: raise video above track content */
+        body.video-overlay #video-sticky-anchor {
+            z-index: 2;
+        }
+
+        #video-overlay-btn {
+            opacity: 0.4;
+        }
+        body.video-overlay #video-overlay-btn {
+            opacity: 1;
+        }
+
         #video-transport-group {
             flex: 0 0 auto;
             display: none;

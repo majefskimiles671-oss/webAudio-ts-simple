@@ -2472,6 +2472,10 @@ document.getElementById("menu-load-video").addEventListener("click", () => {
   input.click();
 });
 
+document.getElementById("video-overlay-btn").addEventListener("click", () => {
+  document.body.classList.toggle("video-overlay");
+});
+
 document.getElementById("video-remove-btn").addEventListener("click", removeVideo);
 
 document.getElementById("video-opacity-slider").addEventListener("input", (e) => {
