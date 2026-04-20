@@ -199,6 +199,64 @@ async function exportAllTracks({ modes, folderHandle }) {
   return writtenFiles;
 }
 
+// Authority - Video Export - Meaning Layer -----
+
+async function _toBlobURL(url, mimeType) {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Failed to fetch ${url}: ${resp.status}`);
+  const buf = await resp.arrayBuffer();
+  return URL.createObjectURL(new Blob([buf], { type: mimeType }));
+}
+
+async function _loadFFmpegScript() {
+  if (window.FFmpegWASM) return;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = './vendor/ffmpeg.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load FFmpeg script'));
+    document.head.appendChild(s);
+  });
+}
+
+async function exportVideo({ sceneLetter, folderHandle, onProgress }) {
+  const sceneMap = getSceneTrackMap();
+  const audioBuffer = renderTrackGroupToStereo(sceneMap[sceneLetter]);
+  const wavBytes = audioBuffer ? audioEngineEncodeWav(audioBuffer) : buildPlaceholderWav();
+
+  onProgress('Loading FFmpeg…');
+  await _loadFFmpegScript();
+  const { FFmpeg } = window.FFmpegWASM;
+  const ffmpeg = new FFmpeg();
+  const coreBase = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+  await ffmpeg.load({
+    coreURL: await _toBlobURL(`${coreBase}/ffmpeg-core.js`, 'text/javascript'),
+    wasmURL: await _toBlobURL(`${coreBase}/ffmpeg-core.wasm`, 'application/wasm'),
+  });
+
+  onProgress('Exporting…');
+  const ext = (videoFile.name.split('.').pop() || 'mp4').toLowerCase();
+  await ffmpeg.writeFile(`input.${ext}`, new Uint8Array(await videoFile.arrayBuffer()));
+  await ffmpeg.writeFile('audio.wav', new Uint8Array(wavBytes));
+  await ffmpeg.exec([
+    '-i', `input.${ext}`,
+    '-i', 'audio.wav',
+    '-c:v', 'copy',
+    '-map', '0:v:0',
+    '-map', '1:a:0',
+    '-shortest',
+    'output.mp4',
+  ]);
+
+  const outputFilename = `Scene-${sceneLetter}-video.mp4`;
+  const data = await ffmpeg.readFile('output.mp4');
+  const fh = await folderHandle.getFileHandle(outputFilename, { create: true });
+  const w = await fh.createWritable();
+  await w.write(new Uint8Array(data));
+  await w.close();
+  return [outputFilename];
+}
+
 // ============================================================
 // Projection / Rendering (View Layer) -----
 // ============================================================
@@ -288,6 +346,13 @@ function showMixdownDialog() {
       </label>`;
   }).join('');
 
+  const scenesWithTracks = SCENE_LETTERS.filter(l => sceneMap[l].length > 0);
+  const hasVideo = typeof videoEl !== 'undefined' && videoEl !== null;
+  const videoEnabled = hasVideo && scenesWithTracks.length > 0;
+  const videoSceneOptions = scenesWithTracks.map(l =>
+    `<option value="${l}">Scene ${l}</option>`
+  ).join('');
+
   overlay.innerHTML = `
     <div class="mixdown-card">
       <p class="mixdown-title">Export Mixdown</p>
@@ -302,6 +367,15 @@ function showMixdownDialog() {
         <button class="mixdown-cancel">Cancel</button>
         <button class="mixdown-primary">${projectFolderHandle ? "Export" : "Choose Folder…"}</button>
       </div>
+      <hr class="mixdown-divider">
+      <p class="mixdown-section-label">Video export</p>
+      <div class="mixdown-video-row">
+        <select class="mixdown-scene-select"${videoEnabled ? '' : ' disabled'}>
+          ${videoEnabled ? videoSceneOptions : '<option>—</option>'}
+        </select>
+        <button class="mixdown-export-video-btn"${videoEnabled ? '' : ' disabled'}>Export Video</button>
+      </div>
+      ${!hasVideo ? '<p class="mixdown-video-notice">Load a video first (File → Load Video…)</p>' : ''}
     </div>`;
 
   document.body.appendChild(overlay);
@@ -332,6 +406,28 @@ function showMixdownDialog() {
       if (err.name !== 'AbortError') { console.error('Export failed:', err); alert('Export failed. See console for details.'); }
     }
   });
+
+  const exportVideoBtn = overlay.querySelector('.mixdown-export-video-btn');
+  if (videoEnabled) {
+    exportVideoBtn.addEventListener('click', async () => {
+      const sceneLetter = overlay.querySelector('.mixdown-scene-select').value;
+      exportVideoBtn.disabled = true;
+      try {
+        const { handle: folderHandle, displayPath } = await getExportFolder();
+        const files = await exportVideo({
+          sceneLetter,
+          folderHandle,
+          onProgress: (msg) => { exportVideoBtn.textContent = msg; },
+        });
+        overlay.remove();
+        showMixdownDone(files, displayPath);
+      } catch (err) {
+        if (err.name !== 'AbortError') { console.error('Video export failed:', err); alert('Video export failed. See console for details.'); }
+        exportVideoBtn.disabled = false;
+        exportVideoBtn.textContent = 'Export Video';
+      }
+    });
+  }
 }
 
 // ============================================================

@@ -24,6 +24,7 @@ function serializeProject() {
     theme:      document.body.getAttribute("data-theme") ?? "earth",
     notesMono:  document.body.getAttribute("data-notes-font") === "mono",
     viewState:  { ...viewState },
+    activeScene: document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim() ?? null,
     sampleRate: SAMPLE_RATE,
     bpm:        tempoBPM,
     timeSignature: {
@@ -253,6 +254,11 @@ function deserializeProject(data) {
   renderTimelineLayer();
   renderMarkerTransport();
   renderBottomPanel();
+  if (data.activeScene) {
+    document.querySelectorAll("#transport-scenes .transport-scene").forEach(btn => {
+      btn.classList.toggle("active", btn.textContent.trim() === data.activeScene);
+    });
+  }
   updateSceneMask();
   updateSoloMask();
   syncTimelineOverlay();
@@ -263,10 +269,10 @@ function deserializeProject(data) {
 // Save / Open (File System Access API) -----
 // ============================================================
 
-async function loadVideoFromFolder(folderHandle, data) {
+async function loadVideoFromFolder(dataHandle, data) {
   if (!data.video?.filename) return;
   try {
-    const vidHandle = await folderHandle.getFileHandle(data.video.filename);
+    const vidHandle = await dataHandle.getFileHandle(data.video.filename);
     const file = await vidHandle.getFile();
     loadVideoFile(file, { opacity: data.video.opacity ?? 45 });
   } catch {
@@ -284,7 +290,9 @@ async function saveProject() {
       updateProjectNameDisplay();
     }
 
-    // Write project.json
+    const dataHandle = await projectFolderHandle.getDirectoryHandle("data", { create: true });
+
+    // Write project.json (project root only)
     const data = serializeProject();
     console.log("saveProject:", data);
     localStorage.setItem("previousProjectData", JSON.stringify(data));
@@ -293,11 +301,11 @@ async function saveProject() {
     await jsonWriter.write(JSON.stringify(data, null, 2));
     await jsonWriter.close();
 
-    // Write WAV for each clip — real audio if available, placeholder otherwise
+    // Write WAV for each clip into data/
     for (const track of tracks) {
       for (const clip of track.clips) {
         const filename  = `clip-${clip.id}.wav`;
-        const wavHandle = await projectFolderHandle.getFileHandle(filename, { create: true });
+        const wavHandle = await dataHandle.getFileHandle(filename, { create: true });
         const wavWriter = await wavHandle.createWritable();
         const payload   = audioEngineHasBuffer(clip.id)
           ? audioEngineEncodeWav(audioEngineGetBuffer(clip.id))
@@ -307,9 +315,9 @@ async function saveProject() {
       }
     }
 
-    // Write video file if one is loaded
+    // Write video file into data/
     if (videoFile && data.video) {
-      const vidHandle = await projectFolderHandle.getFileHandle(data.video.filename, { create: true });
+      const vidHandle = await dataHandle.getFileHandle(data.video.filename, { create: true });
       const vidWriter = await vidHandle.createWritable();
       await vidWriter.write(videoFile);
       await vidWriter.close();
@@ -336,22 +344,28 @@ async function reconnectProjectFolder() {
   }
   projectFolderHandle = folderHandle;
   updateProjectNameDisplay();
-  for (const track of tracks) {
-    for (const clip of track.clips) {
-      try {
-        const wavHandle   = await folderHandle.getFileHandle(`clip-${clip.id}.wav`);
-        const wavFile     = await wavHandle.getFile();
-        const arrayBuffer = await wavFile.arrayBuffer();
-        if (arrayBuffer.byteLength <= 44) continue;
-        const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
-        audioEngineStoreBuffer(clip.id, audioBuffer);
-        updateClipWaveform(clip.id, audioBuffer);
-      } catch {
-        // file missing or undecodable — clip stays silent
+
+  let dataHandle = null;
+  try { dataHandle = await folderHandle.getDirectoryHandle("data"); } catch { /* no data folder */ }
+
+  if (dataHandle) {
+    for (const track of tracks) {
+      for (const clip of track.clips) {
+        try {
+          const wavHandle   = await dataHandle.getFileHandle(`clip-${clip.id}.wav`);
+          const wavFile     = await wavHandle.getFile();
+          const arrayBuffer = await wavFile.arrayBuffer();
+          if (arrayBuffer.byteLength <= 44) continue;
+          const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
+          audioEngineStoreBuffer(clip.id, audioBuffer);
+          updateClipWaveform(clip.id, audioBuffer);
+        } catch {
+          // file missing or undecodable — clip stays silent
+        }
       }
     }
+    await loadVideoFromFolder(dataHandle, projectData);
   }
-  await loadVideoFromFolder(folderHandle, projectData);
   clearDirty();
   return true;
 }
@@ -378,25 +392,29 @@ async function openProject() {
     localStorage.setItem("previousProjectData", JSON.stringify(data));
     deserializeProject(data);
 
-    // Decode each clip's WAV from the project folder into the audio engine
-    for (const savedTrack of (data.tracks ?? [])) {
-      for (const savedClip of (savedTrack.clips ?? [])) {
-        if (!savedClip.file) continue;
-        try {
-          const wavHandle   = await folderHandle.getFileHandle(savedClip.file);
-          const wavFile     = await wavHandle.getFile();
-          const arrayBuffer = await wavFile.arrayBuffer();
-          if (arrayBuffer.byteLength <= 44) continue; // placeholder — no samples
-          const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
-          audioEngineStoreBuffer(savedClip.id, audioBuffer);
-          updateClipWaveform(savedClip.id, audioBuffer);
-        } catch {
-          // file missing or undecodable — clip is silent
+    let dataHandle = null;
+    try { dataHandle = await folderHandle.getDirectoryHandle("data"); } catch { /* no data folder */ }
+
+    // Decode each clip's WAV from data/ into the audio engine
+    if (dataHandle) {
+      for (const savedTrack of (data.tracks ?? [])) {
+        for (const savedClip of (savedTrack.clips ?? [])) {
+          if (!savedClip.file) continue;
+          try {
+            const wavHandle   = await dataHandle.getFileHandle(savedClip.file);
+            const wavFile     = await wavHandle.getFile();
+            const arrayBuffer = await wavFile.arrayBuffer();
+            if (arrayBuffer.byteLength <= 44) continue; // placeholder — no samples
+            const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
+            audioEngineStoreBuffer(savedClip.id, audioBuffer);
+            updateClipWaveform(savedClip.id, audioBuffer);
+          } catch {
+            // file missing or undecodable — clip is silent
+          }
         }
       }
+      await loadVideoFromFolder(dataHandle, data);
     }
-
-    await loadVideoFromFolder(folderHandle, data);
 
     clearDirty();
   } catch (err) {

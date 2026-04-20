@@ -3044,6 +3044,57 @@
             cursor: not-allowed;
         }
 
+        /* Video export section */
+
+        .mixdown-divider {
+            border: none;
+            border-top: 1px solid var(--border-subtle);
+            margin: 20px 0 18px;
+        }
+
+        .mixdown-video-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .mixdown-scene-select {
+            flex: 1;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 13px;
+            padding: 5px 8px;
+        }
+
+        .mixdown-scene-select:disabled {
+            opacity: 0.38;
+            cursor: not-allowed;
+        }
+
+        .mixdown-export-video-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 13px;
+            padding: 5px 14px;
+            white-space: nowrap;
+        }
+
+        .mixdown-export-video-btn:disabled {
+            opacity: 0.38;
+            cursor: not-allowed;
+        }
+
+        .mixdown-video-notice {
+            margin: 0;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
         /* ----- Track Selection ----- */
 
         .control-row.selected > .row-inner {
