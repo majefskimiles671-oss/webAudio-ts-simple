@@ -228,18 +228,22 @@ async function exportVideo({ sceneLetter, folderHandle, onProgress, phosphor = f
   await _loadFFmpegScript();
   const { FFmpeg } = window.FFmpegWASM;
   const ffmpeg = new FFmpeg();
+  ffmpeg.on('progress', ({ progress }) => {
+    const pct = Math.round(progress * 100);
+    onProgress(`Exporting… ${pct}%`);
+  });
   const coreBase = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
   await ffmpeg.load({
     coreURL: await _toBlobURL(`${coreBase}/ffmpeg-core.js`, 'text/javascript'),
     wasmURL: await _toBlobURL(`${coreBase}/ffmpeg-core.wasm`, 'application/wasm'),
   });
 
-  onProgress('Exporting…');
+  onProgress('Exporting… 0%');
   const ext = (videoFile.name.split('.').pop() || 'mp4').toLowerCase();
   await ffmpeg.writeFile(`input.${ext}`, new Uint8Array(await videoFile.arrayBuffer()));
   await ffmpeg.writeFile('audio.wav', new Uint8Array(wavBytes));
   const videoArgs = phosphor
-    ? ['-vf', 'edgedetect=low=0.1:high=0.3,split[e][g];[g]gblur=sigma=2[gb];[e][gb]blend=all_mode=screen,colorchannelmixer=rr=1:gg=0.6:bb=0',
+    ? ['-vf', 'scale=640:-2,edgedetect=low=0.1:high=0.3,split[e][g];[g]gblur=sigma=2[gb];[e][gb]blend=all_mode=screen,colorchannelmixer=rr=1:gg=0.6:bb=0',
        '-c:v', 'libx264', '-crf', '18', '-pix_fmt', 'yuv420p']
     : ['-c:v', 'copy'];
 
