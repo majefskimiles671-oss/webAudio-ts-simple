@@ -616,7 +616,8 @@ function removeVideo() {
   videoEl.src = "";
   videoEl = null;
   videoFile = null;
-  document.body.classList.remove("has-video");
+  document.body.classList.remove("has-video", "video-phosphor");
+  document.getElementById("video-phosphor-btn").classList.remove("active");
 }
 
 // ----- Track Selection
@@ -2495,6 +2496,11 @@ document.getElementById("menu-load-video").addEventListener("click", () => {
 
 document.getElementById("video-overlay-btn").addEventListener("click", () => {
   document.body.classList.toggle("video-overlay");
+});
+
+document.getElementById("video-phosphor-btn").addEventListener("click", () => {
+  const on = document.body.classList.toggle("video-phosphor");
+  document.getElementById("video-phosphor-btn").classList.toggle("active", on);
 });
 
 document.getElementById("video-remove-btn").addEventListener("click", removeVideo);

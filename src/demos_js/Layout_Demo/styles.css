@@ -3454,6 +3454,10 @@
             display: block;
         }
 
+        body.video-phosphor #timeline-video {
+            filter: url(#phosphor-filter);
+        }
+
         /* Keep track content above the video backdrop */
         #timeline-inner {
             z-index: 1;

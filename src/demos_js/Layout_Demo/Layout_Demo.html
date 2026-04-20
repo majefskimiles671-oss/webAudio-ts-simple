@@ -59,6 +59,28 @@ Rule - Add comments before code snippets in this format:
 
 <body>
 
+    <!-- SVG filter defs — not rendered, referenced by CSS filter: url(#...) -->
+    <svg style="display:none">
+        <defs>
+            <filter id="phosphor-filter" color-interpolation-filters="sRGB">
+                <!-- Desaturate to grayscale -->
+                <feColorMatrix type="saturate" values="0" result="gray"/>
+                <!-- Bell curve: shadows and highlights → black, midtones → bright -->
+                <feComponentTransfer in="gray" result="mid">
+                    <feFuncR type="table" tableValues="0 0.5 1 0.5 0"/>
+                    <feFuncG type="table" tableValues="0 0.5 1 0.5 0"/>
+                    <feFuncB type="table" tableValues="0 0.5 1 0.5 0"/>
+                </feComponentTransfer>
+                <!-- Tint amber: R=full, G=60%, B=0 -->
+                <feColorMatrix in="mid" type="matrix"
+                    values="1   0 0 0 0
+                            0 0.6 0 0 0
+                            0   0 0 0 0
+                            0   0 0 1 0"/>
+            </filter>
+        </defs>
+    </svg>
+
     <nav class="menu-bar" aria-label="Application menu">
         <div class="menu">
             <button class="menu-label" aria-haspopup="menu">File</button>
@@ -177,6 +199,7 @@ Rule - Add comments before code snippets in this format:
             <span class="video-transport-label">Video</span>
             <input id="video-opacity-slider" type="range" min="0" max="100" value="45" title="Video opacity">
             <button id="video-overlay-btn" aria-label="Toggle video overlay" title="Toggle video on top of waveforms">⬆</button>
+            <button id="video-phosphor-btn" aria-label="Toggle phosphor filter" title="Phosphor filter">◉</button>
             <button id="video-remove-btn" aria-label="Remove video" title="Remove video">✕</button>
         </div>
 
