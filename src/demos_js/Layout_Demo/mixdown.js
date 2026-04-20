@@ -241,7 +241,10 @@ async function exportVideo({ sceneLetter, folderHandle, onProgress }) {
   await ffmpeg.exec([
     '-i', `input.${ext}`,
     '-i', 'audio.wav',
-    '-c:v', 'copy',
+    '-vf', 'edgedetect=low=0.1:high=0.3,split[e][g];[g]gblur=sigma=2[gb];[e][gb]blend=all_mode=screen,colorchannelmixer=rr=1:gg=0.6:bb=0',
+    '-c:v', 'libx264',
+    '-crf', '18',
+    '-pix_fmt', 'yuv420p',
     '-map', '0:v:0',
     '-map', '1:a:0',
     '-shortest',

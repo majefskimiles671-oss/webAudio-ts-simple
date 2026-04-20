@@ -1435,6 +1435,65 @@
             opacity: 0.4;
         }
 
+        /* x286 — opacity sliders */
+        body[data-theme="x286"] .row-opacity-slider,
+        body[data-theme="x286"] #video-opacity-slider {
+            appearance: none;
+            -webkit-appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        body[data-theme="x286"] .row-opacity-slider::-webkit-slider-runnable-track,
+        body[data-theme="x286"] #video-opacity-slider::-webkit-slider-runnable-track {
+            height: 4px;
+            background: #100800;
+            border: 1px solid #3a2000;
+            border-radius: 2px;
+        }
+
+        body[data-theme="x286"] .row-opacity-slider::-webkit-slider-thumb,
+        body[data-theme="x286"] #video-opacity-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff7700;
+            border: 2px solid #0c0700;
+            margin-top: -5px;
+        }
+
+        body[data-theme="x286"] .row-opacity-slider::-moz-range-track,
+        body[data-theme="x286"] #video-opacity-slider::-moz-range-track {
+            height: 4px;
+            background: #100800;
+            border: 1px solid #3a2000;
+            border-radius: 2px;
+        }
+
+        body[data-theme="x286"] .row-opacity-slider::-moz-range-thumb,
+        body[data-theme="x286"] #video-opacity-slider::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff7700;
+            border: 2px solid #0c0700;
+        }
+
+        body[data-theme="x286"] .row-opacity-slider:hover::-webkit-slider-thumb,
+        body[data-theme="x286"] .row-opacity-slider:active::-webkit-slider-thumb,
+        body[data-theme="x286"] #video-opacity-slider:hover::-webkit-slider-thumb,
+        body[data-theme="x286"] #video-opacity-slider:active::-webkit-slider-thumb {
+            background: #ffcc00;
+        }
+
+        body[data-theme="x286"] .row-opacity-slider:hover::-moz-range-thumb,
+        body[data-theme="x286"] .row-opacity-slider:active::-moz-range-thumb,
+        body[data-theme="x286"] #video-opacity-slider:hover::-moz-range-thumb,
+        body[data-theme="x286"] #video-opacity-slider:active::-moz-range-thumb {
+            background: #ffcc00;
+        }
+
 
         /* Menu CSS */
 

@@ -815,6 +815,8 @@ function createTrack(label, { prepend = false } = {}) {
     ro.disconnect();
     track.controlRow.remove();
     track.timelineRow.remove();
+    syncTimelineMinWidth();
+    syncTimelineOverlay();
     announce(`${trackName} deleted`);
   });
 
@@ -1443,8 +1445,16 @@ function syncTimelineOverlayWidth() {
 }
 
 function syncTimelineMinWidth() {
-  const minSeconds = 16 * secondsPerBar();
-  timelineInner.style.minWidth = `${secondsToPixels(minSeconds)}px`;
+  const floorPx = secondsToPixels(16 * secondsPerBar());
+  let maxPx = floorPx;
+  for (const track of tracks) {
+    for (const clip of track.clips) {
+      const endPx = secondsToPixels((clip.startSample + clip.durationSamples) / SAMPLE_RATE);
+      if (endPx > maxPx) maxPx = endPx;
+    }
+  }
+  const buffer = timelineArea.clientWidth;
+  timelineInner.style.minWidth = `${maxPx > floorPx ? maxPx + buffer * 2 : floorPx}px`;
 }
 
 function ensureTimelineWidth(px) {
