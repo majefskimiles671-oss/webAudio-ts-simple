@@ -219,7 +219,7 @@ async function _loadFFmpegScript() {
   });
 }
 
-async function exportVideo({ sceneLetter, folderHandle, onProgress, phosphor = false }) {
+async function exportVideo({ sceneLetter, folderHandle, onProgress, setCancelFn, phosphor = false }) {
   const sceneMap = getSceneTrackMap();
   const audioBuffer = renderTrackGroupToStereo(sceneMap[sceneLetter]);
   const wavBytes = audioBuffer ? audioEngineEncodeWav(audioBuffer) : buildPlaceholderWav();
@@ -228,6 +228,7 @@ async function exportVideo({ sceneLetter, folderHandle, onProgress, phosphor = f
   await _loadFFmpegScript();
   const { FFmpeg } = window.FFmpegWASM;
   const ffmpeg = new FFmpeg();
+  setCancelFn?.(() => ffmpeg.terminate());
   ffmpeg.on('progress', ({ progress }) => {
     const pct = Math.round(progress * 100);
     onProgress(`Exporting… ${pct}%`);
@@ -270,11 +271,12 @@ async function exportVideo({ sceneLetter, folderHandle, onProgress, phosphor = f
 // Projection / Rendering (View Layer) -----
 // ============================================================
 
-function showVideoExportToast(msg) {
+function showVideoExportToast(msg, onCancel) {
   document.querySelector('.video-export-toast')?.remove();
   const toast = document.createElement('div');
   toast.className = 'video-export-toast';
-  toast.innerHTML = `<span class="video-export-toast-spinner"></span><span class="video-export-toast-msg">${msg}</span>`;
+  toast.innerHTML = `<span class="video-export-toast-spinner"></span><span class="video-export-toast-msg">${msg}</span><button class="video-export-toast-cancel">Cancel</button>`;
+  toast.querySelector('.video-export-toast-cancel').addEventListener('click', onCancel);
   document.body.appendChild(toast);
 }
 
@@ -442,21 +444,27 @@ function showMixdownDialog() {
       const sceneLetter = overlay.querySelector('.mixdown-scene-select').value;
       const phosphor = overlay.querySelector('.mx-phosphor')?.checked ?? false;
       exportVideoBtn.disabled = true;
+      let wasCancelled = false;
       try {
         const { handle: folderHandle, displayPath } = await getExportFolder();
         overlay.remove();
-        showVideoExportToast('Loading FFmpeg…');
+        let cancelExport = null;
+        showVideoExportToast('Loading FFmpeg…', () => {
+          wasCancelled = true;
+          cancelExport?.();
+        });
         const files = await exportVideo({
           sceneLetter,
           folderHandle,
           phosphor,
           onProgress: (msg) => updateVideoExportToast(msg),
+          setCancelFn: (fn) => { cancelExport = fn; },
         });
         hideVideoExportToast();
         showMixdownDone(files, displayPath);
       } catch (err) {
         hideVideoExportToast();
-        if (err.name !== 'AbortError') { console.error('Video export failed:', err); alert('Video export failed. See console for details.'); }
+        if (!wasCancelled && err.name !== 'AbortError') { console.error('Video export failed:', err); alert('Video export failed. See console for details.'); }
       }
     });
   }
