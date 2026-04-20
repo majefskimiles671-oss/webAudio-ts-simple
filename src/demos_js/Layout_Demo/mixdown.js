@@ -326,6 +326,7 @@ function showMixdownDialog() {
   if (!hasAnySceneAssignment) {
     overlay.innerHTML = `
       <div class="mixdown-card">
+        <button class="mixdown-close" aria-label="Close">✕</button>
         <p class="mixdown-title">Export Mixdown</p>
         <p class="mixdown-notice">No tracks are assigned to any scene. You can still export all tracks.</p>
         <p class="mixdown-section-label">Output format</p>
@@ -348,6 +349,7 @@ function showMixdownDialog() {
     overlay.querySelectorAll('input[name="mx-mode"]').forEach(cb => cb.addEventListener('change', updateFallbackBtn));
 
     overlay.querySelector('.mixdown-cancel').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('.mixdown-close').addEventListener('click', () => overlay.remove());
     exportBtnFallback.addEventListener('click', async () => {
       const modes = Array.from(overlay.querySelectorAll('input[name="mx-mode"]:checked'))
         .map(cb => cb.value);
@@ -387,6 +389,7 @@ function showMixdownDialog() {
 
   overlay.innerHTML = `
     <div class="mixdown-card">
+      <button class="mixdown-close" aria-label="Close">✕</button>
       <p class="mixdown-title">Export Mixdown</p>
       <p class="mixdown-section-label">Scenes</p>
       <div class="mixdown-scene-list">${sceneRowsHTML}</div>
@@ -424,6 +427,7 @@ function showMixdownDialog() {
   updateExportBtn();
 
   overlay.querySelector('.mixdown-cancel').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.mixdown-close').addEventListener('click', () => overlay.remove());
   exportBtn.addEventListener('click', async () => {
     const scenes = Array.from(overlay.querySelectorAll('input[name="mx-scene"]:checked'))
       .map(cb => cb.value);

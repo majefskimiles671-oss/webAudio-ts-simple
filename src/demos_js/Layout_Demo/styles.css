@@ -2966,6 +2966,25 @@
             max-width: 420px;
             width: 100%;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .mixdown-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 4px 6px;
+            line-height: 1;
+            border-radius: 4px;
+        }
+        .mixdown-close:hover {
+            color: var(--text-main);
+            background: var(--bg-button);
         }
 
         .mixdown-title {
