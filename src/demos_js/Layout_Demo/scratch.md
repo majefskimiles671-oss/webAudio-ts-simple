@@ -150,15 +150,15 @@ Short answer: importing WAVs of any sample rate or bit depth just works.
 ---
 
 ```bash
-git switch -c miles_fix
+git switch -c miles_export_video
 ```
 
 ```bash
 git switch main
-git merge miles_fix
+git merge miles_export_video
 ```
 
 ```bash
 git push
-git branch -d miles_fix
+git branch -d miles_export_video
 ```
