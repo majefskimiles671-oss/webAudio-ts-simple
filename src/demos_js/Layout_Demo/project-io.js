@@ -73,6 +73,7 @@ function serializeProject() {
           opacity:  parseInt(document.getElementById("video-opacity-slider").value),
         }
       : null,
+    calibratedLatencyMs: audioEngineGetCalibratedLatency(),
   };
 }
 
@@ -126,6 +127,9 @@ function deserializeProject(data) {
   selectedMarkerId = null;
 
   // ----- Restore musical state -----
+
+  audioEngineSetCalibratedLatency(data.calibratedLatencyMs ?? 0);
+  if (typeof updateCalibrateMenuItem === "function") updateCalibrateMenuItem();
 
   if (data.theme) setTheme(data.theme, { silent: true });
   document.body.setAttribute("data-notes-font", data.notesMono ? "mono" : "");

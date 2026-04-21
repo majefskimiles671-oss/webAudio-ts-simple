@@ -2850,6 +2850,48 @@
             cursor: not-allowed;
         }
 
+        .calibrate-description {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0 0 8px 0;
+        }
+
+        .calibrate-status {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0;
+            min-height: 1.4em;
+        }
+
+        .calibrate-result {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 4px 0 0 0;
+        }
+
+        .calibrate-result.success { color: var(--accent-primary); }
+        .calibrate-result.error   { color: #e57373; }
+
+        .calibrate-manual-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .calibrate-manual-input {
+            width: 60px;
+            padding: 4px 8px;
+            background: var(--bg-track);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 13px;
+            text-align: right;
+        }
+
         .unique-name-message {
             font-size: 13px;
             color: var(--text-muted);

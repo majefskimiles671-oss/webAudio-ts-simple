@@ -287,6 +287,135 @@ function audioEngineCloseMicStream() {
   }
 }
 
+// ---- Latency Calibration
+
+let _calibratedLatencyMs = 0;
+
+function audioEngineGetCalibratedLatency() { return _calibratedLatencyMs; }
+function audioEngineSetCalibratedLatency(ms) { _calibratedLatencyMs = ms; }
+
+async function audioEngineCalibrate(onProgress) {
+  // Separate raw stream — echoCancellation would actively suppress the reference tone.
+  let calibStream;
+  try {
+    calibStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    });
+  } catch {
+    throw new Error("Microphone access denied");
+  }
+
+  if (_audioCtx.state === "suspended") await _audioCtx.resume();
+
+  const sampleRate   = _audioCtx.sampleRate;
+  const FREQ         = 1000;
+  const PULSE_ON     = 0.15;
+  const PULSE_OFF    = 0.35;
+  const NUM_PULSES   = 3;
+  const CAPTURE_DUR  = NUM_PULSES * (PULSE_ON + PULSE_OFF) + 0.5;
+  const SCHED_HEAD   = 0.15;
+
+  // Capture PCM via ScriptProcessorNode; connect through zero-gain to avoid mic→speaker feedback.
+  const BUFFER_SIZE = 4096;
+  const micSource   = _audioCtx.createMediaStreamSource(calibStream);
+  const processor   = _audioCtx.createScriptProcessor(BUFFER_SIZE, 1, 1);
+  const silentGain  = _audioCtx.createGain();
+  silentGain.gain.value = 0;
+  silentGain.connect(_audioCtx.destination);
+
+  const chunks       = [];
+  let firstChunkTime = null;
+
+  processor.onaudioprocess = (e) => {
+    if (firstChunkTime === null) firstChunkTime = e.playbackTime;
+    chunks.push(e.inputBuffer.getChannelData(0).slice());
+  };
+
+  micSource.connect(processor);
+  processor.connect(silentGain);
+
+  // Schedule pulsed tone through master chain so it reaches the speakers.
+  const toneStart = _audioCtx.currentTime + SCHED_HEAD;
+  const osc       = _audioCtx.createOscillator();
+  const oscGain   = _audioCtx.createGain();
+  osc.frequency.value = FREQ;
+  oscGain.gain.value  = 0;
+  osc.connect(oscGain);
+  oscGain.connect(_masterGainNode);
+
+  for (let i = 0; i < NUM_PULSES; i++) {
+    const onAt  = toneStart + i * (PULSE_ON + PULSE_OFF);
+    const offAt = onAt + PULSE_ON;
+    oscGain.gain.setValueAtTime(0, onAt - 0.005);
+    oscGain.gain.linearRampToValueAtTime(0.7, onAt);
+    oscGain.gain.setValueAtTime(0.7, offAt - 0.005);
+    oscGain.gain.linearRampToValueAtTime(0, offAt);
+  }
+
+  osc.start(toneStart);
+  osc.stop(toneStart + CAPTURE_DUR);
+
+  onProgress?.("Playing calibration tone…");
+
+  await new Promise(r => setTimeout(r, (CAPTURE_DUR + SCHED_HEAD + 0.3) * 1000));
+
+  try { processor.disconnect(); } catch {}
+  try { micSource.disconnect(); } catch {}
+  try { silentGain.disconnect(); } catch {}
+  calibStream.getTracks().forEach(t => t.stop());
+
+  onProgress?.("Analyzing…");
+
+  if (!firstChunkTime) throw new Error("No audio captured — check microphone permissions");
+
+  const totalSamples = chunks.reduce((s, c) => s + c.length, 0);
+  const recorded     = new Float32Array(totalSamples);
+  let off = 0;
+  for (const c of chunks) { recorded.set(c, off); off += c.length; }
+
+  // Slide a 20ms Goertzel window over the recording to find the 1kHz onset.
+  const WIN      = Math.round(sampleRate * 0.02);
+  const energies = [];
+  for (let s = 0; s + WIN <= recorded.length; s += WIN) {
+    energies.push({ start: s, e: _goertzelEnergy(recorded.subarray(s, s + WIN), FREQ, sampleRate) });
+  }
+  if (energies.length === 0) throw new Error("Recording was empty");
+
+  const expectedOnset = Math.round((toneStart - firstChunkTime) * sampleRate);
+
+  const noiseWindows = energies.filter(w => w.start + WIN < expectedOnset - WIN * 4);
+  const noiseFloor   = noiseWindows.length > 0
+    ? noiseWindows.reduce((s, w) => s + w.e, 0) / noiseWindows.length
+    : 0;
+
+  const peakEnergy = Math.max(...energies.map(w => w.e));
+  const threshold  = noiseFloor + (peakEnergy - noiseFloor) * 0.3;
+
+  const searchFrom = Math.max(0, expectedOnset - Math.round(sampleRate * 0.2));
+  const onset      = energies.find(w => w.start >= searchFrom && w.e > threshold);
+
+  if (!onset) throw new Error("Could not detect tone — try increasing speaker volume");
+
+  const latencyMs = Math.round((onset.start - expectedOnset) / sampleRate * 1000);
+
+  if (latencyMs < 0 || latencyMs > 500) throw new Error(`Implausible result: ${latencyMs} ms`);
+
+  _calibratedLatencyMs = latencyMs;
+  return latencyMs;
+}
+
+function _goertzelEnergy(samples, targetFreq, sampleRate) {
+  const k     = Math.round(samples.length * targetFreq / sampleRate);
+  const omega = 2 * Math.PI * k / samples.length;
+  const coeff = 2 * Math.cos(omega);
+  let s1 = 0, s2 = 0;
+  for (let i = 0; i < samples.length; i++) {
+    const s0 = samples[i] + coeff * s1 - s2;
+    s2 = s1; s1 = s0;
+  }
+  return s1 * s1 + s2 * s2 - coeff * s1 * s2;
+}
+
 function audioEngineRenderLoop(srcBuffer, loopStartSamples, loopEndSamples, outputSamples) {
   const numChannels = srcBuffer.numberOfChannels;
   const out = _audioCtx.createBuffer(numChannels, outputSamples, srcBuffer.sampleRate);

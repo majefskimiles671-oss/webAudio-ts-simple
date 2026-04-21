@@ -956,7 +956,8 @@ async function onRecordStop() {
 
   const audioBuffer = await audioEngineStopRecording();
 
-  addClipToTrack(row, startTime, duration);
+  const _latencyOffset = audioEngineGetCalibratedLatency() / 1000;
+  addClipToTrack(row, Math.max(0, startTime - _latencyOffset), duration);
 
   // Use row reference to find the track — it may have been promoted to `tracks`
   // by the synchronous applyTransportChange IDLE transition before this await resumed.
@@ -3086,6 +3087,66 @@ _showDemoEl.onclick = () => {
 };
 
 updateShowDemoLabel();
+
+// ----- Latency Calibration - Settings Menu - Event Handlers -----
+
+const _calibrateMenuEl   = document.getElementById("menu-calibrate-latency");
+const _calibrateOverlay  = document.getElementById("calibrate-overlay");
+const _calibrateStatus   = document.getElementById("calibrate-status");
+const _calibrateResult   = document.getElementById("calibrate-result");
+const _calibrateRunBtn   = document.getElementById("calibrate-run-btn");
+const _calibrateCloseBtn = document.getElementById("calibrate-close-btn");
+const _calibrateManualInput  = document.getElementById("calibrate-manual-input");
+const _calibrateManualSetBtn = document.getElementById("calibrate-manual-set-btn");
+
+function updateCalibrateMenuItem(ms) {
+  const val = ms ?? audioEngineGetCalibratedLatency();
+  _calibrateMenuEl.textContent = val > 0
+    ? `Calibrate Latency… (${val} ms)`
+    : "Calibrate Latency…";
+}
+
+_calibrateMenuEl.onclick = () => {
+  _calibrateManualInput.value = audioEngineGetCalibratedLatency();
+  _calibrateOverlay.hidden = false;
+};
+
+_calibrateRunBtn.onclick = async () => {
+  _calibrateRunBtn.disabled = true;
+  _calibrateResult.hidden = true;
+  _calibrateResult.className = "calibrate-result";
+  try {
+    const ms = await audioEngineCalibrate(msg => { _calibrateStatus.textContent = msg; });
+    _calibrateResult.textContent = `Measured latency: ${ms} ms`;
+    _calibrateResult.classList.add("success");
+    _calibrateResult.hidden = false;
+    _calibrateManualInput.value = ms;
+    updateCalibrateMenuItem(ms);
+  } catch (err) {
+    _calibrateResult.textContent = `Calibration failed: ${err.message}`;
+    _calibrateResult.classList.add("error");
+    _calibrateResult.hidden = false;
+  } finally {
+    _calibrateStatus.textContent = "";
+    _calibrateRunBtn.disabled = false;
+  }
+};
+
+_calibrateCloseBtn.onclick = () => {
+  _calibrateOverlay.hidden = true;
+};
+
+_calibrateManualSetBtn.onclick = () => {
+  const ms = Math.max(0, Math.min(500, parseInt(_calibrateManualInput.value, 10) || 0));
+  _calibrateManualInput.value = ms;
+  audioEngineSetCalibratedLatency(ms);
+  updateCalibrateMenuItem(ms);
+  _calibrateResult.textContent = `Latency set to ${ms} ms`;
+  _calibrateResult.className = "calibrate-result success";
+  _calibrateResult.hidden = false;
+};
+
+updateCalibrateMenuItem();
 
 const _skipAutoOpen = sessionStorage.getItem("skipAutoOpen");
 sessionStorage.removeItem("skipAutoOpen");
