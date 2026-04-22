@@ -502,6 +502,7 @@ function cdInit() {
   dialog.appendChild(body);
   dialog.appendChild(footer);
   document.body.appendChild(dialog);
+  dialog.classList.add("cd-visible");
 
   dialog.style.setProperty("--cd-zoom", _cdZoom);
   cdInitDrag();

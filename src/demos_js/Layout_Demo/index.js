@@ -222,7 +222,7 @@ const viewState = {
   metronome:       true,
   zoom:            true,
   solo:            true,
-  chordDiagrams:   false,
+  chordDiagrams:   true,
 };
 
 // Authority - View State - Apply -----
@@ -257,6 +257,7 @@ function applyViewState() {
 let selectedTrack = null;
 let playing = false;
 let recording = false;
+let inRecordingSession = false;
 let masterGain = 100;
 let startTime = 0;
 let recordStartX = null;
@@ -615,6 +616,7 @@ function returnToBeginning() {
   setPlayheadPositionPx(0);
   timelineArea.scrollLeft = 0;
   if (videoEl) videoEl.currentTime = 0;
+  if (playing) { audioEngineStop(); onTransportStart(); }
 }
 
 // Authority - Video Backdrop - Meaning Layer -----
@@ -940,6 +942,7 @@ function createRecordingLane() {
 }
 
 function promoteRecordingLane() {
+  inRecordingSession = false;
   if (!recordingLaneTrack) return;
   if (!recordingLaneTrack.timelineRow.querySelector(".waveform")) return;
 
@@ -961,6 +964,7 @@ function promoteRecordingLane() {
 }
 
 function onRecordStart() {
+  inRecordingSession = true;
   recordingTrackRow = recordingLaneTrack.timelineRow;
   if (playing) audioEngineStartRecording(); // armed while playing — start immediately
   // if not playing, onTransportStart() will call audioEngineStartRecording() when play begins
@@ -1426,7 +1430,7 @@ function syncTransportUI() {
     "active",
     state === "RECORD" || state === "PLAY_RECORD",
   );
-  returnToBeginningBtn.disabled = isTransportMoving();
+  returnToBeginningBtn.disabled = inRecordingSession;
   renderMarkerTransport();
 
   if (state !== _lastAnnouncedTransportState) {
@@ -1496,6 +1500,9 @@ function ensureTimelineWidth(px) {
 
 function setTheme(name, { silent = false } = {}) {
   document.body.setAttribute("data-theme", name);
+  const isX286 = name === "x286";
+  document.body.classList.toggle("video-phosphor", isX286);
+  document.getElementById("video-phosphor-btn").classList.toggle("active", isX286);
   renderTimelineLayer();
   rerenderWaveforms();
   if (!silent) markDirty();
@@ -2668,6 +2675,7 @@ document.getElementById("video-phosphor-btn").addEventListener("click", () => {
   const on = document.body.classList.toggle("video-phosphor");
   document.getElementById("video-phosphor-btn").classList.toggle("active", on);
 });
+
 
 document.getElementById("video-remove-btn").addEventListener("click", removeVideo);
 

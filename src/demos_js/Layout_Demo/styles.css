@@ -2205,17 +2205,18 @@
 
         #chord-diagrams-dialog {
             position: fixed;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 700px;
+            top: 50%;
+            left: 75%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 474px;
             min-width: 200px;
             min-height: 120px;
             background: var(--bg-panel);
             border: 1px solid var(--border-subtle);
             border-radius: 8px;
             box-shadow: 0 6px 24px rgba(0,0,0,0.45);
-            z-index: 5000;
+            z-index: 500;
             display: none;
             flex-direction: column;
             user-select: none;
@@ -2659,7 +2660,7 @@
             border: 1px solid var(--border-subtle);
             border-radius: 8px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.55);
-            z-index: 5100;
+            z-index: 600;
             display: none;
             flex-direction: column;
         }
@@ -3563,6 +3564,15 @@
         body.video-phosphor #timeline-video {
             filter: url(#phosphor-filter);
         }
+
+        #video-phosphor-btn {
+            display: none;
+        }
+
+        body[data-theme="x286"] #video-phosphor-btn {
+            display: revert;
+        }
+
 
         /* Keep track content above the video backdrop */
         #timeline-inner {
