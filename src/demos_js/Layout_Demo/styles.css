@@ -2540,6 +2540,29 @@
         .cd-card-btn:hover { color: var(--text-main); }
         .cd-btn-delete:hover { color: var(--accent-danger); }
 
+        .cd-play-btn {
+            font-size: 10px;
+            padding: 2px 0;
+            width: 100%;
+            border-radius: 3px;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .cd-chord-card:hover .cd-play-btn {
+            opacity: 1;
+        }
+
+        .cd-play-btn:hover {
+            background: var(--bg-button);
+            border-color: var(--border-subtle);
+            color: var(--text-main);
+        }
+
         .cd-add-btn {
             align-self: flex-start;
             font-size: 12px;

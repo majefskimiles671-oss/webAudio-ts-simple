@@ -307,7 +307,14 @@ function cdRenderListInto(container) {
       col.appendChild(name);
       col.appendChild(gridWrap.querySelector(".cd-grid"));
       gridWrap.appendChild(col);
+
+      const playBtn = document.createElement("button");
+      playBtn.className = "cd-play-btn";
+      playBtn.textContent = "▶";
+      playBtn.title = "Play chord";
+      playBtn.addEventListener("click", (e) => { e.stopPropagation(); playChord(chord); });
       card.appendChild(gridWrap);
+      card.appendChild(playBtn);
       row.appendChild(card);
     }
     container.appendChild(row);
@@ -421,6 +428,11 @@ function cdRenderEditorInto(container) {
   cancelBtn.textContent = "Cancel";
   cancelBtn.addEventListener("click", cdShowList);
 
+  const popPlayBtn = document.createElement("button");
+  popPlayBtn.className = "cd-btn-cancel cd-btn-play-pop";
+  popPlayBtn.textContent = "▶ Play";
+  popPlayBtn.addEventListener("click", () => playChord(_editingChord));
+
   const rightGroup = document.createElement("div");
   rightGroup.className = "cd-editor-footer-right";
 
@@ -437,6 +449,7 @@ function cdRenderEditorInto(container) {
   rightGroup.appendChild(deleteBtn);
   rightGroup.appendChild(saveBtn);
   footer.appendChild(cancelBtn);
+  footer.appendChild(popPlayBtn);
   footer.appendChild(rightGroup);
   container.appendChild(footer);
 }

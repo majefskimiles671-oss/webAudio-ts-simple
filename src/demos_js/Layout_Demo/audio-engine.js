@@ -430,3 +430,5 @@ function audioEngineRenderLoop(srcBuffer, loopStartSamples, loopEndSamples, outp
   }
   return out;
 }
+
+function getAudioContext() { return _audioCtx; }
