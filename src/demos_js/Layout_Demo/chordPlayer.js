@@ -10,21 +10,43 @@ function _midiToFreq(midi) {
   return 440 * Math.pow(2, (midi - 69) / 12);
 }
 
+// Returns one freq per string (first dot, or open string). Used for normal chords.
 function _chordToFreqs(chord) {
   const freqs = [];
   for (let s = 0; s < 6; s++) {
     if (chord.tops[s] === "x") continue;
-
     const dotIndex = chord.dots[s].indexOf(true);
-    let midi;
-    if (dotIndex === -1) {
-      midi = _STRING_ROOT_MIDI[s];
-    } else {
-      midi = _STRING_ROOT_MIDI[s] + (chord.baseFret - 1) + (dotIndex + 1);
-    }
-    freqs.push({ string: s, freq: _midiToFreq(midi) });
+    const midi = dotIndex === -1
+      ? _STRING_ROOT_MIDI[s]
+      : _STRING_ROOT_MIDI[s] + (chord.baseFret - 1) + (dotIndex + 1);
+    freqs.push(_midiToFreq(midi));
   }
   return freqs;
+}
+
+// Returns every note in the diagram sorted ascending by pitch.
+// Open strings (no dots, not muted) count as fret 0 on that string.
+function _scaleToFreqs(chord) {
+  const freqs = [];
+  for (let s = 0; s < 6; s++) {
+    if (chord.tops[s] === "x") continue;
+    let stringHasDot = false;
+    for (let r = 0; r < chord.dots[s].length; r++) {
+      if (chord.dots[s][r]) {
+        freqs.push(_midiToFreq(_STRING_ROOT_MIDI[s] + (chord.baseFret - 1) + (r + 1)));
+        stringHasDot = true;
+      }
+    }
+    if (!stringHasDot) {
+      freqs.push(_midiToFreq(_STRING_ROOT_MIDI[s]));
+    }
+  }
+  return freqs.sort((a, b) => a - b);
+}
+
+// A scale has at least one string with more than one dot active.
+function _isScale(chord) {
+  return chord.dots.some(s => s.filter(Boolean).length > 1);
 }
 
 // Karplus-Strong computed in JS: fill a delay line with noise then iteratively
@@ -62,13 +84,17 @@ function _ksPluck(ctx, freq, startTime) {
 function playChord(chord) {
   const ctx = getAudioContext();
   if (ctx.state === "suspended") ctx.resume();
+  const now = ctx.currentTime + 0.01;
 
-  const notes      = _chordToFreqs(chord);
-  const now        = ctx.currentTime + 0.01;
-  const strumDelay = _STRUM_DELAYS_S[_strumDelayIdx];
-  _strumDelayIdx   = (_strumDelayIdx + 1) % _STRUM_DELAYS_S.length;
-
-  notes.forEach(({ freq }, i) => {
-    _ksPluck(ctx, freq, now + i * strumDelay);
-  });
+  if (_isScale(chord)) {
+    const asc  = _scaleToFreqs(chord);
+    const desc = [...asc].reverse();
+    const sequence = [...asc, ...desc];
+    sequence.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5));
+  } else {
+    const freqs      = _chordToFreqs(chord);
+    const strumDelay = _STRUM_DELAYS_S[_strumDelayIdx];
+    _strumDelayIdx   = (_strumDelayIdx + 1) % _STRUM_DELAYS_S.length;
+    freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * strumDelay));
+  }
 }

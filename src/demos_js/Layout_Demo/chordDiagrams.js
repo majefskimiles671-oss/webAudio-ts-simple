@@ -75,10 +75,10 @@ function cdGetFooter() {
 function cdGetPanelState() {
   const dialog = cdGetDialog();
   return {
-    left:    parseInt(dialog.style.left) || 200,
-    top:     parseInt(dialog.style.top)  || 80,
-    width:   dialog.offsetWidth,
-    height:  dialog.offsetHeight,
+    left:    parseInt(dialog.style.left)   || 200,
+    top:     parseInt(dialog.style.top)    || 80,
+    width:   parseInt(dialog.style.width)  || dialog.offsetWidth  || undefined,
+    height:  parseInt(dialog.style.height) || dialog.offsetHeight || undefined,
     zoom:    _cdZoom,
     visible: dialog.classList.contains("cd-visible"),
   };
@@ -87,10 +87,16 @@ function cdGetPanelState() {
 function cdSetPanelState(state) {
   if (!state) return;
   const dialog = cdGetDialog();
-  if (state.left  != null) dialog.style.left   = state.left  + "px";
-  if (state.top   != null) dialog.style.top    = state.top   + "px";
-  if (state.width != null) dialog.style.width  = state.width + "px";
-  if (state.height!= null) dialog.style.height = state.height + "px";
+  if (state.width  != null) dialog.style.width  = state.width  + "px";
+  if (state.height != null) dialog.style.height = state.height + "px";
+  if (state.left   != null || state.top != null) {
+    const w    = parseInt(dialog.style.width)  || 320;
+    const h    = parseInt(dialog.style.height) || 400;
+    const left = Math.min(Math.max(0, state.left ?? 200), window.innerWidth  - w);
+    const top  = Math.min(Math.max(0, state.top  ?? 80),  window.innerHeight - h);
+    dialog.style.left = left + "px";
+    dialog.style.top  = top  + "px";
+  }
   if (state.zoom  != null) {
     _cdZoom = state.zoom;
     dialog.style.setProperty("--cd-zoom", _cdZoom);
@@ -517,7 +523,12 @@ function cdInit() {
   document.body.appendChild(dialog);
   dialog.classList.add("cd-visible");
 
+  dialog.style.top  = "210px";
+  dialog.style.left = (window.innerWidth - dialog.offsetWidth - 50) + "px";
   dialog.style.setProperty("--cd-zoom", _cdZoom);
+  window.addEventListener("resize", () => {
+    dialog.style.left = (window.innerWidth - dialog.offsetWidth - 50) + "px";
+  });
   cdInitDrag();
   cdRenderDialog();
 
