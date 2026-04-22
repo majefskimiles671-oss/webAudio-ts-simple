@@ -191,7 +191,7 @@ let markers = [];
 let selectedMarkerId = null;
 
 //  Clip Selection
-let selectedClipId = null;
+const selectedClipIds = new Set();
 
 //  Musical Grid
 let bpm = 120; // beats per minute
@@ -222,7 +222,6 @@ const viewState = {
   metronome:       true,
   zoom:            true,
   solo:            true,
-  recordingLane:   true,
   chordDiagrams:   false,
 };
 
@@ -489,24 +488,46 @@ function setTimeSignature(beats, noteValue) {
 
 // ----- Clip Selection
 function selectClip(clipId) {
-  selectedClipId = clipId;
+  selectedClipIds.clear();
+  selectedClipIds.add(clipId);
   document.querySelectorAll(".waveform").forEach(el => {
     el.classList.toggle("selected", el.dataset.clipId === clipId);
   });
 }
 
+function toggleClipSelection(clipId) {
+  if (selectedClipIds.has(clipId)) {
+    selectedClipIds.delete(clipId);
+    document.querySelector(`.waveform[data-clip-id="${clipId}"]`)?.classList.remove("selected");
+  } else {
+    selectedClipIds.add(clipId);
+    document.querySelector(`.waveform[data-clip-id="${clipId}"]`)?.classList.add("selected");
+  }
+}
+
+function selectAllClipsInTrack(track) {
+  selectedClipIds.clear();
+  document.querySelectorAll(".waveform.selected").forEach(el => el.classList.remove("selected"));
+  track.clips.forEach(c => {
+    selectedClipIds.add(c.id);
+    document.querySelector(`.waveform[data-clip-id="${c.id}"]`)?.classList.add("selected");
+  });
+}
+
 function deselectClip() {
-  selectedClipId = null;
+  selectedClipIds.clear();
   document.querySelectorAll(".waveform.selected").forEach(el => el.classList.remove("selected"));
 }
 
 function deleteSelectedClip() {
-  if (!selectedClipId) return;
-  const track = tracks.find(t => t.clips.some(c => c.id === selectedClipId));
-  if (track) track.clips = track.clips.filter(c => c.id !== selectedClipId);
-  document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`)?.remove();
-  // Memory Leak Prevention: free the decoded AudioBuffer so the audio engine's _buffers map doesn't hold it indefinitely.
-  audioEngineRemoveBuffer(selectedClipId);
+  if (selectedClipIds.size === 0) return;
+  selectedClipIds.forEach(clipId => {
+    const track = tracks.find(t => t.clips.some(c => c.id === clipId));
+    if (track) track.clips = track.clips.filter(c => c.id !== clipId);
+    document.querySelector(`.waveform[data-clip-id="${clipId}"]`)?.remove();
+    // Memory Leak Prevention: free the decoded AudioBuffer so the audio engine's _buffers map doesn't hold it indefinitely.
+    audioEngineRemoveBuffer(clipId);
+  });
   deselectClip();
   markDirty();
 }
@@ -821,10 +842,12 @@ function createTrack(label, { prepend = false } = {}) {
     announce(`${trackName} deleted`);
   });
 
-  // Click background of control row to select the track
+  // Click background of control row to select the track and all its clips
   controlRow.addEventListener("click", (e) => {
     if (e.target.closest("button, [contenteditable], gain-slider, pan-slider, .row-opacity-slider")) return;
     selectTrack(track);
+    selectAllClipsInTrack(track);
+    hideClipPopup();
   }, { signal });
 
   if (prepend) {
@@ -1884,7 +1907,10 @@ let _clipPopupClipId = null;
 
 function showClipPopup(clipId, x, y) {
   _clipPopupClipId = clipId;
-  document.getElementById("clip-popup-loop-btn").hidden = !audioEngineHasBuffer(clipId);
+  const multi = selectedClipIds.size > 1;
+  document.getElementById("clip-popup-loop-btn").hidden = multi || !audioEngineHasBuffer(clipId);
+  document.getElementById("clip-popup-info-btn").hidden = multi;
+  document.getElementById("clip-popup-duplicate-btn").hidden = multi;
   _clipPopup.style.left = `${Math.min(x + 8, window.innerWidth  - 130)}px`;
   _clipPopup.style.top  = `${Math.min(y + 8, window.innerHeight -  60)}px`;
   _clipPopup.hidden = false;
@@ -1898,8 +1924,17 @@ function hideClipPopup() {
 timelineArea.addEventListener("click", (e) => {
   const waveform = e.target.closest(".waveform");
   if (waveform) {
-    selectClip(waveform.dataset.clipId);
-    showClipPopup(waveform.dataset.clipId, e.clientX, e.clientY);
+    const clipId = waveform.dataset.clipId;
+    if (e.metaKey || e.ctrlKey) {
+      toggleClipSelection(clipId);
+      hideClipPopup();
+    } else if (selectedClipIds.has(clipId)) {
+      // Clip already in selection — open popup without replacing selection
+      showClipPopup(clipId, e.clientX, e.clientY);
+    } else {
+      selectClip(clipId);
+      showClipPopup(clipId, e.clientX, e.clientY);
+    }
   } else {
     deselectClip();
     hideClipPopup();
@@ -1930,8 +1965,11 @@ document.getElementById("clip-popup-info-btn").addEventListener("click", () => {
   hideClipPopup();
 });
 
+let _duplicateDialogClipId = null;
+
 document.getElementById("clip-popup-duplicate-btn").addEventListener("click", () => {
   if (!_clipPopupClipId) return;
+  _duplicateDialogClipId = _clipPopupClipId;
   hideClipPopup();
   const input = document.getElementById("duplicate-dialog-input");
   input.value = 1;
@@ -1945,7 +1983,7 @@ function _executeDuplicate() {
   const count  = Math.max(1, Math.min(99, parseInt(document.getElementById("duplicate-dialog-input").value) || 1));
   dialog.hidden = true;
 
-  const clipId = selectedClipId;
+  const clipId = _duplicateDialogClipId;
   if (!clipId) return;
   const track = findTrackByClipId(clipId);
   if (!track) return;
@@ -1989,29 +2027,43 @@ document.getElementById("clip-popup-delete-btn").addEventListener("click", () =>
 
 // ----- Clip Sync Dialog -----
 
-let _syncDialogOriginalStartSample = null;
+// Map<clipId, originalStartSample> for all selected clips being synced
+let _syncDialogOriginalStartSamples = null;
 
 document.getElementById("clip-popup-sync-btn").addEventListener("click", () => {
   if (!_clipPopupClipId) return;
   const track = findTrackByClipId(_clipPopupClipId);
   const clip  = track?.clips.find(c => c.id === _clipPopupClipId);
   if (!clip) return;
-  _syncDialogOriginalStartSample = clip.startSample;
+
+  _syncDialogOriginalStartSamples = new Map();
+  selectedClipIds.forEach(clipId => {
+    const t = findTrackByClipId(clipId);
+    const c = t?.clips.find(cl => cl.id === clipId);
+    if (c) _syncDialogOriginalStartSamples.set(clipId, c.startSample);
+  });
+  if (!_syncDialogOriginalStartSamples.has(_clipPopupClipId)) {
+    _syncDialogOriginalStartSamples.set(_clipPopupClipId, clip.startSample);
+  }
+
   document.getElementById("sync-dialog-slider").value = 0;
   document.getElementById("sync-dialog-number").value = 0;
-  document.getElementById("sync-dialog-title").textContent = `Clip Sync — ${track.name}`;
+  const count = _syncDialogOriginalStartSamples.size;
+  document.getElementById("sync-dialog-title").textContent = count > 1
+    ? `Clip Sync — ${count} clips`
+    : `Clip Sync — ${track.name}`;
   document.getElementById("sync-dialog").hidden = false;
   hideClipPopup();
 });
 
 document.getElementById("sync-dialog-slider").addEventListener("input", (e) => {
   document.getElementById("sync-dialog-number").value = e.target.value;
-  if (!selectedClipId || _syncDialogOriginalStartSample == null) return;
-  const waveform = document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`);
-  if (!waveform) return;
-  const deltaMs  = parseInt(e.target.value) || 0;
-  const newStart = _syncDialogOriginalStartSample / SAMPLE_RATE + deltaMs / 1000;
-  waveform.style.left = `${secondsToPixels(newStart)}px`;
+  if (!_syncDialogOriginalStartSamples) return;
+  const deltaMs = parseInt(e.target.value) || 0;
+  _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
+    const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+    if (waveform) waveform.style.left = `${secondsToPixels(origStart / SAMPLE_RATE + deltaMs / 1000)}px`;
+  });
 });
 
 document.getElementById("sync-dialog-number").addEventListener("input", (e) => {
@@ -2022,27 +2074,31 @@ document.getElementById("sync-dialog-number").addEventListener("input", (e) => {
 document.getElementById("sync-dialog-reset").addEventListener("click", () => {
   document.getElementById("sync-dialog-slider").value = 0;
   document.getElementById("sync-dialog-number").value = 0;
-  if (!selectedClipId || _syncDialogOriginalStartSample == null) return;
-  const waveform = document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`);
-  if (waveform) waveform.style.left = `${secondsToPixels(_syncDialogOriginalStartSample / SAMPLE_RATE)}px`;
+  if (!_syncDialogOriginalStartSamples) return;
+  _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
+    const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+    if (waveform) waveform.style.left = `${secondsToPixels(origStart / SAMPLE_RATE)}px`;
+  });
 });
 
 function _applySyncDialog() {
   document.getElementById("sync-dialog").hidden = true;
-  if (!selectedClipId || _syncDialogOriginalStartSample == null) return;
-  const track = findTrackByClipId(selectedClipId);
-  const clip  = track?.clips.find(c => c.id === selectedClipId);
-  if (!clip) return;
+  if (!_syncDialogOriginalStartSamples) return;
   const deltaMs = Math.max(-500, Math.min(500,
     parseInt(document.getElementById("sync-dialog-number").value) || 0));
-  clip.startSample = _syncDialogOriginalStartSample + Math.round(deltaMs * SAMPLE_RATE / 1000);
-  const newStartSec = clip.startSample / SAMPLE_RATE;
-  const waveform = document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`);
-  if (waveform) {
-    waveform.dataset.startSeconds = newStartSec;
-    waveform.style.left = `${secondsToPixels(newStartSec)}px`;
-  }
-  _syncDialogOriginalStartSample = null;
+  _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
+    const t = findTrackByClipId(clipId);
+    const c = t?.clips.find(cl => cl.id === clipId);
+    if (!c) return;
+    c.startSample = origStart + Math.round(deltaMs * SAMPLE_RATE / 1000);
+    const newStartSec = c.startSample / SAMPLE_RATE;
+    const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+    if (waveform) {
+      waveform.dataset.startSeconds = newStartSec;
+      waveform.style.left = `${secondsToPixels(newStartSec)}px`;
+    }
+  });
+  _syncDialogOriginalStartSamples = null;
   markDirty();
   if (playing) { audioEngineStop(); onTransportStart(); }
 }
@@ -2051,11 +2107,13 @@ document.getElementById("sync-dialog-ok").addEventListener("click", _applySyncDi
 
 document.getElementById("sync-dialog-cancel").addEventListener("click", () => {
   document.getElementById("sync-dialog").hidden = true;
-  if (selectedClipId && _syncDialogOriginalStartSample != null) {
-    const waveform = document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`);
-    if (waveform) waveform.style.left = `${secondsToPixels(_syncDialogOriginalStartSample / SAMPLE_RATE)}px`;
+  if (_syncDialogOriginalStartSamples) {
+    _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
+      const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+      if (waveform) waveform.style.left = `${secondsToPixels(origStart / SAMPLE_RATE)}px`;
+    });
   }
-  _syncDialogOriginalStartSample = null;
+  _syncDialogOriginalStartSamples = null;
 });
 
 document.getElementById("sync-dialog-number").addEventListener("keydown", (e) => {
@@ -2072,16 +2130,39 @@ document.addEventListener("keydown", (e) => {
     deselectClip(); hideClipPopup();
     document.getElementById("shortcut-help-overlay").hidden = true;
     if (!document.getElementById("sync-dialog").hidden) {
-      if (selectedClipId && _syncDialogOriginalStartSample != null) {
-        const waveform = document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`);
-        if (waveform) waveform.style.left = `${secondsToPixels(_syncDialogOriginalStartSample / SAMPLE_RATE)}px`;
+      if (_syncDialogOriginalStartSamples) {
+        _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
+          const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+          if (waveform) waveform.style.left = `${secondsToPixels(origStart / SAMPLE_RATE)}px`;
+        });
       }
-      _syncDialogOriginalStartSample = null;
+      _syncDialogOriginalStartSamples = null;
       document.getElementById("sync-dialog").hidden = true;
     }
   }
 
   if ((e.key === "Delete" || e.key === "Backspace") && !editable) deleteSelectedClip();
+
+  if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !editable && selectedClipIds.size > 0) {
+    e.preventDefault();
+    const deltaSamples = e.shiftKey
+      ? Math.round(0.1 * SAMPLE_RATE)
+      : Math.round(0.01 * SAMPLE_RATE);
+    const sign = e.key === "ArrowLeft" ? -1 : 1;
+    selectedClipIds.forEach(clipId => {
+      const track = findTrackByClipId(clipId);
+      const clip  = track?.clips.find(c => c.id === clipId);
+      if (!clip) return;
+      clip.startSample = clip.startSample + sign * deltaSamples;
+      const newStartSec = clip.startSample / SAMPLE_RATE;
+      const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+      if (waveform) {
+        waveform.dataset.startSeconds = newStartSec;
+        waveform.style.left = `${secondsToPixels(newStartSec)}px`;
+      }
+    });
+    markDirty();
+  }
 
   if (e.key === " " && !editable) {
     e.preventDefault();
@@ -2622,7 +2703,6 @@ makeViewToggle("toggle-tempo",           "tempo");
 makeViewToggle("toggle-metronome",       "metronome");
 makeViewToggle("toggle-zoom",            "zoom");
 makeViewToggle("toggle-solo",            "solo");
-makeViewToggle("toggle-recording-lane",  "recordingLane");
 makeViewToggle("toggle-master",          "master");
 makeViewToggle("toggle-notes",           "notes");
 

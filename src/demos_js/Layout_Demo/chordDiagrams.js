@@ -5,7 +5,21 @@
 // State (Truth Layer) -----
 // ============================================================
 
-let chords = [];
+let chords = [{
+  id:       crypto.randomUUID(),
+  name:     "C",
+  baseFret: 1,
+  frets:    4,
+  tops:     ["x", null, null, "o", null, "o"],
+  dots: [
+    [false, false, false, false],
+    [false, false, true,  false],
+    [false, true,  false, false],
+    [false, false, false, false],
+    [true,  false, false, false],
+    [false, false, false, false],
+  ],
+}];
 let _editingChord = null;
 let _cdDragging = false;
 let _cdDragOffX = 0;

@@ -514,6 +514,8 @@
             flex-shrink: 0;
         }
 
+        body:not(.has-video) .row-opacity-slider { display: none; }
+
         .solo-btn {
             padding: 2px 6px;
             font-weight: bold;
@@ -3418,6 +3420,7 @@
         }
 
         #clip-popup[hidden] { display: none; }
+        #clip-popup button[hidden] { display: none; }
 
         #clip-popup button {
             display: block;
