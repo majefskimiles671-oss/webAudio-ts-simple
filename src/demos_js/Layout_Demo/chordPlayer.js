@@ -44,9 +44,13 @@ function _scaleToFreqs(chord) {
   return freqs.sort((a, b) => a - b);
 }
 
-// A scale has at least one string with more than one dot active.
+// A scale has at least one string with more than one note indicator (tops "o" + dots both count).
 function _isScale(chord) {
-  return chord.dots.some(s => s.filter(Boolean).length > 1);
+  return chord.dots.some((stringDots, s) => {
+    const topCount = chord.tops[s] === "o" ? 1 : 0;
+    const dotCount = stringDots.filter(Boolean).length;
+    return topCount + dotCount > 1;
+  });
 }
 
 // Karplus-Strong computed in JS: fill a delay line with noise then iteratively
