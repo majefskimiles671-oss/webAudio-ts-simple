@@ -1130,14 +1130,14 @@ function renderTimelineRuler() {
     let barNum = firstBar;
 
     while (barTime <= endSeconds) {
-      // Major bar tick — use "N.1" format when beat labels are shown for consistency
-      ticks.push({
-        time: barTime,
-        major: true,
-        label: barNum % labelEvery === 0
-          ? (showBeatLabels ? `${barNum + 1}.1` : `Bar ${barNum + 1}`)
-          : null,
-      });
+      // Only draw bar lines on the label interval — skip lines for bars that would be too crowded
+      if (barNum % labelEvery === 0) {
+        ticks.push({
+          time: barTime,
+          major: true,
+          label: showBeatLabels ? `${barNum + 1}.1` : `Bar ${barNum + 1}`,
+        });
+      }
 
       // Beat ticks
       if (showBeats) {
