@@ -854,7 +854,10 @@ function createTrack(label, { prepend = false } = {}) {
     track.timelineRow.classList.add("dragging");
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = 1;
+    canvas.style.cssText = "position:fixed;top:-2px;left:-2px;opacity:0;pointer-events:none";
+    document.body.appendChild(canvas);
     e.dataTransfer.setDragImage(canvas, 0, 0);
+    requestAnimationFrame(() => canvas.remove());
     e.dataTransfer.effectAllowed = "move";
   }, { signal });
 
