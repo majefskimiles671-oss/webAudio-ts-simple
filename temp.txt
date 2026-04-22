@@ -1,1 +1,8 @@
 <div class="cd-grid cd-view cd-4frets"><div class="cd-top-cell cd-s-first">x</div><div class="cd-top-cell"></div><div class="cd-top-cell"></div><div class="cd-top-cell">o</div><div class="cd-top-cell"></div><div class="cd-top-cell cd-s-last">o</div><div class="cd-fret-cell cd-s-first"></div><div class="cd-fret-cell"></div><div class="cd-fret-cell"></div><div class="cd-fret-cell"></div><div class="cd-fret-cell"><div class="cd-dot"></div></div><div class="cd-fret-cell cd-s-last"></div><div class="cd-fret-cell cd-s-first"></div><div class="cd-fret-cell"></div><div class="cd-fret-cell"><div class="cd-dot"></div></div><div class="cd-fret-cell"></div><div class="cd-fret-cell"></div><div class="cd-fret-cell cd-s-last"></div><div class="cd-fret-cell cd-s-first"></div><div class="cd-fret-cell"><div class="cd-dot"></div></div><div class="cd-fret-cell"></div><div class="cd-fret-cell"></div><div class="cd-fret-cell"></div><div class="cd-fret-cell cd-s-last"></div><div class="cd-fret-cell cd-s-first"></div><div class="cd-fret-cell"></div><div class="cd-fret-cell"></div><div class="cd-fret-cell"></div><div class="cd-fret-cell"></div><div class="cd-fret-cell cd-s-last"></div></div>
+
+
+
+      "Read(//Users/miles.majefski/**)",
+
+      list folders in /Users/miles.majefski/
+

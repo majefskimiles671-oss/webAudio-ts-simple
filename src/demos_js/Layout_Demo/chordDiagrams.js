@@ -208,7 +208,7 @@ function cdBuildGridEl(chord, interactive) {
 
   const frets = chord.frets ?? 5;
   const grid = document.createElement("div");
-  grid.className = "cd-grid" + (interactive ? "" : " cd-view") + (frets === 4 ? " cd-4frets" : "");
+  grid.className = "cd-grid" + (interactive ? "" : " cd-view") + (frets === 4 ? " cd-4frets" : frets === 6 ? " cd-6frets" : "");
 
   // Top row — above-nut indicators
   for (let s = 0; s < 6; s++) {
@@ -385,7 +385,7 @@ function cdRenderEditorInto(container) {
 
   const rowsSeg = document.createElement("div");
   rowsSeg.className = "cd-rows-seg";
-  [4, 5].forEach(n => {
+  [4, 5, 6].forEach(n => {
     const btn = document.createElement("button");
     btn.className = "cd-rows-btn" + (_editingChord.frets === n ? " active" : "");
     btn.textContent = n;

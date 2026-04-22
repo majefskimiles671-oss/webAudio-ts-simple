@@ -48,6 +48,12 @@
             color: var(--text-button);
         }
 
+        input[type="radio"],
+        input[type="checkbox"],
+        input[type="range"] {
+            accent-color: var(--accent-primary);
+        }
+
         /* ----- Prevent Text Selection on Interactive UI ----- */
         .marker-transport,
         .menu-bar,
@@ -2342,6 +2348,10 @@
             grid-template-rows: 18px repeat(4, 1fr);
         }
 
+        .cd-grid.cd-6frets {
+            grid-template-rows: 18px repeat(6, 1fr);
+        }
+
         .cd-top-cell {
             position: relative;
             display: flex;
@@ -2751,6 +2761,10 @@
             grid-template-rows: 28px repeat(4, 1fr);
         }
 
+        .cd-popover-inner .cd-grid.cd-6frets {
+            grid-template-rows: 28px repeat(6, 1fr);
+        }
+
         .cd-popover-inner .cd-dialog-footer {
             border-top: 1px solid var(--border-subtle);
             padding-top: 10px;
@@ -2921,22 +2935,21 @@
 
         .theme-swatch-list label {
             color: #ffffff;
-        }
-
-        .theme-swatch-list input[type="radio"] {
-            appearance: none;
-            -webkit-appearance: none;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            border: none;
-            background: #ffffff;
-            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 2px solid transparent;
             cursor: pointer;
         }
 
-        .theme-swatch-list input[type="radio"]:checked {
-            background: radial-gradient(circle, #000000 42%, #ffffff 42%);
+        .theme-swatch-list label:has(input[type="radio"]:checked) {
+            border-color: #ffffff;
+        }
+
+        .theme-swatch-list input[type="radio"] {
+            display: none;
         }
 
         .vs-dialog-body {
@@ -3202,7 +3215,6 @@
 
         .mixdown-scene-row input[type="checkbox"] {
             flex-shrink: 0;
-            accent-color: var(--accent-primary);
         }
 
         .mixdown-scene-info {
@@ -3245,7 +3257,6 @@
         }
 
         .mixdown-mode-group input[type="checkbox"] {
-            accent-color: var(--accent-primary);
         }
 
         /* Done state file list */
@@ -3498,7 +3509,6 @@
 
         .loop-editor-fields input[type=range] {
             flex: 1;
-            accent-color: var(--accent-primary);
         }
 
         .loop-editor-transport {
