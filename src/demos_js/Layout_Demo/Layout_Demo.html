@@ -454,7 +454,26 @@ Rule - Add comments before code snippets in this format:
   <button id="clip-popup-loop-btn">Loop Edit</button>
   <button id="clip-popup-info-btn">Info</button>
   <button id="clip-popup-duplicate-btn">Duplicate</button>
+  <button id="clip-popup-sync-btn">Sync</button>
   <button id="clip-popup-delete-btn">Delete</button>
+</div>
+
+<div id="sync-dialog" hidden>
+  <div id="sync-dialog-card">
+    <p id="sync-dialog-title">Clip Sync</p>
+    <label id="sync-dialog-label">
+      Offset
+      <div id="sync-dialog-row">
+        <input id="sync-dialog-slider" type="range" min="-500" max="500" value="0">
+        <input id="sync-dialog-number" type="number" min="-500" max="500" value="0"> ms
+        <button id="sync-dialog-reset" type="button">↺</button>
+      </div>
+    </label>
+    <div id="sync-dialog-actions">
+      <button id="sync-dialog-cancel">Cancel</button>
+      <button id="sync-dialog-ok">OK</button>
+    </div>
+  </div>
 </div>
 
 <div id="duplicate-dialog" hidden>

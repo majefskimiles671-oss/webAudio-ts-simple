@@ -1987,6 +1987,82 @@ document.getElementById("clip-popup-delete-btn").addEventListener("click", () =>
   hideClipPopup();
 });
 
+// ----- Clip Sync Dialog -----
+
+let _syncDialogOriginalStartSample = null;
+
+document.getElementById("clip-popup-sync-btn").addEventListener("click", () => {
+  if (!_clipPopupClipId) return;
+  const track = findTrackByClipId(_clipPopupClipId);
+  const clip  = track?.clips.find(c => c.id === _clipPopupClipId);
+  if (!clip) return;
+  _syncDialogOriginalStartSample = clip.startSample;
+  document.getElementById("sync-dialog-slider").value = 0;
+  document.getElementById("sync-dialog-number").value = 0;
+  document.getElementById("sync-dialog-title").textContent = `Clip Sync — ${track.name}`;
+  document.getElementById("sync-dialog").hidden = false;
+  hideClipPopup();
+});
+
+document.getElementById("sync-dialog-slider").addEventListener("input", (e) => {
+  document.getElementById("sync-dialog-number").value = e.target.value;
+  if (!selectedClipId || _syncDialogOriginalStartSample == null) return;
+  const waveform = document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`);
+  if (!waveform) return;
+  const deltaMs  = parseInt(e.target.value) || 0;
+  const newStart = _syncDialogOriginalStartSample / SAMPLE_RATE + deltaMs / 1000;
+  waveform.style.left = `${secondsToPixels(newStart)}px`;
+});
+
+document.getElementById("sync-dialog-number").addEventListener("input", (e) => {
+  const clamped = Math.max(-500, Math.min(500, parseInt(e.target.value) || 0));
+  document.getElementById("sync-dialog-slider").value = clamped;
+});
+
+document.getElementById("sync-dialog-reset").addEventListener("click", () => {
+  document.getElementById("sync-dialog-slider").value = 0;
+  document.getElementById("sync-dialog-number").value = 0;
+  if (!selectedClipId || _syncDialogOriginalStartSample == null) return;
+  const waveform = document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`);
+  if (waveform) waveform.style.left = `${secondsToPixels(_syncDialogOriginalStartSample / SAMPLE_RATE)}px`;
+});
+
+function _applySyncDialog() {
+  document.getElementById("sync-dialog").hidden = true;
+  if (!selectedClipId || _syncDialogOriginalStartSample == null) return;
+  const track = findTrackByClipId(selectedClipId);
+  const clip  = track?.clips.find(c => c.id === selectedClipId);
+  if (!clip) return;
+  const deltaMs = Math.max(-500, Math.min(500,
+    parseInt(document.getElementById("sync-dialog-number").value) || 0));
+  clip.startSample = _syncDialogOriginalStartSample + Math.round(deltaMs * SAMPLE_RATE / 1000);
+  const newStartSec = clip.startSample / SAMPLE_RATE;
+  const waveform = document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`);
+  if (waveform) {
+    waveform.dataset.startSeconds = newStartSec;
+    waveform.style.left = `${secondsToPixels(newStartSec)}px`;
+  }
+  _syncDialogOriginalStartSample = null;
+  markDirty();
+  if (playing) { audioEngineStop(); onTransportStart(); }
+}
+
+document.getElementById("sync-dialog-ok").addEventListener("click", _applySyncDialog);
+
+document.getElementById("sync-dialog-cancel").addEventListener("click", () => {
+  document.getElementById("sync-dialog").hidden = true;
+  if (selectedClipId && _syncDialogOriginalStartSample != null) {
+    const waveform = document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`);
+    if (waveform) waveform.style.left = `${secondsToPixels(_syncDialogOriginalStartSample / SAMPLE_RATE)}px`;
+  }
+  _syncDialogOriginalStartSample = null;
+});
+
+document.getElementById("sync-dialog-number").addEventListener("keydown", (e) => {
+  if (e.key === "Enter")  { e.preventDefault(); _applySyncDialog(); }
+  if (e.key === "Escape") { e.preventDefault(); document.getElementById("sync-dialog").hidden = true; }
+});
+
 document.addEventListener("keydown", (e) => {
   const editable = document.activeElement?.tagName === "INPUT"
     || document.activeElement?.tagName === "TEXTAREA"
@@ -1995,6 +2071,14 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     deselectClip(); hideClipPopup();
     document.getElementById("shortcut-help-overlay").hidden = true;
+    if (!document.getElementById("sync-dialog").hidden) {
+      if (selectedClipId && _syncDialogOriginalStartSample != null) {
+        const waveform = document.querySelector(`.waveform[data-clip-id="${selectedClipId}"]`);
+        if (waveform) waveform.style.left = `${secondsToPixels(_syncDialogOriginalStartSample / SAMPLE_RATE)}px`;
+      }
+      _syncDialogOriginalStartSample = null;
+      document.getElementById("sync-dialog").hidden = true;
+    }
   }
 
   if ((e.key === "Delete" || e.key === "Backspace") && !editable) deleteSelectedClip();
@@ -2776,11 +2860,11 @@ function showLoopEditor(track, clip) {
   _loopEditorClip  = clip;
 
   clip.loopStartSamples ??= 0;
-  if (clip.loopEndSamples == null) {
-    clip.loopEndSamples = Math.min(
-      clip.durationSamples,
-      Math.round(beatsPerBar * secondsPerBeat() * SAMPLE_RATE)
-    );
+  const _loopUnset = clip.loopEndSamples == null
+    || (clip.loopStartSamples === 0 && clip.loopEndSamples >= clip.durationSamples);
+  if (_loopUnset) {
+    clip.loopStartSamples = 0;
+    clip.loopEndSamples = Math.round(secondsPerBeat() * SAMPLE_RATE);
   }
 
   document.getElementById("loop-start-beats").max = beatsPerBar - 1;

@@ -3477,6 +3477,57 @@
           background: var(--accent-primary); color: #fff;
         }
 
+        #sync-dialog {
+          position: fixed; inset: 0; z-index: 1100;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(0,0,0,0.45);
+        }
+        #sync-dialog[hidden] { display: none; }
+        #sync-dialog-card {
+          background: var(--bg-secondary);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 20px 24px;
+          display: flex; flex-direction: column; gap: 16px;
+          min-width: 300px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        #sync-dialog-title {
+          margin: 0; font-size: 14px; font-weight: 600; color: var(--text-main);
+        }
+        #sync-dialog-label {
+          font-size: 13px; color: var(--text-secondary);
+          display: flex; flex-direction: column; gap: 8px;
+        }
+        #sync-dialog-row {
+          display: flex; align-items: center; gap: 8px;
+        }
+        #sync-dialog-slider { flex: 1; }
+        #sync-dialog-number {
+          width: 64px; padding: 4px 6px; border-radius: 4px;
+          border: 1px solid var(--border); background: var(--bg-primary);
+          color: var(--text-main); font-size: 13px;
+        }
+        #sync-dialog-reset {
+          background: none; border: 1px solid var(--border); border-radius: 4px;
+          color: var(--text-secondary); cursor: pointer; padding: 3px 7px; font-size: 13px;
+        }
+        #sync-dialog-reset:hover { color: var(--text-main); }
+        #sync-dialog-actions {
+          display: flex; gap: 8px; justify-content: flex-end;
+        }
+        #sync-dialog-actions button {
+          padding: 6px 14px; border-radius: 4px; border: none;
+          font-size: 13px; cursor: pointer;
+        }
+        #sync-dialog-cancel {
+          background: var(--bg-primary); color: var(--text-main);
+          border: 1px solid var(--border) !important;
+        }
+        #sync-dialog-ok {
+          background: var(--accent-primary); color: #fff;
+        }
+
         /* Video Backdrop ----- */
 
         /* Sticky anchor keeps the video pinned to the visible area of #timeline-area
