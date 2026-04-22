@@ -2845,41 +2845,79 @@
         .view-settings-dialog {
             background: var(--bg-panel);
             border: 1px solid var(--border-subtle);
-            border-radius: 10px;
-            padding: 24px 28px;
-            width: 280px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            overflow: hidden;
         }
 
         .view-settings-title {
             margin: 0;
-            font-size: 15px;
+            padding: 8px 16px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 11px;
             font-weight: 700;
-            color: var(--text-main);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
         }
 
         .view-settings-body {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            flex-direction: row;
+            align-items: flex-start;
+            padding: 16px;
+            gap: 0;
         }
+
+        .vs-col {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0 16px;
+        }
+
+        .vs-col:first-child { padding-left: 0; }
+        .vs-col:last-child  { padding-right: 0; }
+        .vs-col + .vs-col   { border-left: 1px solid var(--border-subtle); }
 
         .view-settings-body label {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             font-size: 13px;
             color: var(--text-main);
             cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .vs-group-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        .vs-col > .vs-group-label:first-child { margin-top: 0; }
+
+        .vs-dialog-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .view-settings-actions {
             display: flex;
             justify-content: flex-end;
             gap: 8px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-subtle);
+            background: var(--bg-surface);
         }
 
         .view-settings-actions button {
@@ -2904,7 +2942,7 @@
         .calibrate-description {
             font-size: 13px;
             color: var(--text-muted);
-            margin: 0 0 8px 0;
+            margin: 0;
         }
 
         .calibrate-status {
@@ -2917,7 +2955,7 @@
         .calibrate-result {
             font-size: 14px;
             font-weight: 600;
-            margin: 4px 0 0 0;
+            margin: 0;
         }
 
         .calibrate-result.success { color: var(--accent-primary); }
@@ -2927,7 +2965,6 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-top: 12px;
             font-size: 13px;
             color: var(--text-muted);
         }
@@ -2946,13 +2983,14 @@
         .unique-name-message {
             font-size: 13px;
             color: var(--text-muted);
-            margin: 0 0 4px 0;
+            margin: 0;
+            padding: 16px 16px 0;
         }
 
         .unique-name-input {
-            width: 100%;
+            width: calc(100% - 32px);
             box-sizing: border-box;
-            margin: 8px 0 16px;
+            margin: 8px 16px 16px;
             padding: 6px 10px;
             background: var(--bg-track);
             border: 1px solid var(--border-subtle);
@@ -3334,6 +3372,7 @@
             gap: 4px 12px;
             font-size: 13px;
             margin: 0;
+            padding: 16px;
         }
 
         .clip-info-body dt { color: var(--text-muted); }
