@@ -828,23 +828,11 @@ function createTrack(label, { prepend = false } = {}) {
     syncTrackMutes();
   }, { signal });
 
-  const deleteBtn = controlFrag.querySelector(".delete-btn");
-  deleteBtn.addEventListener("click", () => {
-    const trackIdx = tracks.indexOf(track);
-    if (trackIdx === -1) return;  // recording lane — not in tracks, protected
-    markDirty();
-    const trackName = track.controlRow.querySelector(".track-title")?.textContent || "Track";
-    if (selectedTrack === track) selectedTrack = null;
-    tracks.splice(trackIdx, 1);
-    // Memory Leak Prevention: abort removes all track event listeners; ro.disconnect stops watching removed DOM rows.
-    trackController.abort();
-    ro.disconnect();
-    track.controlRow.remove();
-    track.timelineRow.remove();
-    syncTimelineMinWidth();
-    syncTimelineOverlay();
-    announce(`${trackName} deleted`);
-  });
+  const trackEditBtn = controlFrag.querySelector(".track-edit-btn");
+  trackEditBtn.addEventListener("click", () => {
+    if (tracks.indexOf(track) === -1) return;  // recording lane — not in tracks, protected
+    openTrackEditDialog(track, trackController, ro);
+  }, { signal });
 
   // Click background of control row to select the track and all its clips
   controlRow.addEventListener("click", (e) => {
@@ -2113,6 +2101,106 @@ document.getElementById("duplicate-dialog-cancel").addEventListener("click", () 
 document.getElementById("clip-popup-delete-btn").addEventListener("click", () => {
   deleteSelectedClip();
   hideClipPopup();
+});
+
+// ----- Track Edit Dialog -----
+
+let _trackEditTarget = null; // { track, trackController, ro }
+
+function openTrackEditDialog(track, trackController, ro) {
+  _trackEditTarget = { track, trackController, ro };
+  document.getElementById("track-edit-dialog-title").textContent = track.name;
+  document.getElementById("track-edit-dialog").hidden = false;
+}
+
+function closeTrackEditDialog() {
+  document.getElementById("track-edit-dialog").hidden = true;
+  _trackEditTarget = null;
+}
+
+function _executeDeleteTrack() {
+  if (!_trackEditTarget) return;
+  const { track, trackController, ro } = _trackEditTarget;
+  const trackIdx = tracks.indexOf(track);
+  if (trackIdx === -1) return;
+  const trackName = track.name;
+  if (selectedTrack === track) selectedTrack = null;
+  tracks.splice(trackIdx, 1);
+  trackController.abort();
+  ro.disconnect();
+  track.controlRow.remove();
+  track.timelineRow.remove();
+  syncTimelineMinWidth();
+  syncTimelineOverlay();
+  markDirty();
+  announce(`${trackName} deleted`);
+  closeTrackEditDialog();
+}
+
+function _executeDuplicateTrack() {
+  if (!_trackEditTarget) return;
+  const { track } = _trackEditTarget;
+  closeTrackEditDialog();
+
+  let newName = `${track.name} copy`;
+  let n = 2;
+  while (!isNameUnique(newName)) newName = `${track.name} copy ${n++}`;
+
+  const newTrack = createTrack(newName);
+
+  // Insert into tracks array right after source
+  const idx = tracks.indexOf(track);
+  tracks.splice(idx + 1, 0, newTrack);
+
+  // Reposition DOM rows (createTrack appended to end)
+  track.controlRow.after(newTrack.controlRow);
+  track.timelineRow.after(newTrack.timelineRow);
+
+  // Apply source settings
+  newTrack.gain    = track.gain;
+  newTrack.pan     = track.pan;
+  newTrack.opacity = track.opacity;
+  newTrack.scenes  = [...track.scenes];
+
+  newTrack.controlRow.querySelector("gain-slider").value = track.gain;
+  newTrack.controlRow.querySelector("pan-slider").value  = track.pan;
+  const opSlider = newTrack.controlRow.querySelector(".row-opacity-slider");
+  opSlider.value = track.opacity;
+  newTrack.timelineRow.style.opacity = track.opacity / 100;
+
+  newTrack.controlRow.querySelectorAll(".track-scene").forEach(btn => {
+    if (track.scenes.includes(btn.textContent.trim())) {
+      btn.classList.add("active");
+      btn.setAttribute("aria-pressed", "true");
+    }
+  });
+
+  // Copy clips
+  for (const srcClip of track.clips) {
+    const startSeconds    = srcClip.startSample / SAMPLE_RATE;
+    const durationSeconds = srcClip.durationSamples / SAMPLE_RATE;
+    addClipToTrack(newTrack.timelineRow, startSeconds, durationSeconds);
+    const newClip = newTrack.clips[newTrack.clips.length - 1];
+    newClip.loopStartSamples = srcClip.loopStartSamples;
+    newClip.loopEndSamples   = srcClip.loopEndSamples;
+    if (audioEngineHasBuffer(srcClip.id)) {
+      const buf = audioEngineGetBuffer(srcClip.id);
+      audioEngineStoreBuffer(newClip.id, buf);
+      updateClipWaveform(newClip.id, buf);
+    }
+  }
+
+  syncTimelineMinWidth();
+  syncTimelineOverlay();
+  markDirty();
+  announce(`${track.name} duplicated`);
+}
+
+document.getElementById("track-edit-close-btn").addEventListener("click", closeTrackEditDialog);
+document.getElementById("track-edit-delete-btn").addEventListener("click", _executeDeleteTrack);
+document.getElementById("track-edit-duplicate-btn").addEventListener("click", _executeDuplicateTrack);
+document.getElementById("track-edit-dialog").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) closeTrackEditDialog();
 });
 
 // ----- Clip Sync Dialog -----

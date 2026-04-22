@@ -281,10 +281,11 @@ Rule - Add comments before code snippets in this format:
                             <circle cx="9" cy="15" r="2"/>
                         </svg>
                     </span>
-                    <button class="delete-btn" aria-label="Delete track">
-                        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-                            <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
-                            <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                    <button class="track-edit-btn" aria-label="Track options">
+                        <svg width="4" height="16" viewBox="0 0 4 16" fill="currentColor" aria-hidden="true">
+                            <circle cx="2" cy="2"  r="1.5"/>
+                            <circle cx="2" cy="8"  r="1.5"/>
+                            <circle cx="2" cy="14" r="1.5"/>
                         </svg>
                     </button>
                     <div class="track-title" contenteditable="true"></div>
@@ -515,6 +516,17 @@ Rule - Add comments before code snippets in this format:
             <button id="calibrate-close-btn" class="view-settings-accept-btn">Close</button>
         </div>
     </div>
+</div>
+
+<div id="track-edit-dialog" hidden>
+  <div id="track-edit-dialog-card">
+    <p id="track-edit-dialog-title">Track Options</p>
+    <div id="track-edit-dialog-actions">
+      <button id="track-edit-duplicate-btn">Duplicate Track</button>
+      <button id="track-edit-delete-btn">Delete Track</button>
+      <button id="track-edit-close-btn">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <div id="drop-indicator" aria-hidden="true"></div>
