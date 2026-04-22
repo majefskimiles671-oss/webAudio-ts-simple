@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(rg *)",
+      "Bash(cd *)",
+      "Bash(sed *)",
+      "Bash(head *)",
+      "Bash(wc *)",
+      "Bash(ls *)",
+      "FileRead",
+      "Glob",
+      "Grep"
+    ]
+  }
+}
