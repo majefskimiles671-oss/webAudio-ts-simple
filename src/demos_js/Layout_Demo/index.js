@@ -124,6 +124,7 @@ document.querySelector(".menu-bar").addEventListener("click", (e) => {
 });
 
 const controlsScrollCol = document.getElementById("controls-scroll-column");
+const dropIndicator = document.getElementById("drop-indicator");
 controlsScrollCol.addEventListener("input", (e) => {
   const gs = e.target.closest("gain-slider");
   if (gs) {
@@ -177,6 +178,7 @@ let recordingLaneTrack = null;  // the current (unpromoted) recording lane track
 
 //  Track State
 const tracks = [];        // promoted tracks only, front = newest (matches DOM order)
+const dragState = { track: null, insertBefore: null };
 const SAMPLE_RATE = 48000; // used for sample-accurate time serialization
 
 //  Global Musical State
@@ -846,10 +848,35 @@ function createTrack(label, { prepend = false } = {}) {
 
   // Click background of control row to select the track and all its clips
   controlRow.addEventListener("click", (e) => {
-    if (e.target.closest("button, [contenteditable], gain-slider, pan-slider, .row-opacity-slider")) return;
+    if (e.target.closest("button, [contenteditable], gain-slider, pan-slider, .row-opacity-slider, .drag-handle")) return;
     selectTrack(track);
     selectAllClipsInTrack(track);
     hideClipPopup();
+  }, { signal });
+
+  // Drag to reorder
+  const dragHandle = controlFrag.querySelector(".drag-handle");
+  dragHandle.addEventListener("pointerdown", () => { controlRow.draggable = true; }, { signal });
+  dragHandle.addEventListener("pointerup",   () => { controlRow.draggable = false; }, { signal });
+
+  controlRow.addEventListener("dragstart", (e) => {
+    dragState.track = track;
+    dragState.insertBefore = null;
+    controlRow.classList.add("dragging");
+    track.timelineRow.classList.add("dragging");
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    e.dataTransfer.setDragImage(canvas, 0, 0);
+    e.dataTransfer.effectAllowed = "move";
+  }, { signal });
+
+  controlRow.addEventListener("dragend", () => {
+    controlRow.draggable = false;
+    controlRow.classList.remove("dragging");
+    track.timelineRow.classList.remove("dragging");
+    dropIndicator.classList.remove("visible");
+    dragState.track = null;
+    dragState.insertBefore = null;
   }, { signal });
 
   if (prepend) {
@@ -961,6 +988,27 @@ function promoteRecordingLane() {
   syncTimelineOverlay();
   updateSceneMask();
   updateSoloMask();
+}
+
+function reorderTrack(dragged, insertBefore) {
+  // insertBefore = null → append at end
+  if (dragged === insertBefore) return;
+  const fromIdx = tracks.indexOf(dragged);
+  const toIdx   = insertBefore ? tracks.indexOf(insertBefore) : tracks.length;
+  if (fromIdx === toIdx || fromIdx === toIdx - 1) return;
+
+  tracks.splice(fromIdx, 1);
+  if (insertBefore) {
+    const destIdx = tracks.indexOf(insertBefore);
+    tracks.splice(destIdx, 0, dragged);
+    controlsScrollCol.insertBefore(dragged.controlRow, insertBefore.controlRow);
+    timelineCol.insertBefore(dragged.timelineRow, insertBefore.timelineRow);
+  } else {
+    tracks.push(dragged);
+    controlsScrollCol.appendChild(dragged.controlRow);
+    timelineCol.appendChild(dragged.timelineRow);
+  }
+  markDirty();
 }
 
 function onRecordStart() {
@@ -1785,6 +1833,41 @@ controlsScrollCol.addEventListener(
   },
   { passive: false },
 );
+
+document.addEventListener("dragover", (e) => {
+  if (!dragState.track) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+
+  const rows = Array.from(controlsScrollCol.children);
+  let insertBefore = null;
+  let indicatorY = null;
+
+  for (const row of rows) {
+    if (row === dragState.track.controlRow) continue;
+    const rect = row.getBoundingClientRect();
+    if (e.clientY < rect.top + rect.height / 2) {
+      insertBefore = findTrackByControlRow(row);
+      indicatorY = rect.top;
+      break;
+    }
+    indicatorY = rect.bottom;
+  }
+
+  if (indicatorY === null) { dropIndicator.classList.remove("visible"); return; }
+  dragState.insertBefore = insertBefore;
+  dropIndicator.style.top = `${indicatorY}px`;
+  dropIndicator.classList.add("visible");
+});
+
+document.addEventListener("drop", (e) => {
+  if (!dragState.track) return;
+  e.preventDefault();
+  dropIndicator.classList.remove("visible");
+  reorderTrack(dragState.track, dragState.insertBefore);
+  dragState.track = null;
+  dragState.insertBefore = null;
+});
 
 const transportToggles = document.querySelectorAll(
   "#transport-scenes .transport-scene",

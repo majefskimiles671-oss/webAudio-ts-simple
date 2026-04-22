@@ -271,6 +271,16 @@ Rule - Add comments before code snippets in this format:
             <div class="row-inner">
 
                 <div class="track-row-1">
+                    <span class="drag-handle" aria-hidden="true" title="Drag to reorder">
+                        <svg width="12" height="18" viewBox="0 0 12 18" fill="currentColor" aria-hidden="true">
+                            <circle cx="3" cy="3"  r="2"/>
+                            <circle cx="9" cy="3"  r="2"/>
+                            <circle cx="3" cy="9"  r="2"/>
+                            <circle cx="9" cy="9"  r="2"/>
+                            <circle cx="3" cy="15" r="2"/>
+                            <circle cx="9" cy="15" r="2"/>
+                        </svg>
+                    </span>
                     <button class="delete-btn" aria-label="Delete track">
                         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
                             <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
@@ -506,6 +516,8 @@ Rule - Add comments before code snippets in this format:
         </div>
     </div>
 </div>
+
+<div id="drop-indicator" aria-hidden="true"></div>
 
 <script src="./audio-engine.js"></script>
 <script src="./project-io.js"></script>
