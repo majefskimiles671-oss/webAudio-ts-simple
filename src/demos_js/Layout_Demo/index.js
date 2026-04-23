@@ -1603,6 +1603,7 @@ document.addEventListener("mousemove", (e) => {
       m.time = newTime;
       markers.sort((a, b) => a.time - b.time);
       renderMarkers();
+      renderBottomPanel();
     }
     return;
   }
@@ -3351,6 +3352,62 @@ document.addEventListener("mouseup", () => {
   _panelDragging = false;
 });
 
+document.addEventListener("click", () => {
+  document.querySelectorAll(".chord-picker-dropdown.open").forEach(d => d.classList.remove("open"));
+});
+
+function buildChordPicker(marker) {
+  const chordList = typeof chords !== "undefined" ? chords : [];
+  const wrap = document.createElement("div");
+  wrap.className = "chord-picker";
+
+  const trigger = document.createElement("button");
+  trigger.className = "chord-picker-trigger";
+  const current = chordList.find(c => c.id === marker.chordId);
+  trigger.textContent = current ? (current.name || "(unnamed)") : "— no chord —";
+
+  const dropdown = document.createElement("div");
+  dropdown.className = "chord-picker-dropdown";
+
+  const allOptions = [{ id: "", name: "— no chord —" }, ...chordList];
+  for (const c of allOptions) {
+    const opt = document.createElement("div");
+    opt.className = "chord-picker-option";
+    opt.textContent = c.name || "(unnamed)";
+    opt.dataset.value = c.id;
+    if (c.id === (marker.chordId ?? "")) opt.classList.add("active");
+    opt.addEventListener("click", (e) => {
+      e.stopPropagation();
+      marker.chordId = c.id || null;
+      markDirty();
+      trigger.textContent = c.id ? (c.name || "(unnamed)") : "— no chord —";
+      dropdown.querySelectorAll(".chord-picker-option").forEach(el =>
+        el.classList.toggle("active", el.dataset.value === (c.id || ""))
+      );
+      dropdown.classList.remove("open");
+    });
+    dropdown.appendChild(opt);
+  }
+
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.querySelectorAll(".chord-picker-dropdown.open").forEach(d => {
+      if (d !== dropdown) d.classList.remove("open");
+    });
+    const isOpening = !dropdown.classList.contains("open");
+    dropdown.classList.toggle("open");
+    if (isOpening) {
+      const rect = trigger.getBoundingClientRect();
+      dropdown.style.left  = rect.left + "px";
+      dropdown.style.width = rect.width + "px";
+      dropdown.style.top   = (rect.top - dropdown.offsetHeight - 4) + "px";
+    }
+  });
+
+  wrap.append(trigger, dropdown);
+  return wrap;
+}
+
 function renderBottomPanel() {
   const content = document.getElementById("bottom-panel-content");
   content.innerHTML = "";
@@ -3374,7 +3431,7 @@ function renderBottomPanel() {
     textarea.rows = 1;
 
     row.addEventListener("click", (e) => {
-      if (e.target === textarea || e.target === chordSelect) return;
+      if (e.target === textarea || e.target.closest(".chord-picker")) return;
       selectMarkerByIndex(markers.indexOf(marker));
     });
 
@@ -3385,26 +3442,9 @@ function renderBottomPanel() {
       textarea.style.height = `${textarea.scrollHeight}px`;
     });
 
-    const chordSelect = document.createElement("select");
-    chordSelect.className = "panel-marker-chord-select";
-    const noneOpt = document.createElement("option");
-    noneOpt.value = "";
-    noneOpt.textContent = "— no chord —";
-    chordSelect.appendChild(noneOpt);
-    for (const c of (typeof chords !== "undefined" ? chords : [])) {
-      const opt = document.createElement("option");
-      opt.value = c.id;
-      opt.textContent = c.name || "(unnamed)";
-      if (c.id === marker.chordId) opt.selected = true;
-      chordSelect.appendChild(opt);
-    }
-    chordSelect.addEventListener("change", (e) => {
-      e.stopPropagation();
-      marker.chordId = chordSelect.value || null;
-      markDirty();
-    });
+    const chordPicker = buildChordPicker(marker);
 
-    row.append(timeEl, textarea, chordSelect);
+    row.append(timeEl, textarea, chordPicker);
     grid.appendChild(row);
   }
 
