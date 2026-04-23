@@ -12,6 +12,7 @@ function _chordToFreqs(chord) {
   cdStringFrets(chord).forEach((frets, s) => {
     if (frets[0] === "x") return;
     const fretIndex = frets.indexOf(true);
+    if (fretIndex === -1 && frets[0] !== "o") return;
     const midi = fretIndex === -1
       ? currentTuning.openMidi(s + 1)
       : currentTuning.openMidi(s + 1) + (chord.baseFret - 1) + fretIndex;
