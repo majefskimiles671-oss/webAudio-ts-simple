@@ -2698,7 +2698,7 @@
             background: var(--accent-primary);
             border: 1px solid transparent;
             border-radius: 4px;
-            color: var(--bg-base);
+            color: #111;
             font-weight: 600;
             font-size: 12px;
             padding: 5px 14px;
