@@ -10,16 +10,17 @@ let chords = [{
   name:     "C",
   baseFret: 1,
   frets:    4,
-  tops:     ["x", null, null, "o", null, "o"],
+  tops:     ["o", null, "o", null, null, "x"],
   dots: [
-    [false, false, false, false],
-    [false, false, true,  false],
-    [false, true,  false, false],
-    [false, false, false, false],
-    [true,  false, false, false],
-    [false, false, false, false],
+    [false, false, false, false],  // string 1 (high E)
+    [true,  false, false, false],  // string 2 (B)
+    [false, false, false, false],  // string 3 (G)
+    [false, true,  false, false],  // string 4 (D)
+    [false, false, true,  false],  // string 5 (A)
+    [false, false, false, false],  // string 6 (low E)
   ],
 }];
+let currentTuning = tuning([64, 59, 55, 50, 45, 40]);
 let _editingChord = null;
 let _cdDragging = false;
 let _cdDragOffX = 0;
@@ -50,6 +51,10 @@ function cdCloneChord(c) {
     tops: [...c.tops],
     dots: c.dots.map(row => [...row]),
   };
+}
+
+function cdStringFrets(chord) {
+  return chord.tops.map((top, s) => [top, ...chord.dots[s]]);
 }
 
 function cdGetDialog() {
@@ -216,10 +221,10 @@ function cdBuildGridEl(chord, interactive) {
   const grid = document.createElement("div");
   grid.className = "cd-grid" + (interactive ? "" : " cd-view") + (frets === 4 ? " cd-4frets" : frets === 6 ? " cd-6frets" : "");
 
-  // Top row — above-nut indicators
-  for (let s = 0; s < 6; s++) {
+  // Top row — above-nut indicators (render s=5..0 so low E appears left, high E right)
+  for (let s = 5; s >= 0; s--) {
     const cell = document.createElement("div");
-    cell.className = "cd-top-cell" + (s === 0 ? " cd-s-first" : s === 5 ? " cd-s-last" : "");
+    cell.className = "cd-top-cell" + (s === 5 ? " cd-s-first" : s === 0 ? " cd-s-last" : "");
     cell.textContent = chord.tops[s] ?? "";
     if (interactive) {
       cell.addEventListener("click", () => cdCycleTop(s));
@@ -227,11 +232,11 @@ function cdBuildGridEl(chord, interactive) {
     grid.appendChild(cell);
   }
 
-  // Fret rows
+  // Fret rows (same reverse order)
   for (let r = 0; r < frets; r++) {
-    for (let s = 0; s < 6; s++) {
+    for (let s = 5; s >= 0; s--) {
       const cell = document.createElement("div");
-      cell.className = "cd-fret-cell" + (s === 0 ? " cd-s-first" : s === 5 ? " cd-s-last" : "");
+      cell.className = "cd-fret-cell" + (s === 5 ? " cd-s-first" : s === 0 ? " cd-s-last" : "");
       if (chord.dots[s][r]) {
         const dot = document.createElement("div");
         dot.className = "cd-dot";

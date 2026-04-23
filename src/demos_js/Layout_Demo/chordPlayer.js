@@ -2,8 +2,7 @@
 // Karplus-Strong plucked-string synthesis for chord diagram playback.
 // Algorithm runs in JS (pre-computed buffer), avoiding WebAudio feedback graph instability.
 
-const _STRING_ROOT_MIDI = [40, 45, 50, 55, 59, 64]; // low E2 → high E4
-const _STRUM_DELAYS_S   = [0.022, 0.5];
+const _STRUM_DELAYS_S = [0.022, 0.5];
 let _strumDelayIdx      = 0;
 
 function _midiToFreq(midi) {
@@ -13,15 +12,15 @@ function _midiToFreq(midi) {
 // Returns one freq per string (first dot, or open string). Used for normal chords.
 function _chordToFreqs(chord) {
   const freqs = [];
-  for (let s = 0; s < 6; s++) {
-    if (chord.tops[s] === "x") continue;
-    const dotIndex = chord.dots[s].indexOf(true);
-    const midi = dotIndex === -1
-      ? _STRING_ROOT_MIDI[s]
-      : _STRING_ROOT_MIDI[s] + (chord.baseFret - 1) + (dotIndex + 1);
+  cdStringFrets(chord).forEach((frets, s) => {
+    if (frets[0] === "x") return;
+    const fretIndex = frets.indexOf(true);
+    const midi = fretIndex === -1
+      ? currentTuning.openMidi(s + 1)
+      : currentTuning.openMidi(s + 1) + (chord.baseFret - 1) + fretIndex;
     freqs.push(_midiToFreq(midi));
-  }
-  return freqs;
+  });
+  return freqs.reverse();
 }
 
 // Returns every note in the diagram sorted ascending by pitch.
@@ -30,15 +29,16 @@ function _scaleToFreqs(chord) {
   const freqs = [];
   for (let s = 0; s < 6; s++) {
     if (chord.tops[s] === "x") continue;
+    if (chord.tops[s] == null && !chord.dots[s].some(Boolean)) continue;
     let stringHasDot = false;
     for (let r = 0; r < chord.dots[s].length; r++) {
       if (chord.dots[s][r]) {
-        freqs.push(_midiToFreq(_STRING_ROOT_MIDI[s] + (chord.baseFret - 1) + (r + 1)));
+        freqs.push(_midiToFreq(currentTuning.openMidi(s + 1) + (chord.baseFret - 1) + (r + 1)));
         stringHasDot = true;
       }
     }
-    if (!stringHasDot) {
-      freqs.push(_midiToFreq(_STRING_ROOT_MIDI[s]));
+    if (!stringHasDot || chord.tops[s] === "o") {
+      freqs.push(_midiToFreq(currentTuning.openMidi(s + 1)));
     }
   }
   return freqs.sort((a, b) => a - b);
@@ -73,8 +73,9 @@ function _ksGenerate(freq, sampleRate, durationSec) {
   return output;
 }
 
-function _ksPluck(ctx, freq, startTime) {
-  const samples = _ksGenerate(freq, ctx.sampleRate, 3.5);
+function _ksPluck(ctx, freq, startTime, durationSec = 3.5) {
+  console.log("midi:", Math.round(69 + 12 * Math.log2(freq / 440)));
+  const samples = _ksGenerate(freq, ctx.sampleRate, durationSec);
   const buf = ctx.createBuffer(1, samples.length, ctx.sampleRate);
   buf.copyToChannel(samples, 0);
 
@@ -93,8 +94,8 @@ function playChord(chord) {
   if (_isScale(chord)) {
     const asc  = _scaleToFreqs(chord);
     const desc = [...asc].reverse();
-    const sequence = [...asc, ...desc];
-    sequence.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5));
+    const sequence = [...asc, ...desc.slice(1)];
+    sequence.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5, 0.375));
   } else {
     const freqs      = _chordToFreqs(chord);
     const strumDelay = _STRUM_DELAYS_S[_strumDelayIdx];

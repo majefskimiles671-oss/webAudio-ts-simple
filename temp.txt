@@ -6,3 +6,12 @@
 
       list folders in /Users/miles.majefski/
 
+OK I think we need to make acouple of changes.  First we need to change the string order in the dots array.
+E=6
+A=5
+D=4
+G=3
+B=2
+E=1
+
+While you are doing that, I need you to add a general solution for _STRING_ROOT_MIDI so that later we can define

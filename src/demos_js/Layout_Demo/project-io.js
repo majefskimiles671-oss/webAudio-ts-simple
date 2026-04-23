@@ -54,6 +54,7 @@ function serializeProject() {
       }),
     })),
     chordPanel: (typeof cdGetPanelState === "function") ? cdGetPanelState() : undefined,
+    tuning: (typeof currentTuning !== "undefined") ? [...currentTuning.openMidiNotes] : [64, 59, 55, 50, 45, 40],
     chords: (typeof chords !== "undefined" ? chords : []).map(c => ({
       id:       c.id,
       name:     c.name,
@@ -229,6 +230,10 @@ function deserializeProject(data) {
   selectedMarkerId = markers[0]?.id ?? null;
 
   // ----- Restore chords -----
+
+  if (typeof currentTuning !== "undefined" && Array.isArray(data.tuning)) {
+    currentTuning = tuning(data.tuning);
+  }
 
   if (typeof chords !== "undefined") {
     chords.length = 0;

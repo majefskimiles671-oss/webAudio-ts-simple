@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Layout Demo (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8080/src/demos_js/Layout_Demo/Layout_Demo.html",
+      "webRoot": "${workspaceFolder}"
+    }
+  ]
+}
