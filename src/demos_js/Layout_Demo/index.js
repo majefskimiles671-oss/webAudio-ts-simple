@@ -575,6 +575,10 @@ function selectMarkerByIndex(index) {
   // ----- Re-render marker transport controls
   renderMarkerTransport();
   renderBottomPanel();
+
+  if (marker.chordId && typeof cdHighlightChord === "function") {
+    cdHighlightChord(marker.chordId);
+  }
 }
 
 //  -----------Apply Transport Change
@@ -1667,7 +1671,7 @@ timelineRuler.addEventListener("click", (e) => {
     return;
   }
 
-  const marker = { id: crypto.randomUUID(), time, note: "" };
+  const marker = { id: crypto.randomUUID(), time, note: "", chordId: null };
   markers.push(marker);
   markers.sort((a, b) => a.time - b.time);
   selectedMarkerId = marker.id;
@@ -1715,7 +1719,7 @@ markerAddBtn.addEventListener("click", () => {
     return;
   }
 
-  const marker = { id: crypto.randomUUID(), time, note: "" };
+  const marker = { id: crypto.randomUUID(), time, note: "", chordId: null };
   markers.push(marker);
   markers.sort((a, b) => a.time - b.time);
   selectedMarkerId = marker.id;
@@ -3320,7 +3324,7 @@ function renderBottomPanel() {
     textarea.rows = 1;
 
     row.addEventListener("click", (e) => {
-      if (e.target === textarea) return;
+      if (e.target === textarea || e.target === chordSelect) return;
       selectMarkerByIndex(markers.indexOf(marker));
     });
 
@@ -3331,7 +3335,26 @@ function renderBottomPanel() {
       textarea.style.height = `${textarea.scrollHeight}px`;
     });
 
-    row.append(timeEl, textarea);
+    const chordSelect = document.createElement("select");
+    chordSelect.className = "panel-marker-chord-select";
+    const noneOpt = document.createElement("option");
+    noneOpt.value = "";
+    noneOpt.textContent = "— no chord —";
+    chordSelect.appendChild(noneOpt);
+    for (const c of (typeof chords !== "undefined" ? chords : [])) {
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.name || "(unnamed)";
+      if (c.id === marker.chordId) opt.selected = true;
+      chordSelect.appendChild(opt);
+    }
+    chordSelect.addEventListener("change", (e) => {
+      e.stopPropagation();
+      marker.chordId = chordSelect.value || null;
+      markDirty();
+    });
+
+    row.append(timeEl, textarea, chordSelect);
     grid.appendChild(row);
   }
 
@@ -3359,7 +3382,7 @@ for (let i = 0; i < trackCount; i++) {
 }
 createRecordingLane();
 
-markers.push({ id: ORIGIN_MARKER_ID, time: secondsPerBar() * 0, note: "" });
+markers.push({ id: ORIGIN_MARKER_ID, time: secondsPerBar() * 0, note: "", chordId: null });
 // markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 4, note: "" });
 // markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 8, note: "Chorus begins\nBig energy here\nDon't forget the drop\nRide it out to bar 12" });
 selectedMarkerId = ORIGIN_MARKER_ID;

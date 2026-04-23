@@ -2165,6 +2165,19 @@
             font-family: monospace;
         }
 
+        .panel-marker-chord-select {
+            grid-column: 1 / -1;
+            font-size: 11px;
+            background: var(--bg-panel);
+            color: var(--text-muted);
+            border: 1px solid var(--border-subtle);
+            border-radius: 3px;
+            padding: 2px 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 2px;
+        }
+
         /* Demo Sequence Popup */
 
         .demo-seq-overlay {
@@ -2314,6 +2327,22 @@
         }
 
         .cd-dialog-close:hover {
+            color: var(--text-main);
+            background: var(--bg-panel);
+        }
+
+        .cd-dialog-share {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+            padding: 2px 5px;
+            border-radius: 3px;
+            line-height: 1;
+        }
+
+        .cd-dialog-share:hover {
             color: var(--text-main);
             background: var(--bg-panel);
         }
@@ -2472,6 +2501,12 @@
             width: 72px;
             zoom: var(--cd-zoom, 1);
             cursor: pointer;
+        }
+
+        .cd-chord-card.cd-card-highlighted {
+            outline: 2px solid var(--accent-primary);
+            outline-offset: 3px;
+            border-radius: 4px;
         }
 
         .cd-name-grid-col {

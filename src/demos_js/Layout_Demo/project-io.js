@@ -67,6 +67,7 @@ function serializeProject() {
       id:         m.id,
       timeSample: Math.round(m.time * SAMPLE_RATE),
       note:       m.note ?? "",
+      chordId:    m.chordId ?? null,
     })),
     video: videoFile
       ? {
@@ -224,7 +225,7 @@ function deserializeProject(data) {
   // ----- Restore markers -----
 
   for (const saved of (data.markers ?? [])) {
-    markers.push({ id: saved.id, time: saved.timeSample / sr, note: saved.note ?? "" });
+    markers.push({ id: saved.id, time: saved.timeSample / sr, note: saved.note ?? "", chordId: saved.chordId ?? null });
   }
   markers.sort((a, b) => a.time - b.time);
   selectedMarkerId = markers[0]?.id ?? null;

@@ -27,6 +27,26 @@ let _cdDragOffX = 0;
 let _cdDragOffY = 0;
 let _cdZoom = 1;
 
+function cdHighlightChord(id) {
+  const body = document.getElementById("chord-diagrams-body");
+  if (!body) return;
+  body.querySelectorAll(".cd-chord-card").forEach(el => el.classList.remove("cd-card-highlighted"));
+  const card = body.querySelector(`.cd-chord-card[data-chord-id="${id}"]`);
+  if (!card) return;
+  card.classList.add("cd-card-highlighted");
+  card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+
+function cdEncodeChords() {
+  return btoa(JSON.stringify(chords.map(c => ({
+    name: c.name, baseFret: c.baseFret, frets: c.frets, tops: c.tops, dots: c.dots,
+  }))));
+}
+
+function cdDecodeChords(str) {
+  try { return JSON.parse(atob(str)); } catch { return null; }
+}
+
 // ============================================================
 // Helpers (Pure Computation Layer) -----
 // ============================================================
@@ -180,6 +200,7 @@ function cdSaveChord() {
   if (typeof markDirty === "function") markDirty();
   cdShowList();
   cdRenderDialog();
+  if (typeof renderBottomPanel === "function") renderBottomPanel();
 }
 
 function cdDeleteChord(id) {
@@ -187,6 +208,7 @@ function cdDeleteChord(id) {
   if (typeof markDirty === "function") markDirty();
   cdShowList();
   cdRenderDialog();
+  if (typeof renderBottomPanel === "function") renderBottomPanel();
 }
 
 function cdToggleDot(s, r) {
@@ -306,6 +328,7 @@ function cdRenderListInto(container) {
     for (const chord of chords) {
       const card = document.createElement("div");
       card.className = "cd-chord-card";
+      card.dataset.chordId = chord.id;
       card.addEventListener("click", () => cdOpenEditPopover(chord.id, card));
 
       const name = document.createElement("div");
@@ -517,7 +540,20 @@ function cdInit() {
   closeBtn.textContent = "✕";
   closeBtn.addEventListener("click", cdTogglePanel);
 
+  const shareBtn = document.createElement("button");
+  shareBtn.className = "cd-dialog-share";
+  shareBtn.textContent = "⬆";
+  shareBtn.title = "Copy share link";
+  shareBtn.addEventListener("click", () => {
+    const url = location.href.split('#')[0] + '#chords=' + cdEncodeChords();
+    navigator.clipboard.writeText(url).then(() => {
+      shareBtn.textContent = "✓";
+      setTimeout(() => shareBtn.textContent = "⬆", 1500);
+    });
+  });
+
   titlebar.appendChild(title);
+  titlebar.appendChild(shareBtn);
   titlebar.appendChild(closeBtn);
 
   const body = document.createElement("div");
@@ -540,6 +576,25 @@ function cdInit() {
   });
   cdInitDrag();
   cdRenderDialog();
+
+  const _hashChords = window.location.hash.startsWith('#chords=')
+    ? cdDecodeChords(window.location.hash.slice('#chords='.length))
+    : null;
+  if (_hashChords) {
+    chords.length = 0;
+    for (const c of _hashChords) {
+      const f = c.frets ?? 4;
+      chords.push({
+        id:       crypto.randomUUID(),
+        name:     c.name ?? "",
+        baseFret: c.baseFret ?? 1,
+        frets:    f,
+        tops:     c.tops ?? Array(6).fill(null),
+        dots:     Array.isArray(c.dots) ? c.dots : Array.from({ length: 6 }, () => Array(f).fill(false)),
+      });
+    }
+    cdRenderDialog();
+  }
 
   const popover = document.createElement("div");
   popover.id = "chord-edit-popover";
