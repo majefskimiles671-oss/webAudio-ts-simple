@@ -2520,6 +2520,8 @@ function _meterTick() {
 
   _updateMasterMeter();
 
+  if (_masterL > 0.002 || _masterR > 0.002 || _masterPeakL > 0.002 || _masterPeakR > 0.002) anyActive = true;
+
   if (_meterPlaying || anyActive) {
     _meterRafId = requestAnimationFrame(_meterTick);
   } else {

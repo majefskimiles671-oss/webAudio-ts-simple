@@ -432,3 +432,4 @@ function audioEngineRenderLoop(srcBuffer, loopStartSamples, loopEndSamples, outp
 }
 
 function getAudioContext() { return _audioCtx; }
+function getMasterGainNode() { return _masterGainNode; }

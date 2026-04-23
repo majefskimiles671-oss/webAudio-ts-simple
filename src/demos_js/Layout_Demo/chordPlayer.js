@@ -77,7 +77,7 @@ function _ksPluck(ctx, freq, startTime, durationSec = 3.5) {
 
   const src = ctx.createBufferSource();
   src.buffer = buf;
-  src.connect(ctx.destination);
+  src.connect(getMasterGainNode());
   src.start(startTime);
   src.addEventListener("ended", () => src.disconnect());
 }
@@ -86,6 +86,7 @@ function _ksPluck(ctx, freq, startTime, durationSec = 3.5) {
 function playChordStrum(chord) {
   const ctx = getAudioContext();
   if (ctx.state === "suspended") ctx.resume();
+  startMeterAnimation();
   const now = ctx.currentTime + 0.01;
   if (_isScale(chord)) {
     const freqs = _scaleToFreqs(chord);
@@ -100,6 +101,7 @@ function playChordStrum(chord) {
 function playChordSpaced(chord) {
   const ctx = getAudioContext();
   if (ctx.state === "suspended") ctx.resume();
+  startMeterAnimation();
   const now = ctx.currentTime + 0.01;
   if (_isScale(chord)) {
     const asc  = _scaleToFreqs(chord);
