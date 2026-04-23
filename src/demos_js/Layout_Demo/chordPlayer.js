@@ -74,7 +74,7 @@ function _ksGenerate(freq, sampleRate, durationSec) {
 }
 
 function _ksPluck(ctx, freq, startTime, durationSec = 3.5) {
-  console.log("midi:", Math.round(69 + 12 * Math.log2(freq / 440)));
+  // console.log("midi:", Math.round(69 + 12 * Math.log2(freq / 440)));
   const samples = _ksGenerate(freq, ctx.sampleRate, durationSec);
   const buf = ctx.createBuffer(1, samples.length, ctx.sampleRate);
   buf.copyToChannel(samples, 0);
