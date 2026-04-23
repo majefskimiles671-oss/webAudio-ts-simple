@@ -2,6 +2,9 @@
 // Karplus-Strong plucked-string synthesis for chord diagram playback.
 // Algorithm runs in JS (pre-computed buffer), avoiding WebAudio feedback graph instability.
 
+let _synthMode = "pluck"; // "pluck" | "synth"
+let _activeVoices = [];   // { oscs, env } — released on re-trigger
+
 function _midiToFreq(midi) {
   return 440 * Math.pow(2, (midi - 69) / 12);
 }
@@ -83,12 +86,89 @@ function _ksPluck(ctx, freq, startTime, durationSec = 3.5) {
   src.addEventListener("ended", () => src.disconnect());
 }
 
+function _synthPlayNote(ctx, freq, startTime, durationSec) {
+  const env    = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+  filter.type            = "lowpass";
+  filter.frequency.value = 900;
+  filter.Q.value         = 1.2;
+
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  const osc3 = ctx.createOscillator();
+  osc1.type = "sawtooth"; osc1.frequency.value = freq; osc1.detune.value = +4;
+  osc2.type = "sawtooth"; osc2.frequency.value = freq; osc2.detune.value = -4;
+  osc3.type = "sine";     osc3.frequency.value = freq / 2;
+
+  const g1 = ctx.createGain(); g1.gain.value = 0.4;
+  const g2 = ctx.createGain(); g2.gain.value = 0.4;
+  const g3 = ctx.createGain(); g3.gain.value = 0.2;
+
+  osc1.connect(g1).connect(filter);
+  osc2.connect(g2).connect(filter);
+  osc3.connect(g3).connect(filter);
+  filter.connect(env);
+  env.connect(getMasterGainNode());
+
+  const A = 0.35, D = 0.15, S = 0.65, R = 1.2;
+  env.gain.setValueAtTime(0,   startTime);
+  env.gain.linearRampToValueAtTime(1.0, startTime + A);
+  env.gain.linearRampToValueAtTime(S,   startTime + A + D);
+  env.gain.setValueAtTime(S,            startTime + durationSec);
+  env.gain.linearRampToValueAtTime(0,   startTime + durationSec + R);
+
+  const stopTime = startTime + durationSec + R + 0.05;
+  [osc1, osc2, osc3].forEach(o => { o.start(startTime); o.stop(stopTime); });
+  osc1.addEventListener("ended", () => {
+    [osc1, osc2, osc3, g1, g2, g3, filter, env].forEach(n => { try { n.disconnect(); } catch {} });
+  });
+  return { oscs: [osc1, osc2, osc3], env };
+}
+
+function _synthReleaseAll(ctx) {
+  const now = ctx.currentTime;
+  for (const v of _activeVoices) {
+    v.env.gain.cancelScheduledValues(now);
+    v.env.gain.setValueAtTime(v.env.gain.value, now);
+    v.env.gain.linearRampToValueAtTime(0, now + 1.2);
+    v.oscs.forEach(o => { try { o.stop(now + 1.25); } catch {} });
+  }
+  _activeVoices = [];
+}
+
+function cdBuildSoundToggle() {
+  const seg = document.createElement("div");
+  seg.className = "cd-sound-seg";
+
+  ["pluck", "synth"].forEach(mode => {
+    const btn = document.createElement("button");
+    btn.className = "cd-sound-btn" + (_synthMode === mode ? " active" : "");
+    btn.textContent = mode === "pluck" ? "Pluck" : "Synth";
+    btn.addEventListener("click", () => {
+      _synthMode = mode;
+      seg.querySelectorAll(".cd-sound-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+    seg.appendChild(btn);
+  });
+  return seg;
+}
+
 // Single click: strum for chords; ascending run for scales.
 function playChordStrum(chord) {
   const ctx = getAudioContext();
   if (ctx.state === "suspended") ctx.resume();
   startMeterAnimation();
   const now = ctx.currentTime + 0.01;
+  if (_synthMode === "synth") {
+    _synthReleaseAll(ctx);
+    const freqs = _isScale(chord) ? _scaleToFreqs(chord) : _chordToFreqs(chord);
+    const gap   = _isScale(chord) ? 0.08 : 0.022;
+    freqs.forEach((freq, i) => {
+      _activeVoices.push(_synthPlayNote(ctx, freq, now + i * gap, 4.0));
+    });
+    return;
+  }
   if (_isScale(chord)) {
     const freqs = _scaleToFreqs(chord);
     freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5, 0.375));
@@ -104,6 +184,20 @@ function playChordSpaced(chord) {
   if (ctx.state === "suspended") ctx.resume();
   startMeterAnimation();
   const now = ctx.currentTime + 0.01;
+  if (_synthMode === "synth") {
+    _synthReleaseAll(ctx);
+    let seq;
+    if (_isScale(chord)) {
+      const asc = _scaleToFreqs(chord);
+      seq = [...asc, ...[...asc].reverse().slice(1)];
+    } else {
+      seq = _chordToFreqs(chord);
+    }
+    seq.forEach((freq, i) => {
+      _activeVoices.push(_synthPlayNote(ctx, freq, now + i * 0.5, 3.0));
+    });
+    return;
+  }
   if (_isScale(chord)) {
     const asc  = _scaleToFreqs(chord);
     const desc = [...asc].reverse();

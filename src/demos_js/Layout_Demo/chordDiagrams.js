@@ -419,6 +419,7 @@ function cdRenderListFooterInto(footer) {
   zoomWrap.appendChild(zoomOut);
   zoomWrap.appendChild(zoomIn);
   footer.appendChild(addBtn);
+  footer.appendChild(cdBuildSoundToggle());
   footer.appendChild(zoomWrap);
 }
 

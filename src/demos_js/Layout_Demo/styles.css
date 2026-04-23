@@ -2386,8 +2386,8 @@
             position: fixed;
             top: 210px;
             left: 0;
-            width: 250px;
-            height: 474px;
+            width: 330px;
+            height: 460px;
             min-width: 200px;
             min-height: 120px;
             background: var(--bg-panel);
@@ -2833,6 +2833,37 @@
         }
 
         .cd-rows-btn:not(.active):hover {
+            color: var(--text-main);
+        }
+
+        .cd-sound-seg {
+            display: flex;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .cd-sound-btn {
+            background: var(--bg-surface);
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 4px 10px;
+            cursor: pointer;
+            letter-spacing: 0.04em;
+        }
+
+        .cd-sound-btn + .cd-sound-btn {
+            border-left: 1px solid var(--border-subtle);
+        }
+
+        .cd-sound-btn.active {
+            background: var(--accent-primary);
+            color: var(--bg-base);
+            font-weight: 600;
+        }
+
+        .cd-sound-btn:not(.active):hover {
             color: var(--text-main);
         }
 
