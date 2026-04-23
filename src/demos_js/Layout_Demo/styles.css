@@ -2794,6 +2794,16 @@
             justify-content: space-between;
         }
 
+        .cd-popover-inner .cd-editor-footer-right {
+            display: flex;
+            gap: 8px;
+        }
+
+        .cd-popover-inner .cd-play-wrap {
+            display: flex;
+            justify-content: center;
+        }
+
 /* Keyboard Shortcut Help Overlay */
 
         .shortcut-help-overlay {

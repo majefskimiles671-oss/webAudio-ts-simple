@@ -457,11 +457,15 @@ function cdRenderEditorInto(container) {
   saveBtn.textContent = "Save";
   saveBtn.addEventListener("click", cdSaveChord);
 
+  const playWrap = document.createElement("div");
+  playWrap.className = "cd-play-wrap";
+  playWrap.appendChild(popPlayBtn);
+
   rightGroup.appendChild(deleteBtn);
   rightGroup.appendChild(saveBtn);
   footer.appendChild(cancelBtn);
-  footer.appendChild(popPlayBtn);
   footer.appendChild(rightGroup);
+  container.appendChild(playWrap);
   container.appendChild(footer);
 }
 
