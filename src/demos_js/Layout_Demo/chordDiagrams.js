@@ -5,21 +5,43 @@
 // State (Truth Layer) -----
 // ============================================================
 
-let chords = [{
-  id:       crypto.randomUUID(),
-  name:     "C",
-  baseFret: 1,
-  frets:    4,
-  tops:     ["o", null, "o", null, null, "x"],
-  dots: [
-    [false, false, false, false],  // string 1 (high E)
-    [true,  false, false, false],  // string 2 (B)
-    [false, false, false, false],  // string 3 (G)
-    [false, true,  false, false],  // string 4 (D)
-    [false, false, true,  false],  // string 5 (A)
-    [false, false, false, false],  // string 6 (low E)
-  ],
-}];
+let chords = [
+  {
+    id: crypto.randomUUID(), name: "C", baseFret: 1, frets: 4,
+    tops: ["o", null, "o", null, null, "x"],
+    dots: [[false,false,false,false],[true,false,false,false],[false,false,false,false],[false,true,false,false],[false,false,true,false],[false,false,false,false]],
+  },
+  {
+    id: crypto.randomUUID(), name: "D", baseFret: 1, frets: 4,
+    tops: [null, null, null, "o", "x", "x"],
+    dots: [[false,true,false,false],[false,false,true,false],[false,true,false,false],[false,false,false,false],[false,false,false,false],[false,false,false,false]],
+  },
+  {
+    id: crypto.randomUUID(), name: "G", baseFret: 1, frets: 4,
+    tops: [null, "o", "o", "o", "x", null],
+    dots: [[false,false,true,false],[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,false,true,false]],
+  },
+  {
+    id: crypto.randomUUID(), name: "Am", baseFret: 1, frets: 4,
+    tops: ["o", null, null, null, "o", "x"],
+    dots: [[false,false,false,false],[true,false,false,false],[false,true,false,false],[false,true,false,false],[false,false,false,false],[false,false,false,false]],
+  },
+  {
+    id: crypto.randomUUID(), name: "Em", baseFret: 1, frets: 4,
+    tops: ["o", "o", "o", null, null, "o"],
+    dots: [[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,true,false,false],[false,true,false,false],[false,false,false,false]],
+  },
+  {
+    id: crypto.randomUUID(), name: "Bm", baseFret: 1, frets: 4,
+    tops: [null, null, null, null, null, "x"],
+    dots: [[false,true,false,false],[false,false,true,false],[false,false,false,true],[false,false,false,true],[false,true,false,false],[false,false,false,false]],
+  },
+  {
+    id: crypto.randomUUID(), name: "F# dim", baseFret: 1, frets: 4,
+    tops: [null, null, null, null, "x", "x"],
+    dots: [[false,true,false,false],[true,false,false,false],[false,true,false,false],[true,false,false,false],[false,false,false,false],[false,false,false,false]],
+  },
+];
 let currentTuning = tuning([64, 59, 55, 50, 45, 40]);
 let _editingChord = null;
 let _cdDragging = false;
