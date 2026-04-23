@@ -15,17 +15,20 @@ const _masterAnalyserR = _audioCtx.createAnalyser();
 const _dryGain         = _audioCtx.createGain();
 const _reverbConvolver = _audioCtx.createConvolver();
 const _wetGain         = _audioCtx.createGain();
-_wetGain.gain.value = 0;
+const _compressor      = _audioCtx.createDynamicsCompressor();
+_wetGain.gain.value        = 0;
+_compressor.knee.value     = 6;
+_compressor.attack.value   = 0.003;
+_compressor.release.value  = 0.25;
 
-// Dry and wet paths both sum into the splitter (metering) and destination.
-// Meter therefore reflects post-effects level.
+// Chain: masterGain → dry/wet reverb mix → compressor → splitter (metering) + destination
 _masterGainNode.connect(_dryGain);
 _masterGainNode.connect(_reverbConvolver);
 _reverbConvolver.connect(_wetGain);
-_dryGain.connect(_masterSplitter);
-_dryGain.connect(_audioCtx.destination);
-_wetGain.connect(_masterSplitter);
-_wetGain.connect(_audioCtx.destination);
+_dryGain.connect(_compressor);
+_wetGain.connect(_compressor);
+_compressor.connect(_masterSplitter);
+_compressor.connect(_audioCtx.destination);
 _masterSplitter.connect(_masterAnalyserL, 0);
 _masterSplitter.connect(_masterAnalyserR, 1);
 
@@ -463,6 +466,18 @@ function audioEngineSetReverbWet(mix) {
 
 function audioEngineSetReverbDecay(decaySeconds) {
   _reverbConvolver.buffer = _generateReverbIR(decaySeconds);
+}
+
+function audioEngineSetCompressorThreshold(db) {
+  _compressor.threshold.value = db;
+}
+
+function audioEngineSetCompressorRatio(ratio) {
+  _compressor.ratio.value = ratio;
+}
+
+function audioEngineGetCompressorReduction() {
+  return _compressor.reduction;
 }
 
 function getAudioContext() { return _audioCtx; }

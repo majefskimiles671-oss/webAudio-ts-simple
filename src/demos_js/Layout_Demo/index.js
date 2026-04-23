@@ -2520,7 +2520,7 @@ function _meterTick() {
 
   _updateMasterMeter();
 
-  if (_masterL > 0.002 || _masterR > 0.002 || _masterPeakL > 0.002 || _masterPeakR > 0.002) anyActive = true;
+  if (_masterL > 0.002 || _masterR > 0.002 || _masterPeakL > 0.002 || _masterPeakR > 0.002 || _grLevel > 0.002) anyActive = true;
 
   if (_meterPlaying || anyActive) {
     _meterRafId = requestAnimationFrame(_meterTick);
@@ -2549,9 +2549,11 @@ function _renderTrackMeter(track) {
 // ---- Master Meter
 
 const MASTER_METER_SEGS = 20;
+const GR_METER_SEGS = 12;
 let _masterL = 0, _masterR = 0;
 let _masterPeakL = 0, _masterPeakR = 0;
 let _masterPeakFramesL = 0, _masterPeakFramesR = 0;
+let _grLevel = 0;
 
 function _updateMasterMeter() {
   const { L, R } = audioEngineGetMasterLevel();
@@ -2571,7 +2573,11 @@ function _updateMasterMeter() {
   else if (_masterPeakFramesR > 0) { _masterPeakFramesR--; }
   else { _masterPeakR = Math.max(_masterR, _masterPeakR * 0.93); }
 
+  const rawGR = Math.min(1, Math.abs(audioEngineGetCompressorReduction()) / 20);
+  _grLevel += (rawGR - _grLevel) * (rawGR > _grLevel ? 0.8 : 0.12);
+
   _renderMasterMeter();
+  _renderGRMeter();
 }
 
 function _renderMasterMeter() {
@@ -2592,6 +2598,15 @@ function _renderMasterMeter() {
       seg.classList.toggle("lit",  lit);
       seg.classList.toggle("peak", isPeak);
     });
+  });
+}
+
+function _renderGRMeter() {
+  const bar = document.getElementById("master-gr-meter");
+  if (!bar) return;
+  const activeSegs = Math.round(_grLevel * GR_METER_SEGS);
+  bar.querySelectorAll(".gr-seg").forEach((seg, i) => {
+    seg.classList.toggle("lit", i >= GR_METER_SEGS - activeSegs);
   });
 }
 
@@ -3490,6 +3505,16 @@ document.querySelectorAll(".master-meter-bar").forEach(bar => {
   }
 });
 
+// Populate GR meter segments
+const _grMeterBar = document.getElementById("master-gr-meter");
+if (_grMeterBar) {
+  for (let i = 0; i < GR_METER_SEGS; i++) {
+    const seg = document.createElement("div");
+    seg.className = "gr-seg";
+    _grMeterBar.appendChild(seg);
+  }
+}
+
 // Master gain slider
 document.getElementById("master-gain-slider").addEventListener("input", (e) => {
   masterGain = e.target.value;
@@ -3502,6 +3527,14 @@ document.getElementById("master-reverb-wet").addEventListener("input", (e) => {
 
 document.getElementById("master-reverb-size").addEventListener("input", (e) => {
   audioEngineSetReverbDecay(0.3 + (e.target.value / 100) * 5.7);
+});
+
+document.getElementById("master-comp-threshold").addEventListener("input", (e) => {
+  audioEngineSetCompressorThreshold(parseFloat(e.target.value));
+});
+
+document.getElementById("master-comp-ratio").addEventListener("input", (e) => {
+  audioEngineSetCompressorRatio(parseFloat(e.target.value));
 });
 
 // DOM Sync - Video Backdrop - Synchronization Layer -----

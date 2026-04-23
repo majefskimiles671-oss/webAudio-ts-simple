@@ -2014,7 +2014,17 @@
             padding: 10px 12px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 0;
+        }
+
+        .master-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 8px 0;
+        }
+        .master-section + .master-section {
+            border-top: 1px solid var(--border-subtle);
         }
 
         .master-heading {
@@ -2084,6 +2094,23 @@
         .mm-seg:nth-child(n+17).peak {
             background: var(--meter-high);
             opacity: 0.7;
+        }
+
+        /* GR meter — fills right-to-left, amber color */
+        .gr-meter-bar {
+            flex: 1;
+            height: 8px;
+            display: flex;
+            gap: 2px;
+        }
+        .gr-seg {
+            flex: 1;
+            border-radius: 1px;
+            background: rgba(255, 255, 255, 0.07);
+        }
+        .gr-seg.lit {
+            background: var(--meter-mid);
+            box-shadow: 0 0 3px color-mix(in srgb, var(--meter-mid) 67%, transparent);
         }
 
         .master-gain-row {
