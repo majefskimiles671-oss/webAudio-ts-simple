@@ -320,6 +320,11 @@ function secondsPerBar() {
   return secondsPerBeat() * beatsPerBar;
 }
 
+function snapToBeat(time) {
+  const spb = secondsPerBeat();
+  return Math.round(time / spb) * spb;
+}
+
 function getRulerTicks(startSeconds, endSeconds) {
   if (rulerMode === "seconds") {
     return getSecondTicks(startSeconds, endSeconds);
@@ -577,7 +582,7 @@ function selectMarkerByIndex(index) {
   renderMarkerTransport();
   renderBottomPanel();
 
-  if (marker.chordId && typeof cdHighlightChord === "function") {
+  if (typeof cdHighlightChord === "function") {
     cdHighlightChord(marker.chordId);
   }
 }
@@ -1661,7 +1666,7 @@ const timelineRuler = document.getElementById("timeline-ruler");
 // ---- Marker Handlers
 timelineRuler.addEventListener("click", (e) => {
   const x = e.clientX - timelineInner.getBoundingClientRect().left;
-  const time = pixelsToSeconds(x);
+  const time = rulerMode === "bars" ? snapToBeat(pixelsToSeconds(x)) : pixelsToSeconds(x);
 
   const nearby = findNearbyMarker(time);
   if (nearby) {
@@ -2634,7 +2639,7 @@ function updatePlayhead() {
     renderMarkers();
     renderMarkerTransport();
     renderBottomPanel();
-    if (_nextMarker.chordId && typeof cdHighlightChord === "function") {
+    if (typeof cdHighlightChord === "function") {
       cdHighlightChord(_nextMarker.chordId);
     }
   }

@@ -30,7 +30,17 @@ let _cdZoom = 1;
 function cdHighlightChord(id) {
   const body = document.getElementById("chord-diagrams-body");
   if (!body) return;
-  body.querySelectorAll(".cd-chord-card").forEach(el => el.classList.remove("cd-card-highlighted"));
+  if (!id) {
+    // No chord on this marker — dim whichever card is currently highlighted
+    body.querySelectorAll(".cd-chord-card.cd-card-highlighted").forEach(el => {
+      el.classList.remove("cd-card-highlighted");
+      el.classList.add("cd-card-dimmed");
+    });
+    return;
+  }
+  body.querySelectorAll(".cd-chord-card").forEach(el => {
+    el.classList.remove("cd-card-highlighted", "cd-card-dimmed");
+  });
   const card = body.querySelector(`.cd-chord-card[data-chord-id="${id}"]`);
   if (!card) return;
   card.classList.add("cd-card-highlighted");

@@ -457,6 +457,7 @@
 
 
 
+
         /* Track name */
 
         .track-title {
@@ -2505,6 +2506,12 @@
 
         .cd-chord-card.cd-card-highlighted {
             outline: 2px solid var(--accent-primary);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        .cd-chord-card.cd-card-dimmed {
+            outline: 2px solid color-mix(in oklab, var(--accent-primary) 50%, transparent);
             outline-offset: 3px;
             border-radius: 4px;
         }
