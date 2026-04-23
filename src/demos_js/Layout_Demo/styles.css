@@ -429,9 +429,13 @@
             transform: translateX(-7px);
             pointer-events: auto;
             /* OVERRIDES parent setting */
-            cursor: pointer;
+            cursor: grab;
             background: rgba(255, 0, 0, 0);
             /* TEMP DEBUG — will remove */
+        }
+
+        .timeline-marker-hit:active {
+            cursor: grabbing;
         }
 
         /* The actual visible line (tiny) */

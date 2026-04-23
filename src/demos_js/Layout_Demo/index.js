@@ -191,6 +191,7 @@ let timeSignature = {
 const ORIGIN_MARKER_ID = "origin";
 let markers = [];
 let selectedMarkerId = null;
+let _markerDragState = null; // { markerId }  — set while dragging a marker
 
 //  Clip Selection
 const selectedClipIds = new Set();
@@ -1346,16 +1347,20 @@ function renderMarkers() {
     const x = secondsToPixels(marker.time);
     markerWrap.style.left = `${x}px`;
 
-    // ✅ CLICK → LOAD MARKER
-    markerWrap.addEventListener("click", (e) => {
-      e.stopPropagation();
+    markerWrap.addEventListener("mousedown", (e) => {
+      e.stopPropagation(); // prevent scrub
       selectedMarkerId = marker.id;
+      if (marker.id !== ORIGIN_MARKER_ID) {
+        _markerDragState = { markerId: marker.id };
+      }
       renderMarkers();
       renderMarkerTransport();
       renderBottomPanel();
     });
 
-    // (drag comes later; keep click-only for now)
+    // Stop click from bubbling to the ruler (would create a new marker)
+    markerWrap.addEventListener("click", (e) => e.stopPropagation());
+
     markersLayer.appendChild(markerWrap);
   }
 }
@@ -1589,12 +1594,29 @@ timelineArea.addEventListener("mousedown", (e) => {
 });
 
 document.addEventListener("mousemove", (e) => {
+  if (_markerDragState) {
+    const x = e.clientX - timelineInner.getBoundingClientRect().left;
+    let newTime = Math.max(0, pixelsToSeconds(x));
+    if (rulerMode === "bars") newTime = snapToBeat(newTime);
+    const m = markers.find(m => m.id === _markerDragState.markerId);
+    if (m) {
+      m.time = newTime;
+      markers.sort((a, b) => a.time - b.time);
+      renderMarkers();
+    }
+    return;
+  }
   if (!isScrubbing) return;
 
   scrubToMouseEvent(e);
 });
 
 document.addEventListener("mouseup", () => {
+  if (_markerDragState) {
+    _markerDragState = null;
+    markDirty();
+    return;
+  }
   if (!isScrubbing) return;
 
   isScrubbing = false;
