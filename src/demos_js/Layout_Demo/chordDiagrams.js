@@ -345,8 +345,8 @@ function cdRenderListInto(container) {
       const playBtn = document.createElement("button");
       playBtn.className = "cd-play-btn";
       playBtn.textContent = "▶";
-      playBtn.title = "Play chord";
-      playBtn.addEventListener("click", (e) => { e.stopPropagation(); playChord(chord); });
+      playBtn.title = "Click: strum  •  Double-click: spaced notes";
+      cdAttachPlayHandlers(playBtn, () => chord);
       card.appendChild(gridWrap);
       card.appendChild(playBtn);
       row.appendChild(card);
@@ -465,7 +465,8 @@ function cdRenderEditorInto(container) {
   const popPlayBtn = document.createElement("button");
   popPlayBtn.className = "cd-btn-cancel cd-btn-play-pop";
   popPlayBtn.textContent = "▶ Play";
-  popPlayBtn.addEventListener("click", () => playChord(_editingChord));
+  popPlayBtn.title = "Click: strum  •  Double-click: spaced notes";
+  cdAttachPlayHandlers(popPlayBtn, () => _editingChord);
 
   const rightGroup = document.createElement("div");
   rightGroup.className = "cd-editor-footer-right";

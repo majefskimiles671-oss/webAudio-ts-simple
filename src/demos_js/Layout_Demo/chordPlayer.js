@@ -2,9 +2,6 @@
 // Karplus-Strong plucked-string synthesis for chord diagram playback.
 // Algorithm runs in JS (pre-computed buffer), avoiding WebAudio feedback graph instability.
 
-const _STRUM_DELAYS_S = [0.022, 0.5];
-let _strumDelayIdx      = 0;
-
 function _midiToFreq(midi) {
   return 440 * Math.pow(2, (midi - 69) / 12);
 }
@@ -74,7 +71,6 @@ function _ksGenerate(freq, sampleRate, durationSec) {
 }
 
 function _ksPluck(ctx, freq, startTime, durationSec = 3.5) {
-  // console.log("midi:", Math.round(69 + 12 * Math.log2(freq / 440)));
   const samples = _ksGenerate(freq, ctx.sampleRate, durationSec);
   const buf = ctx.createBuffer(1, samples.length, ctx.sampleRate);
   buf.copyToChannel(samples, 0);
@@ -86,20 +82,55 @@ function _ksPluck(ctx, freq, startTime, durationSec = 3.5) {
   src.addEventListener("ended", () => src.disconnect());
 }
 
-function playChord(chord) {
+// Single click: strum for chords; ascending run for scales.
+function playChordStrum(chord) {
   const ctx = getAudioContext();
   if (ctx.state === "suspended") ctx.resume();
   const now = ctx.currentTime + 0.01;
+  if (_isScale(chord)) {
+    const freqs = _scaleToFreqs(chord);
+    freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5, 0.375));
+  } else {
+    const freqs = _chordToFreqs(chord);
+    freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.022));
+  }
+}
 
+// Double click: play notes spaced out over time.
+function playChordSpaced(chord) {
+  const ctx = getAudioContext();
+  if (ctx.state === "suspended") ctx.resume();
+  const now = ctx.currentTime + 0.01;
   if (_isScale(chord)) {
     const asc  = _scaleToFreqs(chord);
     const desc = [...asc].reverse();
     const sequence = [...asc, ...desc.slice(1)];
     sequence.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5, 0.375));
   } else {
-    const freqs      = _chordToFreqs(chord);
-    const strumDelay = _STRUM_DELAYS_S[_strumDelayIdx];
-    _strumDelayIdx   = (_strumDelayIdx + 1) % _STRUM_DELAYS_S.length;
-    freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * strumDelay));
+    const freqs = _chordToFreqs(chord);
+    freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5));
   }
+}
+
+// Attach single/double-click play handlers to a button element.
+// Single click → strum, double click → spaced notes.
+function cdAttachPlayHandlers(btn, getChord) {
+  let clickTimer = null;
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (clickTimer) {
+      clearTimeout(clickTimer);
+      clickTimer = null;
+      return;
+    }
+    clickTimer = setTimeout(() => {
+      clickTimer = null;
+      playChordStrum(getChord());
+    }, 220);
+  });
+  btn.addEventListener("dblclick", (e) => {
+    e.stopPropagation();
+    if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+    playChordSpaced(getChord());
+  });
 }

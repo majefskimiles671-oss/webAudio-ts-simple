@@ -215,16 +215,17 @@ function clearDirty() {
 
 // State - View State - Truth Layer -----
 const viewState = {
-  bottomPanel:     true,
-  master:          true,
-  notes:           true,
-  scenes:          true,
-  markerTransport: true,
-  tempo:           true,
-  metronome:       true,
-  zoom:            true,
-  solo:            true,
-  chordDiagrams:   true,
+  bottomPanel:          true,
+  master:               true,
+  notes:                true,
+  scenes:               true,
+  markerTransport:      true,
+  tempo:                true,
+  metronome:            true,
+  zoom:                 true,
+  solo:                 true,
+  chordDiagrams:        true,
+  markerLookaheadBeats: 1,
 };
 
 // Authority - View State - Apply -----
@@ -2621,6 +2622,23 @@ function updatePlayhead() {
   renderTimelineLayer();
   renderMetronomeScan();
 
+  // Select the last marker whose time falls within one beat of the playhead
+  const _lookahead = currentTimeSeconds + secondsPerBeat() * viewState.markerLookaheadBeats;
+  let _nextMarker = null;
+  for (const m of markers) {
+    if (m.time <= _lookahead) _nextMarker = m;
+    else break;
+  }
+  if (_nextMarker && _nextMarker.id !== selectedMarkerId) {
+    selectedMarkerId = _nextMarker.id;
+    renderMarkers();
+    renderMarkerTransport();
+    renderBottomPanel();
+    if (_nextMarker.chordId && typeof cdHighlightChord === "function") {
+      cdHighlightChord(_nextMarker.chordId);
+    }
+  }
+
   if (videoEl && ++_videoDriftFrame >= 90) {
     _videoDriftFrame = 0;
     if (Math.abs(videoEl.currentTime - currentTimeSeconds) > 0.15) {
@@ -2914,6 +2932,7 @@ document.getElementById("view-settings-open").addEventListener("click", () => {
     r.checked = r.value === rulerMode;
   });
   document.getElementById("vs-notes-font-mono").checked = _notesFontSnapshot === "mono";
+  document.getElementById("vs-marker-lookahead").value = viewState.markerLookaheadBeats;
   _viewSettingsOverlay.hidden = false;
 });
 
@@ -2929,6 +2948,9 @@ _viewSettingsOverlay.addEventListener("change", e => {
   if (e.target.id === "vs-notes-font-mono") {
     document.body.setAttribute("data-notes-font", e.target.checked ? "mono" : "");
   }
+  if (e.target.id === "vs-marker-lookahead") {
+    viewState.markerLookaheadBeats = Math.max(0, parseFloat(e.target.value) || 0);
+  }
 });
 
 document.getElementById("view-settings-cancel").addEventListener("click", () => {
@@ -2937,6 +2959,7 @@ document.getElementById("view-settings-cancel").addEventListener("click", () => 
   setTheme(_themeSnapshot, { silent: true });
   setRulerMode(_rulerSnapshot);
   document.body.setAttribute("data-notes-font", _notesFontSnapshot || "");
+  document.getElementById("vs-marker-lookahead").value = viewState.markerLookaheadBeats;
   _viewSettingsOverlay.hidden = true;
 });
 
