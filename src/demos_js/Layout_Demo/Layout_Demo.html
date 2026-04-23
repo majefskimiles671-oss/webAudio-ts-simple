@@ -327,7 +327,15 @@ Rule - Add comments before code snippets in this format:
 
             <div id="bottom-panel-master">
                 <div class="master-section">
-                    <p class="master-heading">Master</p>
+                    <div class="master-section-header">
+                        <p class="master-heading">Master</p>
+                        <select class="master-preset-select" id="master-vol-preset">
+                            <option value="">Preset</option>
+                            <option value="unity">Unity</option>
+                            <option value="low">-6 dB</option>
+                            <option value="quiet">-12 dB</option>
+                        </select>
+                    </div>
                     <div id="master-meter">
                         <div class="master-meter-row">
                             <span class="master-ch-label">L</span>
@@ -344,7 +352,15 @@ Rule - Add comments before code snippets in this format:
                     </div>
                 </div>
                 <div class="master-section">
-                    <p class="master-heading">Reverb</p>
+                    <div class="master-section-header">
+                        <p class="master-heading">Reverb</p>
+                        <select class="master-preset-select" id="reverb-preset">
+                            <option value="">Preset</option>
+                            <option value="room">Room</option>
+                            <option value="hall">Hall</option>
+                            <option value="cathedral">Cathedral</option>
+                        </select>
+                    </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">Wet</span>
                         <gain-slider id="master-reverb-wet" min="0" max="100" value="0"></gain-slider>
@@ -355,7 +371,15 @@ Rule - Add comments before code snippets in this format:
                     </div>
                 </div>
                 <div class="master-section">
-                    <p class="master-heading">Compressor</p>
+                    <div class="master-section-header">
+                        <p class="master-heading">Compressor</p>
+                        <select class="master-preset-select" id="comp-preset">
+                            <option value="">Preset</option>
+                            <option value="light">Light</option>
+                            <option value="punch">Punch</option>
+                            <option value="limit">Limit</option>
+                        </select>
+                    </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">Thr</span>
                         <gain-slider id="master-comp-threshold" min="-60" max="0" value="-18"></gain-slider>

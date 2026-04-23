@@ -3519,22 +3519,71 @@ if (_grMeterBar) {
 document.getElementById("master-gain-slider").addEventListener("input", (e) => {
   masterGain = e.target.value;
   audioEngineSetMasterGain(e.target.value / 100);
+  document.getElementById("master-vol-preset").value = "";
 });
 
 document.getElementById("master-reverb-wet").addEventListener("input", (e) => {
   audioEngineSetReverbWet(e.target.value / 100);
+  document.getElementById("reverb-preset").value = "";
 });
 
 document.getElementById("master-reverb-size").addEventListener("input", (e) => {
   audioEngineSetReverbDecay(0.3 + (e.target.value / 100) * 5.7);
+  document.getElementById("reverb-preset").value = "";
 });
 
 document.getElementById("master-comp-threshold").addEventListener("input", (e) => {
   audioEngineSetCompressorThreshold(parseFloat(e.target.value));
+  document.getElementById("comp-preset").value = "";
 });
 
 document.getElementById("master-comp-ratio").addEventListener("input", (e) => {
   audioEngineSetCompressorRatio(parseFloat(e.target.value));
+  document.getElementById("comp-preset").value = "";
+});
+
+// Master presets
+const _masterPresets = {
+  unity: { vol: 100 },
+  low:   { vol: 50  },
+  quiet: { vol: 25  },
+};
+document.getElementById("master-vol-preset").addEventListener("change", (e) => {
+  const p = _masterPresets[e.target.value];
+  if (!p) return;
+  document.getElementById("master-gain-slider").value = p.vol;
+  masterGain = p.vol;
+  audioEngineSetMasterGain(p.vol / 100);
+});
+
+// Reverb presets
+const _reverbPresets = {
+  room:      { wet: 20, size: 18 },
+  hall:      { wet: 40, size: 50 },
+  cathedral: { wet: 65, size: 85 },
+};
+document.getElementById("reverb-preset").addEventListener("change", (e) => {
+  const p = _reverbPresets[e.target.value];
+  if (!p) return;
+  document.getElementById("master-reverb-wet").value  = p.wet;
+  document.getElementById("master-reverb-size").value = p.size;
+  audioEngineSetReverbWet(p.wet / 100);
+  audioEngineSetReverbDecay(0.3 + (p.size / 100) * 5.7);
+});
+
+// Compressor presets
+const _compPresets = {
+  light: { thr: -18, ratio: 3  },
+  punch: { thr: -24, ratio: 6  },
+  limit: { thr: -6,  ratio: 18 },
+};
+document.getElementById("comp-preset").addEventListener("change", (e) => {
+  const p = _compPresets[e.target.value];
+  if (!p) return;
+  document.getElementById("master-comp-threshold").value = p.thr;
+  document.getElementById("master-comp-ratio").value     = p.ratio;
+  audioEngineSetCompressorThreshold(p.thr);
+  audioEngineSetCompressorRatio(p.ratio);
 });
 
 // DOM Sync - Video Backdrop - Synchronization Layer -----
