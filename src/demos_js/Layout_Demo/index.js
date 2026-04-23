@@ -3496,6 +3496,14 @@ document.getElementById("master-gain-slider").addEventListener("input", (e) => {
   audioEngineSetMasterGain(e.target.value / 100);
 });
 
+document.getElementById("master-reverb-wet").addEventListener("input", (e) => {
+  audioEngineSetReverbWet(e.target.value / 100);
+});
+
+document.getElementById("master-reverb-size").addEventListener("input", (e) => {
+  audioEngineSetReverbDecay(0.3 + (e.target.value / 100) * 5.7);
+});
+
 // DOM Sync - Video Backdrop - Synchronization Layer -----
 // Keep video sized to the visible area of #timeline-area so it doesn't scroll.
 (function () {

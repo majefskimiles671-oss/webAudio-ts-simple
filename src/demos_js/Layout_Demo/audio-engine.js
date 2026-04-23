@@ -12,10 +12,22 @@ const _masterGainNode  = _audioCtx.createGain();
 const _masterSplitter  = _audioCtx.createChannelSplitter(2);
 const _masterAnalyserL = _audioCtx.createAnalyser();
 const _masterAnalyserR = _audioCtx.createAnalyser();
-_masterGainNode.connect(_masterSplitter);
+const _dryGain         = _audioCtx.createGain();
+const _reverbConvolver = _audioCtx.createConvolver();
+const _wetGain         = _audioCtx.createGain();
+_wetGain.gain.value = 0;
+
+// Dry and wet paths both sum into the splitter (metering) and destination.
+// Meter therefore reflects post-effects level.
+_masterGainNode.connect(_dryGain);
+_masterGainNode.connect(_reverbConvolver);
+_reverbConvolver.connect(_wetGain);
+_dryGain.connect(_masterSplitter);
+_dryGain.connect(_audioCtx.destination);
+_wetGain.connect(_masterSplitter);
+_wetGain.connect(_audioCtx.destination);
 _masterSplitter.connect(_masterAnalyserL, 0);
 _masterSplitter.connect(_masterAnalyserR, 1);
-_masterGainNode.connect(_audioCtx.destination);
 
 function audioEngineDecodeWav(arrayBuffer) {
   return _audioCtx.decodeAudioData(arrayBuffer);
@@ -429,6 +441,28 @@ function audioEngineRenderLoop(srcBuffer, loopStartSamples, loopEndSamples, outp
     }
   }
   return out;
+}
+
+function _generateReverbIR(decaySeconds) {
+  const sr  = _audioCtx.sampleRate;
+  const len = Math.round(sr * decaySeconds);
+  const buf = _audioCtx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++)
+      d[i] = (Math.random() * 2 - 1) * Math.exp(-3 * i / len);
+  }
+  return buf;
+}
+_reverbConvolver.buffer = _generateReverbIR(1.5);
+
+function audioEngineSetReverbWet(mix) {
+  _dryGain.gain.value = 1 - mix;
+  _wetGain.gain.value = mix;
+}
+
+function audioEngineSetReverbDecay(decaySeconds) {
+  _reverbConvolver.buffer = _generateReverbIR(decaySeconds);
 }
 
 function getAudioContext() { return _audioCtx; }
