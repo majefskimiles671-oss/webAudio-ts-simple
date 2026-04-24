@@ -1343,7 +1343,155 @@
             --waveform-b: #2a3020;   /* deep olive-violet — green lurking */
         }
 
+        body[data-theme="Purple Light"] {
+            /* Surfaces — soft violet in daylight */
+            --bg-app:     #f0ebfb;
+            --bg-surface: #faf8ff;
+            --bg-panel:   #e6dff5;
+            --bg-button:  #d0c4ee;
 
+            /* Text — deep indigo, muted mauve */
+            --text-main:   #1a0e38;
+            --text-muted:  #6b5890;
+            --text-button: #1a0e38;
+
+            /* UI chrome */
+            --border-subtle: #bbaee0;
+
+            /* Accents — vivid violet primary, soft pink highlight */
+            --accent-primary:   #7c3aed;
+            --accent-danger:    #dc2626;
+            --accent-highlight: #c084fc;
+
+            /* Waveform */
+            --waveform-a: #e6dff5;
+            --waveform-b: #d0c4ee;
+        }
+
+        body[data-theme="Fire Light"] {
+            /* Surfaces — warm ember glow in daylight */
+            --bg-app:     #fef3e8;
+            --bg-surface: #fffdf9;
+            --bg-panel:   #fde8d0;
+            --bg-button:  #f5c9a0;
+
+            /* Text — deep charcoal-brown, warm muted */
+            --text-main:   #1c0a04;
+            --text-muted:  #7c3c1c;
+            --text-button: #1c0a04;
+
+            /* UI chrome */
+            --border-subtle: #f0b080;
+
+            /* Accents — deepened orange and amber for light-bg contrast */
+            --accent-primary:   #ea6010;
+            --accent-danger:    #dc2626;
+            --accent-highlight: #e8b800;
+
+            /* Waveform */
+            --waveform-a: #fde8d0;
+            --waveform-b: #f5c9a0;
+        }
+
+        body[data-theme="Earth Light"] {
+            /* Surfaces — warm parchment and sandstone */
+            --bg-app:     #f2ebe0;
+            --bg-surface: #fffcf5;
+            --bg-panel:   #e8dece;
+            --bg-button:  #d4c5ae;
+
+            /* Text — dark warm brown */
+            --text-main:   #1c1712;
+            --text-muted:  #78706a;
+            --text-button: #1c1712;
+
+            /* UI chrome */
+            --border-subtle: #c2b49a;
+
+            /* Accents — lime and amber, deepened for light-bg contrast */
+            --accent-primary:   #6a9e0e;
+            --accent-danger:    #b91c1c;
+            --accent-highlight: #c9870a;
+
+            /* Waveform */
+            --waveform-a: #e8dece;
+            --waveform-b: #d4c5ae;
+        }
+
+        body[data-theme="Cookies Haze Light"] {
+            /* Surfaces — cannabis bud in afternoon sun, sage and warm tan */
+            --bg-app:     #edf3dc;
+            --bg-surface: #f7fced;
+            --bg-panel:   #e0ecca;
+            --bg-button:  #cec09a;
+
+            /* Text — dark warm green-brown, olive muted */
+            --text-main:   #1a1e10;
+            --text-muted:  #586040;
+            --text-button: #1a1e10;
+
+            /* UI chrome */
+            --border-subtle: #b4c490;
+
+            /* Accents — amber pistils, vivid lime trichomes */
+            --accent-primary:   #b07de0;
+            --accent-danger:    #cc3333;
+            --accent-highlight: #7ec010;
+
+            /* Waveform */
+            --waveform-a: #e0ecca;
+            --waveform-b: #cec09a;
+        }
+
+        body[data-theme="Studio Light"] {
+            /* Surfaces — clean bright studio console */
+            --bg-app:     #f0f0f0;
+            --bg-surface: #ffffff;
+            --bg-panel:   #e8e8e8;
+            --bg-button:  #d4d4d4;
+
+            /* Text — near-black on white */
+            --text-main:   #1a1a1a;
+            --text-muted:  #6b6b6b;
+            --text-button: #1a1a1a;
+
+            /* UI chrome */
+            --border-subtle: #c2c2c2;
+
+            /* Accents — studio blue primary, green signal */
+            --accent-primary:   #0a84ff;
+            --accent-danger:    #ff3b30;
+            --accent-highlight: #30c060;
+
+            /* Waveform */
+            --waveform-a: #e4e4e4;
+            --waveform-b: #d0d0d0;
+        }
+
+        body[data-theme="Red Light"] {
+            /* Surfaces — recording booth under the ON AIR lamp */
+            --bg-app:     #0e0000;
+            --bg-surface: #1c0404;
+            --bg-panel:   #140202;
+            --bg-button:  #2c0808;
+
+            /* Text — warm pinkish-white, dim red muted */
+            --text-main:   #ffd8d8;
+            --text-muted:  #aa4444;
+            --text-button: #ffd8d8;
+
+            /* UI chrome */
+            --border-subtle: #3d0a0a;
+
+            /* Accents — vivid red primary, hot pink highlight */
+            --accent-primary:   #e03030;
+            --accent-danger:    #ff6060;
+            --accent-highlight: #ff9090;
+
+            /* Waveform */
+            --waveform-a: #1c0404;
+            --waveform-b: #280606;
+        }
 
         body[data-theme="x286"] {
             /* Surfaces — phosphor screen in a dark room */
@@ -3223,9 +3371,9 @@
         .vs-col > .vs-group-label:first-child { margin-top: 0; }
 
         .theme-swatch-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 0;
             background: #000000;
             padding: 8px;
             border-radius: 8px;
