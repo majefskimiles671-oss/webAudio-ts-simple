@@ -4074,6 +4074,34 @@
   flex-wrap: nowrap;
 }
 
+.midi-clip-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  z-index: 2;
+}
+
+.midi-clip-handle-left  { left: 0; border-radius: 3px 0 0 3px; }
+.midi-clip-handle-right { right: 0; border-radius: 0 3px 3px 0; }
+
+.midi-clip-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 36%;
+  min-height: 8px;
+  background: var(--accent-primary);
+  border-radius: 1px;
+  opacity: 0.5;
+}
+
+.midi-clip-handle:hover::after { opacity: 1; }
+
 .midi-event {
   position: absolute;
   top: 0;

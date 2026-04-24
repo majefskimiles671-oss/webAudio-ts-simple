@@ -1558,6 +1558,75 @@ function renderMidiClip(track, clip) {
     isDblClick = false;
   });
 
+  // Right-edge resize handle
+  const rightHandle = document.createElement("div");
+  rightHandle.className = "midi-clip-handle midi-clip-handle-right";
+  let rStartX = 0, rStartDur = 0;
+  rightHandle.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    rStartX   = e.clientX;
+    rStartDur = clip.durationSamples;
+    rightHandle.setPointerCapture(e.pointerId);
+  });
+  rightHandle.addEventListener("pointermove", (e) => {
+    if (!rightHandle.hasPointerCapture(e.pointerId)) return;
+    const deltaX = e.clientX - rStartX;
+    let newDurSec = rStartDur / SAMPLE_RATE + pixelsToSeconds(deltaX);
+    if (rulerMode === "bars") {
+      const snapped = snapToHalfBeat(clip.startSample / SAMPLE_RATE + newDurSec);
+      newDurSec = snapped - clip.startSample / SAMPLE_RATE;
+    }
+    clip.durationSamples = Math.max(Math.round(SAMPLE_RATE / 4), Math.round(newDurSec * SAMPLE_RATE));
+    el.style.width = computeWaveformWidth(clip.durationSamples / SAMPLE_RATE) + "px";
+  });
+  rightHandle.addEventListener("pointerup", (e) => {
+    if (!rightHandle.hasPointerCapture(e.pointerId)) return;
+    rightHandle.releasePointerCapture(e.pointerId);
+    markDirty();
+  });
+  el.appendChild(rightHandle);
+
+  // Left-edge resize handle
+  const leftHandle = document.createElement("div");
+  leftHandle.className = "midi-clip-handle midi-clip-handle-left";
+  let lStartX = 0, lStartSample = 0, lStartDur = 0, lOrigOffsets = [];
+  leftHandle.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    lStartX      = e.clientX;
+    lStartSample = clip.startSample;
+    lStartDur    = clip.durationSamples;
+    lOrigOffsets = clip.events.map(ev => ev.offsetSamples);
+    leftHandle.setPointerCapture(e.pointerId);
+  });
+  leftHandle.addEventListener("pointermove", (e) => {
+    if (!leftHandle.hasPointerCapture(e.pointerId)) return;
+    const deltaX = e.clientX - lStartX;
+    let newStartSec = Math.max(0, lStartSample / SAMPLE_RATE + pixelsToSeconds(deltaX));
+    if (rulerMode === "bars") newStartSec = snapToHalfBeat(newStartSec);
+    const newStartSample = Math.round(newStartSec * SAMPLE_RATE);
+    const sampleDelta    = newStartSample - lStartSample;
+    const newDur         = lStartDur - sampleDelta;
+    if (newDur < Math.round(SAMPLE_RATE / 4)) return;
+    clip.startSample     = newStartSample;
+    clip.durationSamples = newDur;
+    clip.events.forEach((ev, i) => {
+      ev.offsetSamples = Math.max(0, lOrigOffsets[i] - sampleDelta);
+    });
+    el.style.left  = secondsToPixels(clip.startSample / SAMPLE_RATE) + "px";
+    el.style.width = computeWaveformWidth(clip.durationSamples / SAMPLE_RATE) + "px";
+    el.querySelectorAll(".midi-event").forEach((evEl, i) => {
+      evEl.style.left = secondsToPixels(clip.events[i].offsetSamples / SAMPLE_RATE) + "px";
+    });
+  });
+  leftHandle.addEventListener("pointerup", (e) => {
+    if (!leftHandle.hasPointerCapture(e.pointerId)) return;
+    leftHandle.releasePointerCapture(e.pointerId);
+    markDirty();
+  });
+  el.appendChild(leftHandle);
+
   rowInner.appendChild(el);
 }
 
