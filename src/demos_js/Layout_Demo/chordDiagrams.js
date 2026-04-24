@@ -41,6 +41,11 @@ let chords = [
     tops: [null, null, null, null, "x", "x"],
     dots: [[false,true,false,false],[true,false,false,false],[false,true,false,false],[true,false,false,false],[false,false,false,false],[false,false,false,false]],
   },
+  {
+    id: crypto.randomUUID(), name: "C tanpura", baseFret: 1, frets: 6,
+    tops: ["x", null, "o", null, "x", null],
+    dots: [[false,false,false,false,false,false],[true,false,false,false,false,false],[false,false,false,false,false,false],[false,false,false,false,true,false],[false,false,false,false,false,false],[false,false,true,false,false,false]],
+  },
 ];
 let currentTuning = tuning([64, 59, 55, 50, 45, 40]);
 let _editingChord = null;
@@ -505,10 +510,6 @@ function cdRenderEditorInto(container) {
   cancelBtn.textContent = "Cancel";
   cancelBtn.addEventListener("click", cdShowList);
 
-  const debugBtn = document.createElement("button");
-  debugBtn.className = "cd-btn-cancel";
-  debugBtn.textContent = "Debug";
-  debugBtn.addEventListener("click", cdDebugChord);
 
   const popPlayBtn = document.createElement("button");
   popPlayBtn.className = "cd-btn-cancel cd-btn-play-pop";
@@ -536,7 +537,6 @@ function cdRenderEditorInto(container) {
   rightGroup.appendChild(deleteBtn);
   rightGroup.appendChild(saveBtn);
   footer.appendChild(cancelBtn);
-  footer.appendChild(debugBtn);
   footer.appendChild(rightGroup);
   container.appendChild(playWrap);
   container.appendChild(footer);

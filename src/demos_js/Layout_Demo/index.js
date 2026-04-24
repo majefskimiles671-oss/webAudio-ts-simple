@@ -3973,6 +3973,14 @@ if (_grMeterBar) {
 
 tanpuraInit(getAudioContext());
 
+// Apply defaults — mirrors the HTML default values so the audio engine matches on load.
+audioEngineSetMasterGain(0.25);   // -12 dB
+cpSetSynthMult(0.5);              // Med
+tanpuraSetMode("synth");
+tanpuraSetVolume(0.5);
+tanpuraSetSynthMult(0.5);         // Med
+[0, 1, 2, 3].forEach(i => tanpuraSetStringGain(i, 0.5));
+
 // Master gain slider
 document.getElementById("master-gain-slider").addEventListener("input", (e) => {
   masterGain = e.target.value;
@@ -4071,7 +4079,7 @@ document.getElementById("comp-preset").addEventListener("change", (e) => {
 });
 
 // Tanpura controls
-let _tanpuraEnabled = false;
+let _tanpuraEnabled = true;
 
 document.getElementById("tanpura-toggle").addEventListener("click", (e) => {
   const btn = e.currentTarget;

@@ -334,7 +334,7 @@ Rule - Add comments before code snippets in this format:
                             <option value="">Preset</option>
                             <option value="unity">Unity</option>
                             <option value="low">-6 dB</option>
-                            <option value="quiet">-12 dB</option>
+                            <option value="quiet" selected>-12 dB</option>
                         </select>
                     </div>
                     <div id="master-meter">
@@ -349,7 +349,7 @@ Rule - Add comments before code snippets in this format:
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">Vol</span>
-                        <gain-slider id="master-gain-slider" min="0" max="100" value="100"></gain-slider>
+                        <gain-slider id="master-gain-slider" min="0" max="100" value="25"></gain-slider>
                     </div>
                 </div>
                 <div class="master-section">
@@ -406,30 +406,30 @@ Rule - Add comments before code snippets in this format:
                         <div class="master-fx-controls">
                             <select class="master-preset-select" id="synth-len-preset">
                                 <option value="100">Long</option>
-                                <option value="50">Med</option>
+                                <option value="50" selected>Med</option>
                                 <option value="25">Short</option>
                             </select>
                         </div>
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">Len</span>
-                        <gain-slider id="synth-note-length" min="10" max="100" value="100"></gain-slider>
+                        <gain-slider id="synth-note-length" min="10" max="100" value="50"></gain-slider>
                     </div>
                 </div>
                 <div class="master-section">
                     <div class="master-section-header">
                         <p class="master-heading">Tanpura</p>
                         <div class="master-fx-controls">
-                            <button class="master-fx-toggle" id="tanpura-toggle">OFF</button>
+                            <button class="master-fx-toggle active" id="tanpura-toggle">ON</button>
                             <select class="master-preset-select" id="tanpura-mode">
                                 <option value="pluck">Pluck</option>
-                                <option value="synth">Synth</option>
+                                <option value="synth" selected>Synth</option>
                             </select>
                         </div>
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">Vol</span>
-                        <gain-slider id="tanpura-volume" min="0" max="100" value="60"></gain-slider>
+                        <gain-slider id="tanpura-volume" min="0" max="100" value="50"></gain-slider>
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">Rate</span>
@@ -437,28 +437,28 @@ Rule - Add comments before code snippets in this format:
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">Len</span>
-                        <gain-slider id="tanpura-synth-length" min="10" max="100" value="100"></gain-slider>
+                        <gain-slider id="tanpura-synth-length" min="10" max="100" value="50"></gain-slider>
                         <select class="master-preset-select" id="tanpura-synth-len-preset">
                             <option value="100">Long</option>
-                            <option value="50">Med</option>
+                            <option value="50" selected>Med</option>
                             <option value="25">Short</option>
                         </select>
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">S1</span>
-                        <gain-slider id="tanpura-s1-vol" min="0" max="100" value="100"></gain-slider>
+                        <gain-slider id="tanpura-s1-vol" min="0" max="100" value="50"></gain-slider>
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">S2</span>
-                        <gain-slider id="tanpura-s2-vol" min="0" max="100" value="100"></gain-slider>
+                        <gain-slider id="tanpura-s2-vol" min="0" max="100" value="50"></gain-slider>
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">S3</span>
-                        <gain-slider id="tanpura-s3-vol" min="0" max="100" value="100"></gain-slider>
+                        <gain-slider id="tanpura-s3-vol" min="0" max="100" value="50"></gain-slider>
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">S4</span>
-                        <gain-slider id="tanpura-s4-vol" min="0" max="100" value="100"></gain-slider>
+                        <gain-slider id="tanpura-s4-vol" min="0" max="100" value="50"></gain-slider>
                     </div>
                 </div>
             </div>
