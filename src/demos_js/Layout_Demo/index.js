@@ -292,7 +292,6 @@ function jumpPlayheadToTime(seconds) {
       })),
       seconds
     );
-    midiEnginePlay(tracks, seconds);
     syncTrackMutes();
   }
 }
@@ -1948,7 +1947,7 @@ function logProject() {
   const theme = document.body.getAttribute("data-theme") ?? "—";
 
   console.group(
-    `%c ♩ PROJECT  •  ${d.bpm} BPM  •  ${d.timeSignature.beats}/${d.timeSignature.noteValue}  •  ${tracks.length} tracks  •  theme: ${theme}`,
+    `%c ♩ PROJECT  •  ${d.bpm} BPM  •  ${d.timeSignature.beats}/${d.timeSignature.noteValue}  •  ${tracks.length} tracks  •  theme: ${theme}  •  id: ${d.id ?? "—"}`,
     "font-weight:bold; font-size:13px; color:#7aa2f7"
   );
 
@@ -3094,6 +3093,10 @@ function syncTrackMutes() {
                                  : (!activeScene || track.scenes.includes(activeScene));
     audioEngineSetTrackGain(track.id, audible ? track.gain / 100 : 0);
   }
+  if (playing) {
+    midiEngineStop();
+    midiEnginePlay(tracks, getPlayheadTime());
+  }
 }
 
 function onTransportStart() {
@@ -3108,7 +3111,6 @@ function onTransportStart() {
     })),
     getPlayheadTime()
   );
-  midiEnginePlay(tracks, getPlayheadTime());
   syncTrackMutes();
   if (recording) audioEngineStartRecording(); // record was armed before play — start now
   if (_tanpuraEnabled) {

@@ -496,7 +496,7 @@ async function reconnectProjectFolder() {
 
 async function openProject() {
   try {
-    const folderHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+    const folderHandle = await window.showDirectoryPicker({ mode: "read" });
 
     let jsonHandle;
     try {
@@ -510,7 +510,7 @@ async function openProject() {
     const data = JSON.parse(await file.text());
 
     projectId            = data.id ?? folderHandle.name;
-    projectFolderHandle  = folderHandle;
+    projectFolderHandle  = null;
     updateProjectNameDisplay();
 
     localStorage.setItem("previousProjectData", JSON.stringify(data));

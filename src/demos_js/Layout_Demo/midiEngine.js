@@ -14,8 +14,15 @@ function midiEnginePlay(tracks, playheadSeconds) {
   if (ctx.state === "suspended") ctx.resume();
   const now = ctx.currentTime;
 
+  const activeScene = document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim();
+  const soloedControlRow = document.querySelector(".solo-btn.active")?.closest(".control-row");
+  const soloedTrack = soloedControlRow ? tracks.find(t => t.controlRow === soloedControlRow) : null;
+
   for (const track of tracks) {
     if (!track.midiClips?.length) continue;
+    const audible = soloedTrack ? track === soloedTrack
+                                : (!activeScene || track.scenes.includes(activeScene));
+    if (!audible) continue;
     for (const clip of track.midiClips) {
       const clipStart = clip.startSample / SAMPLE_RATE;
       const clipEnd   = (clip.startSample + clip.durationSamples) / SAMPLE_RATE;
