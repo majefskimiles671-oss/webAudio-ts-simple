@@ -1598,6 +1598,131 @@
             --meter-high: #ffbb00;   /* full phosphor brightness */
         }
 
+        body[data-theme="Shaadi"] {
+            /* Surfaces — deep crimson like the bride's lehenga */
+            --bg-app:     #1a0508;
+            --bg-surface: #2a0810;
+            --bg-panel:   #200610;
+            --bg-button:  #3d0c1c;
+
+            /* Text — warm ivory, rose-gold muted */
+            --text-main:   #fde8c0;
+            --text-muted:  #c87060;
+            --text-button: #fde8c0;
+
+            /* UI chrome — deep rose border */
+            --border-subtle: #5a1428;
+
+            /* Accents — rich gold jewelry, saffron bridesmaids */
+            --accent-primary:   #c89010;
+            --accent-danger:    #ff4444;
+            --accent-highlight: #f97316;
+
+            /* Waveform */
+            --waveform-a: #200610;
+            --waveform-b: #3d0c1c;
+        }
+
+        body[data-theme="Saffron"] {
+            /* Surfaces — dark amber like the bridesmaids' saris in shadow */
+            --bg-app:     #1c0d00;
+            --bg-surface: #2d1400;
+            --bg-panel:   #240f00;
+            --bg-button:  #3d2000;
+
+            /* Text — warm cream, muted amber */
+            --text-main:   #fef3d0;
+            --text-muted:  #c87840;
+            --text-button: #fef3d0;
+
+            /* UI chrome — dark amber border */
+            --border-subtle: #5a3010;
+
+            /* Accents — bright saffron orange, marigold yellow */
+            --accent-primary:   #f97316;
+            --accent-danger:    #dc2626;
+            --accent-highlight: #fbbf24;
+
+            /* Waveform */
+            --waveform-a: #240f00;
+            --waveform-b: #3d2000;
+        }
+
+        body[data-theme="Gulabi"] {
+            /* Surfaces — deep rose like the flower garlands */
+            --bg-app:     #1a0814;
+            --bg-surface: #2d1020;
+            --bg-panel:   #220d1a;
+            --bg-button:  #400a28;
+
+            /* Text — soft rose-white, muted blush */
+            --text-main:   #fde8f0;
+            --text-muted:  #c87898;
+            --text-button: #fde8f0;
+
+            /* UI chrome — deep rose border */
+            --border-subtle: #5a1840;
+
+            /* Accents — vivid rose, warm ceremony gold */
+            --accent-primary:   #f43f5e;
+            --accent-danger:    #ff6b35;
+            --accent-highlight: #d4a017;
+
+            /* Waveform */
+            --waveform-a: #220d1a;
+            --waveform-b: #400a28;
+        }
+
+        body[data-theme="Harvest"] {
+            /* Surfaces — shadow grey base, toffee warmth */
+            --bg-app:     #1f1e23;
+            --bg-surface: #3a2818;
+            --bg-panel:   #2a2014;
+            --bg-button:  #45563e;
+
+            /* Text — pearl beige, toffee muted */
+            --text-main:   #e7d8b8;
+            --text-muted:  #885941;
+            --text-button: #e7d8b8;
+
+            /* UI chrome — dark granite shadow */
+            --border-subtle: #2e3828;
+
+            /* Accents — amber honey primary, intense cherry danger */
+            --accent-primary:   #f3aa0d;
+            --accent-danger:    #bb3036;
+            --accent-highlight: #bb3036;
+
+            /* Waveform */
+            --waveform-a: #2a2014;
+            --waveform-b: #3a2818;
+        }
+
+        body[data-theme="Canyon"] {
+            /* Surfaces — shadowed canyon rock and clay */
+            --bg-app:     #3d1218;
+            --bg-surface: #634039;
+            --bg-panel:   #4e2426;
+            --bg-button:  #585560;
+
+            /* Text — pale sandstone, muted terracotta */
+            --text-main:   #f5e2d8;
+            --text-muted:  #d68c72;
+            --text-button: #f5e2d8;
+
+            /* UI chrome — cool gray-purple shadow */
+            --border-subtle: #3a3840;
+
+            /* Accents — bright terracotta at golden hour, muted salmon */
+            --accent-primary:   #ea7d46;
+            --accent-danger:    #ff4444;
+            --accent-highlight: #d68c72;
+
+            /* Waveform */
+            --waveform-a: #4e2426;
+            --waveform-b: #634039;
+        }
+
         /* x286 — Mars colony newswire ticker */
         #x286-newswire {
             display: none;
@@ -4338,6 +4463,21 @@
 
 .instrument-toggle:hover,
 .add-midi-clip-btn:hover {
+  background: var(--bg-hover, color-mix(in srgb, var(--accent-primary) 15%, transparent));
+}
+
+#add-midi-track-btn {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  cursor: pointer;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+#add-midi-track-btn:hover {
   background: var(--bg-hover, color-mix(in srgb, var(--accent-primary) 15%, transparent));
 }
 

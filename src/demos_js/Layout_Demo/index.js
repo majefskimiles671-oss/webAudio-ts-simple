@@ -1470,6 +1470,28 @@ function addMidiClipToTrack(track) {
   markDirty();
 }
 
+function addMidiTrack() {
+  trackCount += 1;
+  const { name } = pickTrackName();
+  const track = createTrack(name);
+  tracks.push(track);
+
+  const clip = {
+    id:              crypto.randomUUID(),
+    startSample:     0,
+    durationSamples: Math.round(8 * secondsPerBar() * SAMPLE_RATE),
+    events:          [],
+  };
+  track.midiClips.push(clip);
+  renderMidiClip(track, clip);
+
+  syncTimelineMinWidth();
+  syncTimelineOverlay();
+  updateSceneMask();
+  updateSoloMask();
+  markDirty();
+}
+
 function renderMidiClip(track, clip) {
   const rowInner = track.timelineRow.querySelector(".row-inner");
   const el = document.createElement("div");
@@ -2686,6 +2708,7 @@ function _executeDuplicateTrack() {
 document.getElementById("track-edit-close-btn").addEventListener("click", closeTrackEditDialog);
 document.getElementById("track-edit-delete-btn").addEventListener("click", _executeDeleteTrack);
 document.getElementById("track-edit-duplicate-btn").addEventListener("click", _executeDuplicateTrack);
+document.getElementById("add-midi-track-btn").addEventListener("click", addMidiTrack);
 document.getElementById("track-edit-dialog").addEventListener("click", (e) => {
   if (e.target === e.currentTarget) closeTrackEditDialog();
 });
