@@ -69,6 +69,7 @@ function serializeProject() {
       frets:    c.frets ?? 5,
       tops:     [...c.tops],
       dots:     c.dots.map(row => [...row]),
+      tab:      c.tab ?? null,
     })),
     markers: markers.map(m => ({
       id:         m.id,
@@ -257,10 +258,11 @@ function deserializeProject(data) {
         frets:    f,
         tops:     c.tops ?? Array(6).fill(null),
         dots:     c.dots ?? Array.from({ length: 6 }, () => Array(f).fill(false)),
+        tab:      c.tab ?? null,
       });
     }
-    if (typeof cdRenderDialog === "function") cdRenderDialog();
     if (typeof cdSetPanelState === "function") cdSetPanelState(data.chordPanel);
+    if (typeof cdRenderDialog === "function") cdRenderDialog();
   }
 
   // ----- Restore tracks -----

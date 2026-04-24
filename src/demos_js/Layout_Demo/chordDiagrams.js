@@ -158,6 +158,8 @@ function cdGetPanelState() {
     zoom:      _cdZoom,
     visible:   dialog.classList.contains("cd-visible"),
     synthMode: (typeof cpGetSynthMode === "function") ? cpGetSynthMode() : "pluck",
+    tabs:      cdTabs.map(t => ({ id: t.id, name: t.name })),
+    activeTab: cdActiveTab,
   };
 }
 
@@ -177,6 +179,12 @@ function cdSetPanelState(state) {
   if (state.zoom  != null) {
     _cdZoom = state.zoom;
     dialog.style.setProperty("--cd-zoom", _cdZoom);
+  }
+  if (Array.isArray(state.tabs)) {
+    cdTabs = state.tabs.map(t => ({ id: t.id, name: t.name }));
+  }
+  if (state.activeTab != null) {
+    cdActiveTab = state.activeTab;
   }
   if (state.visible) {
     dialog.classList.add("cd-visible");
