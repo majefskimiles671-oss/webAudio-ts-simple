@@ -168,7 +168,7 @@ function deserializeProject(data) {
     track.opacity = saved.opacity ?? 100;
     const opEl = track.controlRow.querySelector(".row-opacity-slider");
     if (opEl) opEl.value = track.opacity;
-    track.timelineRow.style.opacity = track.opacity / 100;
+    track.timelineRow.style.setProperty('--row-opacity', track.opacity / 100);
 
     // Scene assignments
     track.scenes = saved.scenes ?? [];

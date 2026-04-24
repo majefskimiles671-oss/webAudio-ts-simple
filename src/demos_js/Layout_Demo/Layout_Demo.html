@@ -354,12 +354,15 @@ Rule - Add comments before code snippets in this format:
                 <div class="master-section">
                     <div class="master-section-header">
                         <p class="master-heading">Reverb</p>
+                        <div class="master-fx-controls">
+                        <button class="master-fx-toggle active" id="reverb-toggle">ON</button>
                         <select class="master-preset-select" id="reverb-preset">
                             <option value="">Preset</option>
                             <option value="room">Room</option>
                             <option value="hall">Hall</option>
                             <option value="cathedral">Cathedral</option>
                         </select>
+                        </div>
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">Wet</span>
@@ -373,12 +376,15 @@ Rule - Add comments before code snippets in this format:
                 <div class="master-section">
                     <div class="master-section-header">
                         <p class="master-heading">Compressor</p>
+                        <div class="master-fx-controls">
+                        <button class="master-fx-toggle active" id="comp-toggle">ON</button>
                         <select class="master-preset-select" id="comp-preset">
                             <option value="">Preset</option>
                             <option value="light">Light</option>
                             <option value="punch">Punch</option>
                             <option value="limit">Limit</option>
                         </select>
+                        </div>
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">Thr</span>
@@ -527,6 +533,7 @@ Rule - Add comments before code snippets in this format:
   <button id="clip-popup-loop-btn">Loop Edit</button>
   <button id="clip-popup-info-btn">Info</button>
   <button id="clip-popup-duplicate-btn">Duplicate</button>
+  <button id="clip-popup-normalize-btn">Normalize</button>
   <button id="clip-popup-sync-btn">Sync</button>
   <button id="clip-popup-delete-btn">Delete</button>
 </div>

@@ -63,7 +63,14 @@ function _ksGenerate(freq, sampleRate, durationSec) {
   const output = new Float32Array(totalSamples);
   const delay  = new Float32Array(N);
 
-  for (let i = 0; i < N; i++) delay[i] = Math.random() * 2 - 1;
+  const phases = new Float32Array(Math.floor(N / 2) + 1);
+  for (let k = 1; k < phases.length; k++) phases[k] = Math.random() * 2 * Math.PI;
+  const norm = 1 / Math.sqrt(phases.length - 1);
+  for (let i = 0; i < N; i++) {
+    let s = 0;
+    for (let k = 1; k < phases.length; k++) s += Math.cos(2 * Math.PI * k * i / N + phases[k]);
+    delay[i] = s * norm;
+  }
 
   for (let i = 0; i < totalSamples; i++) {
     const idx  = i % N;

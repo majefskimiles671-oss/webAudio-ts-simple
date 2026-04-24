@@ -137,7 +137,7 @@ controlsScrollCol.addEventListener("input", (e) => {
   if (ps) {
     markDirty();
     const track = findTrackByControlRow(ps.closest(".control-row"));
-    if (track) track.pan = ps.value;
+    if (track) { track.pan = ps.value; audioEngineSetTrackPan(track.id, track.pan / 100); }
     return;
   }
   const os = e.target.closest(".row-opacity-slider");
@@ -146,7 +146,7 @@ controlsScrollCol.addEventListener("input", (e) => {
     const track = findTrackByControlRow(os.closest(".control-row"));
     if (track) {
       track.opacity = parseInt(os.value);
-      track.timelineRow.style.opacity = track.opacity / 100;
+      track.timelineRow.style.setProperty('--row-opacity', track.opacity / 100);
     }
   }
 });
@@ -287,7 +287,8 @@ function jumpPlayheadToTime(seconds) {
     audioEnginePlay(
       tracks.map(t => ({
         id: t.id,
-        clips: t.clips.map(clip => ({ ...clip, gain: t.gain / 100, pan: t.pan / 100 })),
+        pan: t.pan / 100,
+        clips: t.clips.map(clip => ({ ...clip, gain: t.gain / 100 })),
       })),
       seconds
     );
@@ -2025,6 +2026,7 @@ function showClipPopup(clipId, x, y) {
   document.getElementById("clip-popup-loop-btn").hidden = multi || !audioEngineHasBuffer(clipId);
   document.getElementById("clip-popup-info-btn").hidden = multi;
   document.getElementById("clip-popup-duplicate-btn").hidden = multi;
+  document.getElementById("clip-popup-normalize-btn").hidden = multi || !audioEngineHasBuffer(clipId);
   _clipPopup.style.left = `${Math.min(x + 8, window.innerWidth  - 130)}px`;
   _clipPopup.style.top  = `${Math.min(y + 8, window.innerHeight -  60)}px`;
   _clipPopup.hidden = false;
@@ -2080,6 +2082,14 @@ document.getElementById("clip-popup-info-btn").addEventListener("click", () => {
 });
 
 let _duplicateDialogClipId = null;
+
+document.getElementById("clip-popup-normalize-btn").addEventListener("click", () => {
+  if (!_clipPopupClipId) return;
+  const clipId = _clipPopupClipId;
+  audioEngineNormalizeClip(clipId);
+  updateClipWaveform(clipId, audioEngineGetBuffer(clipId));
+  hideClipPopup();
+});
 
 document.getElementById("clip-popup-duplicate-btn").addEventListener("click", () => {
   if (!_clipPopupClipId) return;
@@ -2202,7 +2212,7 @@ function _executeDuplicateTrack() {
   newTrack.controlRow.querySelector("pan-slider").value  = track.pan;
   const opSlider = newTrack.controlRow.querySelector(".row-opacity-slider");
   opSlider.value = track.opacity;
-  newTrack.timelineRow.style.opacity = track.opacity / 100;
+  newTrack.timelineRow.style.setProperty('--row-opacity', track.opacity / 100);
 
   newTrack.controlRow.querySelectorAll(".track-scene").forEach(btn => {
     if (track.scenes.includes(btn.textContent.trim())) {
@@ -2228,6 +2238,8 @@ function _executeDuplicateTrack() {
 
   syncTimelineMinWidth();
   syncTimelineOverlay();
+  updateSceneMask();
+  updateSoloMask();
   markDirty();
   announce(`${track.name} duplicated`);
 }
@@ -3540,6 +3552,32 @@ document.getElementById("master-comp-threshold").addEventListener("input", (e) =
 document.getElementById("master-comp-ratio").addEventListener("input", (e) => {
   audioEngineSetCompressorRatio(parseFloat(e.target.value));
   document.getElementById("comp-preset").value = "";
+});
+
+document.getElementById("reverb-toggle").addEventListener("click", (e) => {
+  const btn = e.currentTarget;
+  const on = !btn.classList.contains("active");
+  btn.classList.toggle("active", on);
+  btn.textContent = on ? "ON" : "OFF";
+  if (on) {
+    audioEngineSetReverbWet(document.getElementById("master-reverb-wet").value / 100);
+  } else {
+    audioEngineSetReverbWet(0);
+  }
+});
+
+document.getElementById("comp-toggle").addEventListener("click", (e) => {
+  const btn = e.currentTarget;
+  const on = !btn.classList.contains("active");
+  btn.classList.toggle("active", on);
+  btn.textContent = on ? "ON" : "OFF";
+  if (on) {
+    audioEngineSetCompressorThreshold(parseFloat(document.getElementById("master-comp-threshold").value));
+    audioEngineSetCompressorRatio(parseFloat(document.getElementById("master-comp-ratio").value));
+  } else {
+    audioEngineSetCompressorThreshold(0);
+    audioEngineSetCompressorRatio(1);
+  }
 });
 
 // Master presets

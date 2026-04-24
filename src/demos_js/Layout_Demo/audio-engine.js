@@ -106,19 +106,21 @@ function audioEnginePlay(trackGroups, playheadSeconds) {
   if (_audioCtx.state === "suspended") _audioCtx.resume();
   const now = _audioCtx.currentTime;
 
-  for (const { id: trackId, clips } of trackGroups) {
-    const mixerGain = _audioCtx.createGain();
-    const splitter  = _audioCtx.createChannelSplitter(2);
-    const analyserL = _audioCtx.createAnalyser();
-    const analyserR = _audioCtx.createAnalyser();
+  for (const { id: trackId, pan: trackPan = 0, clips } of trackGroups) {
+    const mixerGain   = _audioCtx.createGain();
+    const trackPanner = _audioCtx.createStereoPanner();
+    const splitter    = _audioCtx.createChannelSplitter(2);
+    const analyserL   = _audioCtx.createAnalyser();
+    const analyserR   = _audioCtx.createAnalyser();
 
-    mixerGain.connect(splitter);
+    trackPanner.pan.value = trackPan;
+    mixerGain.connect(trackPanner);
+    trackPanner.connect(splitter);
     splitter.connect(analyserL, 0); // L channel → analyserL (metering only)
     splitter.connect(analyserR, 1); // R channel → analyserR (metering only)
-    mixerGain.connect(_masterGainNode);
+    trackPanner.connect(_masterGainNode);
 
-    // Memory Leak Prevention: store splitter so audioEngineStop() can disconnect it along with the analysers.
-    _trackMixers.set(trackId, { mixerGain, splitter, analyserL, analyserR });
+    _trackMixers.set(trackId, { mixerGain, trackPanner, splitter, analyserL, analyserR });
 
     for (const clip of clips) {
       const buffer = _buffers.get(clip.id);
@@ -130,9 +132,7 @@ function audioEnginePlay(trackGroups, playheadSeconds) {
       src.buffer = buffer;
       const gainNode = _audioCtx.createGain();
       gainNode.gain.value = clip.gain ?? 1;
-      const panner = _audioCtx.createStereoPanner();
-      panner.pan.value = clip.pan ?? 0;
-      src.connect(gainNode).connect(panner).connect(mixerGain);
+      src.connect(gainNode).connect(mixerGain);
       let when, offset;
       if (playheadSeconds <= clipStart) {
         when   = now + (clipStart - playheadSeconds);
@@ -153,8 +153,9 @@ function audioEngineStop() {
   }
   _activeSources = [];
   // Memory Leak Prevention: disconnect all nodes per mixer so the AudioContext can release them.
-  for (const { mixerGain, splitter, analyserL, analyserR } of _trackMixers.values()) {
+  for (const { mixerGain, trackPanner, splitter, analyserL, analyserR } of _trackMixers.values()) {
     try { mixerGain.disconnect(); } catch {}
+    try { trackPanner.disconnect(); } catch {}
     try { splitter.disconnect(); } catch {}
     try { analyserL.disconnect(); } catch {}
     try { analyserR.disconnect(); } catch {}
@@ -165,6 +166,11 @@ function audioEngineStop() {
 function audioEngineSetTrackGain(trackId, gain) {
   const mixer = _trackMixers.get(trackId);
   if (mixer) mixer.mixerGain.gain.value = gain;
+}
+
+function audioEngineSetTrackPan(trackId, pan) {
+  const mixer = _trackMixers.get(trackId);
+  if (mixer) mixer.trackPanner.pan.value = pan;
 }
 
 function _getRMS(analyser) {
@@ -458,6 +464,25 @@ function _generateReverbIR(decaySeconds) {
   return buf;
 }
 _reverbConvolver.buffer = _generateReverbIR(1.5);
+
+function audioEngineNormalizeClip(clipId) {
+  const buf = _buffers.get(clipId);
+  if (!buf) return;
+  let peak = 0;
+  for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+    const data = buf.getChannelData(ch);
+    for (let i = 0; i < data.length; i++) {
+      const abs = Math.abs(data[i]);
+      if (abs > peak) peak = abs;
+    }
+  }
+  if (peak < 0.0001) return;
+  const scale = 1 / peak;
+  for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+    const data = buf.getChannelData(ch);
+    for (let i = 0; i < data.length; i++) data[i] *= scale;
+  }
+}
 
 function audioEngineSetReverbWet(mix) {
   _dryGain.gain.value = 1 - mix;
