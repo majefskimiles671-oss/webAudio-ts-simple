@@ -2,8 +2,9 @@
 // Karplus-Strong plucked-string synthesis for chord diagram playback.
 // Algorithm runs in JS (pre-computed buffer), avoiding WebAudio feedback graph instability.
 
-let _synthMode = "pluck"; // "pluck" | "synth"
-let _activeVoices = [];   // { oscs, env } — released on re-trigger
+let _synthMode     = "pluck"; // "pluck" | "synth"
+let _synthNoteMult = 1;       // global length multiplier for all synth note playback
+let _activeVoices  = [];      // { oscs, env } — released on re-trigger
 
 function _midiToFreq(midi) {
   return 440 * Math.pow(2, (midi - 69) / 12);
@@ -118,7 +119,7 @@ function _synthPlayNote(ctx, freq, startTime, durationSec) {
   filter.connect(env);
   env.connect(getMasterGainNode());
 
-  const A = 0.35, D = 0.15, S = 0.65, R = 1.2;
+  const A = 0.35 * _synthNoteMult, D = 0.15 * _synthNoteMult, S = 0.65, R = 1.2 * _synthNoteMult;
   env.gain.setValueAtTime(0,   startTime);
   env.gain.linearRampToValueAtTime(1.0, startTime + A);
   env.gain.linearRampToValueAtTime(S,   startTime + A + D);
@@ -144,7 +145,9 @@ function _synthReleaseAll(ctx) {
   _activeVoices = [];
 }
 
-function cpGetSynthMode() { return _synthMode; }
+function cpGetSynthMode()  { return _synthMode; }
+function cpGetSynthMult()  { return _synthNoteMult; }
+function cpSetSynthMult(m) { _synthNoteMult = m; }
 
 function cpSetSynthMode(mode) {
   _synthMode = mode;
@@ -182,7 +185,7 @@ function playChordStrum(chord) {
     const freqs = _isScale(chord) ? _scaleToFreqs(chord) : _chordToFreqs(chord);
     const gap   = _isScale(chord) ? 0.08 : 0.022;
     freqs.forEach((freq, i) => {
-      _activeVoices.push(_synthPlayNote(ctx, freq, now + i * gap, 4.0));
+      _activeVoices.push(_synthPlayNote(ctx, freq, now + i * gap, 4.0 * _synthNoteMult));
     });
     return;
   }
@@ -211,7 +214,7 @@ function playChordSpaced(chord) {
       seq = _chordToFreqs(chord);
     }
     seq.forEach((freq, i) => {
-      _activeVoices.push(_synthPlayNote(ctx, freq, now + i * 0.5, 3.0));
+      _activeVoices.push(_synthPlayNote(ctx, freq, now + i * 0.5, 3.0 * _synthNoteMult));
     });
     return;
   }
@@ -237,7 +240,7 @@ function cpScheduleChordAt(chord, ctx, audioTime, mode = "pluck") {
       const src = _ksPluck(ctx, freq, t, 3.5);
       if (src) nodes.push(src);
     } else {
-      const voice = _synthPlayNote(ctx, freq, t, 2.0);
+      const voice = _synthPlayNote(ctx, freq, t, 2.0 * _synthNoteMult);
       if (voice?.oscs) nodes.push(...voice.oscs);
     }
   });

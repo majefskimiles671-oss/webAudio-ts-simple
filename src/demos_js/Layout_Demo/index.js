@@ -4130,8 +4130,28 @@ document.getElementById("tanpura-rate").addEventListener("input", (e) => {
   tanpuraSetRate(parseInt(e.target.value));
 });
 
+document.getElementById("synth-note-length").addEventListener("input", (e) => {
+  cpSetSynthMult(e.target.value / 100);
+});
+
+document.getElementById("synth-len-preset").addEventListener("change", (e) => {
+  const val = parseInt(e.target.value);
+  cpSetSynthMult(val / 100);
+  document.getElementById("synth-note-length").value = val;
+});
+
 document.getElementById("tanpura-mode").addEventListener("change", (e) => {
   tanpuraSetMode(e.target.value);
+});
+
+document.getElementById("tanpura-synth-length").addEventListener("input", (e) => {
+  tanpuraSetSynthMult(e.target.value / 100);
+});
+
+document.getElementById("tanpura-synth-len-preset").addEventListener("change", (e) => {
+  const val = parseInt(e.target.value);
+  tanpuraSetSynthMult(val / 100);
+  document.getElementById("tanpura-synth-length").value = val;
 });
 
 [1, 2, 3, 4].forEach((n) => {

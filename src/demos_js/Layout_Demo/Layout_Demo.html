@@ -402,6 +402,22 @@ Rule - Add comments before code snippets in this format:
                 </div>
                 <div class="master-section">
                     <div class="master-section-header">
+                        <p class="master-heading">Synth</p>
+                        <div class="master-fx-controls">
+                            <select class="master-preset-select" id="synth-len-preset">
+                                <option value="100">Long</option>
+                                <option value="50">Med</option>
+                                <option value="25">Short</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">Len</span>
+                        <gain-slider id="synth-note-length" min="10" max="100" value="100"></gain-slider>
+                    </div>
+                </div>
+                <div class="master-section">
+                    <div class="master-section-header">
                         <p class="master-heading">Tanpura</p>
                         <div class="master-fx-controls">
                             <button class="master-fx-toggle" id="tanpura-toggle">OFF</button>
@@ -418,6 +434,15 @@ Rule - Add comments before code snippets in this format:
                     <div class="master-gain-row">
                         <span class="master-gain-label">Rate</span>
                         <gain-slider id="tanpura-rate" min="0" max="100" value="50"></gain-slider>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">Len</span>
+                        <gain-slider id="tanpura-synth-length" min="10" max="100" value="100"></gain-slider>
+                        <select class="master-preset-select" id="tanpura-synth-len-preset">
+                            <option value="100">Long</option>
+                            <option value="50">Med</option>
+                            <option value="25">Short</option>
+                        </select>
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">S1</span>

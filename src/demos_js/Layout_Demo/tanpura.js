@@ -9,6 +9,7 @@ let _tanpuraActive       = false;
 let _tanpuraStrings      = [67, 60, 60, 48]; // default Pa·Sa·Sa·Sa̎ around C4
 let _tanpuraRate         = 50;    // 0–100
 let _tanpuraMode         = "pluck"; // "pluck" | "synth"
+let _tanpuraSynthMult    = 1;       // envelope length multiplier for synth mode
 let _tanpuraTimerId      = null;
 let _tanpuraStrIdx       = 0;
 let _tanpuraStringGains  = [1, 1, 1, 1];
@@ -54,7 +55,7 @@ function _tanpuraRateToInterval(rate) {
   return 1.0 - (rate / 100) * 0.75;
 }
 
-function _tanpuraSynthNote(freq, gain) {
+function _tanpuraSynthNote(freq, gain, mult = 1) {
   const ctx    = _tanpuraCtx;
   const env    = ctx.createGain();
   const filter = ctx.createBiquadFilter();
@@ -80,7 +81,7 @@ function _tanpuraSynthNote(freq, gain) {
   env.connect(_tanpuraGain);
 
   const now = ctx.currentTime;
-  const dur = 3.5, A = 0.3, R = 1.0;
+  const dur = 3.5 * mult, A = 0.3 * mult, R = 1.0 * mult;
   const peak = 0.8 * gain;
   env.gain.setValueAtTime(0, now);
   env.gain.linearRampToValueAtTime(peak, now + A);
@@ -102,7 +103,7 @@ function _tanpuraPluckNext() {
   const strGain   = _tanpuraStringGains[_tanpuraStrIdx];
 
   if (_tanpuraMode === "synth") {
-    _tanpuraSynthNote(freq, strGain);
+    _tanpuraSynthNote(freq, strGain, _tanpuraSynthMult);
   } else {
     const samples = _tanpuraKsGenerate(freq, _tanpuraCtx.sampleRate, 5.0);
     for (let i = 0; i < samples.length; i++) samples[i] *= strGain;
@@ -164,6 +165,10 @@ function tanpuraSetStrings(midiArray) {
 
 function tanpuraSetMode(mode) {
   _tanpuraMode = mode;
+}
+
+function tanpuraSetSynthMult(mult) {
+  _tanpuraSynthMult = mult;
 }
 
 function tanpuraSetStringGain(idx, v) {
