@@ -105,7 +105,7 @@ function _tanpuraPluckNext() {
   if (_tanpuraMode === "synth") {
     _tanpuraSynthNote(freq, strGain, _tanpuraSynthMult);
   } else {
-    const samples = _tanpuraKsGenerate(freq, _tanpuraCtx.sampleRate, 5.0);
+    const samples = _tanpuraKsGenerate(freq, _tanpuraCtx.sampleRate, _tanpuraSynthMult * 10);
     for (let i = 0; i < samples.length; i++) samples[i] *= strGain;
     const buf     = _tanpuraCtx.createBuffer(1, samples.length, _tanpuraCtx.sampleRate);
     buf.copyToChannel(samples, 0);

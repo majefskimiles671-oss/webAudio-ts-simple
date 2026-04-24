@@ -3981,6 +3981,16 @@ tanpuraSetVolume(0.5);
 tanpuraSetSynthMult(0.5);         // Med
 [0, 1, 2, 3].forEach(i => tanpuraSetStringGain(i, 0.5));
 
+// Reverb default: Room
+audioEngineSetReverbWet(0.20);
+audioEngineSetReverbDecay(0.3 + (18 / 100) * 5.7);
+document.getElementById("reverb-preset").value = "room";
+
+// Comp default: Limit
+audioEngineSetCompressorThreshold(-6);
+audioEngineSetCompressorRatio(18);
+document.getElementById("comp-preset").value = "limit";
+
 // Master gain slider
 document.getElementById("master-gain-slider").addEventListener("input", (e) => {
   masterGain = e.target.value;
