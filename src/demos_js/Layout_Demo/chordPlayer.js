@@ -91,6 +91,7 @@ function _ksPluck(ctx, freq, startTime, durationSec = 3.5) {
   src.connect(getMasterGainNode());
   src.start(startTime);
   src.addEventListener("ended", () => src.disconnect());
+  return src;
 }
 
 function _synthPlayNote(ctx, freq, startTime, durationSec) {
@@ -214,6 +215,24 @@ function playChordSpaced(chord) {
     const freqs = _chordToFreqs(chord);
     freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5));
   }
+}
+
+// Chord Player - Scheduling - Playback -----
+// Schedules a strum at an exact WebAudio time. Returns stoppable nodes for cancellation.
+function cpScheduleChordAt(chord, ctx, audioTime, mode = "pluck") {
+  const freqs = _chordToFreqs(chord);
+  const nodes = [];
+  freqs.forEach((freq, i) => {
+    const t = audioTime + i * 0.022;
+    if (mode === "pluck") {
+      const src = _ksPluck(ctx, freq, t, 3.5);
+      if (src) nodes.push(src);
+    } else {
+      const voice = _synthPlayNote(ctx, freq, t, 2.0);
+      if (voice?.oscs) nodes.push(...voice.oscs);
+    }
+  });
+  return nodes;
 }
 
 // Attach single/double-click play handlers to a button element.

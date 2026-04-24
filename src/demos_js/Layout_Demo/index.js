@@ -292,6 +292,7 @@ function jumpPlayheadToTime(seconds) {
       })),
       seconds
     );
+    midiEnginePlay(tracks, seconds);
     syncTrackMutes();
   }
 }
@@ -325,6 +326,11 @@ function secondsPerBar() {
 function snapToBeat(time) {
   const spb = secondsPerBeat();
   return Math.round(time / spb) * spb;
+}
+
+function snapToHalfBeat(time) {
+  const half = secondsPerBeat() / 2;
+  return Math.round(time / half) * half;
 }
 
 function getRulerTicks(startSeconds, endSeconds) {
@@ -613,6 +619,7 @@ function applyTransportChange({ play, record }) {
   if (wasPlaying && !playing) {
     stopMeterAnimation();
     audioEngineStop();
+    midiEngineStop();
     if (videoEl) { videoEl.pause(); videoEl.currentTime = currentTimeSeconds; }
   }
 
@@ -743,6 +750,8 @@ function createTrack(label, { prepend = false } = {}) {
     opacity:     100,
     scenes:      [],
     clips:       [],
+    midiClips:   [],
+    instrument:  "pluck",
     controlRow:  null,  // assigned below
     timelineRow: null,  // assigned below
     meterEl:     null,  // assigned below
@@ -915,6 +924,32 @@ function createTrack(label, { prepend = false } = {}) {
       ch.appendChild(seg);
     }
   });
+
+  // Instrument toggle + add-MIDI button
+  const trackRow3 = document.createElement("div");
+  trackRow3.className = "track-row-3";
+
+  const instrBtn = document.createElement("button");
+  instrBtn.className = "instrument-toggle";
+  instrBtn.textContent = "Pluck";
+  instrBtn.title = "Switch instrument (Pluck / Synth)";
+  instrBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    track.instrument = track.instrument === "pluck" ? "synth" : "pluck";
+    instrBtn.textContent = track.instrument === "synth" ? "Synth" : "Pluck";
+  }, { signal });
+
+  const addMidiBtn = document.createElement("button");
+  addMidiBtn.className = "add-midi-clip-btn";
+  addMidiBtn.textContent = "+ MIDI";
+  addMidiBtn.title = "Add MIDI clip at playhead";
+  addMidiBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    addMidiClipToTrack(track);
+  }, { signal });
+
+  trackRow3.append(instrBtn, addMidiBtn);
+  controlRow.querySelector(".row-inner").appendChild(trackRow3);
 
   track.controlRow  = controlRow;
   track.timelineRow = timelineRow;
@@ -1418,6 +1453,172 @@ function drawDummyWaveform(canvas) {
   ctx.globalAlpha = 1;
 }
 
+// Projection/Rendering - MIDI Clips -----
+
+function addMidiClipToTrack(track) {
+  const startSec = getPlayheadTime();
+  const durSec   = 4 * secondsPerBar();
+  const clip = {
+    id:              crypto.randomUUID(),
+    startSample:     Math.round(startSec * SAMPLE_RATE),
+    durationSamples: Math.round(durSec   * SAMPLE_RATE),
+    events:          [],
+  };
+  track.midiClips.push(clip);
+  renderMidiClip(track, clip);
+  markDirty();
+}
+
+function renderMidiClip(track, clip) {
+  const rowInner = track.timelineRow.querySelector(".row-inner");
+  const el = document.createElement("div");
+  el.className = "midi-clip";
+  el.dataset.clipId = clip.id;
+  el.style.left  = secondsToPixels(clip.startSample / SAMPLE_RATE) + "px";
+  el.style.width = computeWaveformWidth(clip.durationSamples / SAMPLE_RATE) + "px";
+  rerenderMidiClipEvents(clip, el);
+
+  const DRAG_THRESHOLD = 5;
+  const DBL_MS = 300;
+  let lastDown = 0, singleClickTimer = null;
+  let dragStartX = 0, dragStartSample = 0, isDragging = false, isDblClick = false;
+
+  el.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    const now = Date.now();
+    isDblClick = (now - lastDown) < DBL_MS;
+    lastDown = now;
+    dragStartX = e.clientX;
+    dragStartSample = clip.startSample;
+    isDragging = false;
+    if (isDblClick && singleClickTimer) { clearTimeout(singleClickTimer); singleClickTimer = null; }
+    el.setPointerCapture(e.pointerId);
+  });
+
+  el.addEventListener("pointermove", (e) => {
+    if (!el.hasPointerCapture(e.pointerId) || !isDblClick) return;
+    const deltaX = e.clientX - dragStartX;
+    if (!isDragging && Math.abs(deltaX) > DRAG_THRESHOLD) isDragging = true;
+    if (isDragging) {
+      let newSec = Math.max(0, dragStartSample / SAMPLE_RATE + pixelsToSeconds(deltaX));
+      if (rulerMode === "bars") newSec = snapToHalfBeat(newSec);
+      clip.startSample = Math.round(newSec * SAMPLE_RATE);
+      el.style.left = secondsToPixels(newSec) + "px";
+    }
+  });
+
+  el.addEventListener("pointerup", (e) => {
+    if (!el.hasPointerCapture(e.pointerId)) return;
+    el.releasePointerCapture(e.pointerId);
+    if (isDblClick) {
+      if (isDragging) markDirty();
+    } else {
+      const cx = e.clientX, cy = e.clientY;
+      singleClickTimer = setTimeout(() => {
+        singleClickTimer = null;
+        const offsetX = cx - el.getBoundingClientRect().left;
+        const offsetSamples = Math.round(pixelsToSeconds(offsetX) * SAMPLE_RATE);
+        const picker = buildMidiChordPicker((chord) => {
+          clip.events.push({ offsetSamples, chordId: chord.id });
+          clip.events.sort((a, b) => a.offsetSamples - b.offsetSamples);
+          rerenderMidiClipEvents(clip, el);
+          markDirty();
+        });
+        picker.style.left = cx + "px";
+        picker.style.top  = cy + "px";
+        document.body.appendChild(picker);
+        setTimeout(() => {
+          const dismiss = (ev) => {
+            if (!picker.contains(ev.target)) {
+              picker.remove();
+              document.removeEventListener("pointerdown", dismiss, { capture: true });
+            }
+          };
+          document.addEventListener("pointerdown", dismiss, { capture: true });
+        }, 0);
+      }, DBL_MS);
+    }
+    isDragging = false;
+    isDblClick = false;
+  });
+
+  rowInner.appendChild(el);
+}
+
+function rerenderMidiClipEvents(clip, el) {
+  el.querySelectorAll(".midi-event").forEach(n => n.remove());
+  for (const ev of clip.events) {
+    const chord = (typeof chords !== "undefined") && chords.find(c => c.id === ev.chordId);
+    const evEl = document.createElement("div");
+    evEl.className = "midi-event";
+    evEl.textContent = chord ? (chord.name || "?") : "?";
+    evEl.style.left = secondsToPixels(ev.offsetSamples / SAMPLE_RATE) + "px";
+
+    const DRAG_THRESHOLD = 3;
+    let evDragStartX = 0, evDragStartSamples = 0, evIsDragging = false;
+
+    evEl.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      evDragStartX = e.clientX;
+      evDragStartSamples = ev.offsetSamples;
+      evIsDragging = false;
+      evEl.setPointerCapture(e.pointerId);
+    });
+
+    evEl.addEventListener("pointermove", (e) => {
+      if (!evEl.hasPointerCapture(e.pointerId)) return;
+      const deltaX = e.clientX - evDragStartX;
+      if (!evIsDragging && Math.abs(deltaX) > DRAG_THRESHOLD) evIsDragging = true;
+      if (evIsDragging) {
+        let newSec = evDragStartSamples / SAMPLE_RATE + pixelsToSeconds(deltaX);
+        if (rulerMode === "bars") newSec = snapToHalfBeat(newSec);
+        ev.offsetSamples = Math.max(0, Math.min(clip.durationSamples, Math.round(newSec * SAMPLE_RATE)));
+        evEl.style.left = secondsToPixels(ev.offsetSamples / SAMPLE_RATE) + "px";
+      }
+    });
+
+    evEl.addEventListener("pointerup", (e) => {
+      if (!evEl.hasPointerCapture(e.pointerId)) return;
+      evEl.releasePointerCapture(e.pointerId);
+      if (evIsDragging) {
+        clip.events.sort((a, b) => a.offsetSamples - b.offsetSamples);
+        rerenderMidiClipEvents(clip, el);
+        markDirty();
+      }
+      evIsDragging = false;
+    });
+
+    el.appendChild(evEl);
+  }
+}
+
+
+function refreshMidiClipDOM(clip) {
+  const el = document.querySelector(`.midi-clip[data-clip-id="${clip.id}"]`);
+  if (el) rerenderMidiClipEvents(clip, el);
+}
+
+function buildMidiChordPicker(onSelect) {
+  const chordList = (typeof chords !== "undefined") ? chords : [];
+  const wrap = document.createElement("div");
+  wrap.className = "midi-chord-picker-popup";
+  for (const c of chordList) {
+    const btn = document.createElement("button");
+    btn.className = "midi-chord-picker-option";
+    btn.textContent = c.name || "(unnamed)";
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      onSelect(c);
+      wrap.remove();
+    });
+    wrap.appendChild(btn);
+  }
+  wrap.addEventListener("click", e => e.stopPropagation());
+  return wrap;
+}
+
 function rerenderWaveforms() {
   /**
    * Make sure that every time you draw a waveform you do this first:
@@ -1438,6 +1639,16 @@ function rerenderWaveforms() {
 
     drawDummyWaveform(canvas);
   });
+
+  for (const track of tracks) {
+    for (const clip of track.midiClips) {
+      const el = document.querySelector(`.midi-clip[data-clip-id="${clip.id}"]`);
+      if (!el) continue;
+      el.style.left  = secondsToPixels(clip.startSample / SAMPLE_RATE) + "px";
+      el.style.width = computeWaveformWidth(clip.durationSamples / SAMPLE_RATE) + "px";
+      rerenderMidiClipEvents(clip, el);
+    }
+  }
 }
 
 // ============================================================
@@ -2646,6 +2857,7 @@ function onTransportStart() {
     })),
     getPlayheadTime()
   );
+  midiEnginePlay(tracks, getPlayheadTime());
   syncTrackMutes();
   if (recording) audioEngineStartRecording(); // record was armed before play — start now
 }
@@ -3736,6 +3948,7 @@ _calibrateManualSetBtn.onclick = () => {
 };
 
 updateCalibrateMenuItem();
+
 
 const _skipAutoOpen = sessionStorage.getItem("skipAutoOpen");
 sessionStorage.removeItem("skipAutoOpen");

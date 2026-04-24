@@ -4029,3 +4029,98 @@
             font-size: 11px;
             padding: 3px 7px !important;
         }
+}
+
+/* ============================================================
+   MIDI Clips
+   ============================================================ */
+
+.track-row-3 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+}
+
+.instrument-toggle,
+.add-midi-clip-btn {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.instrument-toggle:hover,
+.add-midi-clip-btn:hover {
+  background: var(--bg-hover, color-mix(in srgb, var(--accent-primary) 15%, transparent));
+}
+
+/* MIDI clip block on the timeline */
+.midi-clip {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  min-width: 4px;
+  background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+  border: 1px solid var(--accent-primary);
+  border-radius: 3px;
+  overflow: visible;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.midi-event {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  border-right: 1px solid color-mix(in srgb, var(--accent-primary) 60%, transparent);
+  color: var(--text-primary);
+  padding: 0 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: grab;
+  background: color-mix(in srgb, var(--accent-primary) 30%, transparent);
+}
+.midi-event:active { cursor: grabbing; }
+
+/* Floating chord picker popup in editor */
+.midi-chord-picker-popup {
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg-elevated, var(--bg-surface));
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 0;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  min-width: 100px;
+}
+
+.midi-chord-picker-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.midi-chord-picker-option:hover {
+  background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+}
