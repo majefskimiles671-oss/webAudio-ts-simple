@@ -1343,6 +1343,81 @@
             --waveform-b: #2a3020;   /* deep olive-violet — green lurking */
         }
 
+        body[data-theme="Purple Dark"] {
+            /* Surfaces — deep violet night */
+            --bg-app:     #0f0820;
+            --bg-surface: #1a1030;
+            --bg-panel:   #140c28;
+            --bg-button:  #2e1c58;
+
+            /* Text — soft lavender, muted violet */
+            --text-main:   #e8d8ff;
+            --text-muted:  #9070c0;
+            --text-button: #e8d8ff;
+
+            /* UI chrome */
+            --border-subtle: #3a2068;
+
+            /* Accents — vivid violet, electric pink */
+            --accent-primary:   #a855f7;
+            --accent-danger:    #ef4444;
+            --accent-highlight: #e879f9;
+
+            /* Waveform */
+            --waveform-a: #140c28;
+            --waveform-b: #2e1c58;
+        }
+
+        body[data-theme="Rangoli"] {
+            /* Surfaces — night sky of a Hindu wedding, deep jewel plum */
+            --bg-app:     #1c0a1e;
+            --bg-surface: #2e1032;
+            --bg-panel:   #240c28;
+            --bg-button:  #421848;
+
+            /* Text — warm gold, amber muted */
+            --text-main:   #fde8b0;
+            --text-muted:  #c8905a;
+            --text-button: #fde8b0;
+
+            /* UI chrome — deep plum border */
+            --border-subtle: #5c2860;
+
+            /* Accents — saffron marigold, magenta */
+            --accent-primary:   #f59e0b;
+            --accent-danger:    #dc2626;
+            --accent-highlight: #e879f9;
+
+            /* Waveform */
+            --waveform-a: #240c28;
+            --waveform-b: #421848;
+        }
+
+        body[data-theme="Ronin"] {
+            /* Surfaces — sumi ink, lacquered wood */
+            --bg-app:     #0c0a08;
+            --bg-surface: #1a1510;
+            --bg-panel:   #120e0a;
+            --bg-button:  #2e2418;
+
+            /* Text — aged washi paper, warm gray */
+            --text-main:   #f0e8d8;
+            --text-muted:  #8a7860;
+            --text-button: #f0e8d8;
+
+            /* UI chrome — dark lacquer */
+            --border-subtle: #3a2e20;
+
+            /* Accents — crimson lacquer, sakura */
+            --accent-primary:   #c8102e;
+            --accent-danger:    #ff4444;
+            --accent-highlight: #f9a8c4;
+
+            /* Waveform */
+            --waveform-a: #120e0a;
+            --waveform-b: #2e2418;
+        }
+
         body[data-theme="Purple Light"] {
             /* Surfaces — soft violet in daylight */
             --bg-app:     #f0ebfb;
