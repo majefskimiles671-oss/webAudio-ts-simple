@@ -4157,12 +4157,14 @@ document.getElementById("tanpura-rate-sync").addEventListener("change", (e) => {
 
 document.getElementById("synth-note-length").addEventListener("input", (e) => {
   cpSetSynthMult(e.target.value / 100);
+  if (playing) midiEnginePlay(tracks, getPlayheadTime());
 });
 
 document.getElementById("synth-len-preset").addEventListener("change", (e) => {
   const val = parseInt(e.target.value);
   cpSetSynthMult(val / 100);
   document.getElementById("synth-note-length").value = val;
+  if (playing) midiEnginePlay(tracks, getPlayheadTime());
 });
 
 document.getElementById("tanpura-mode").addEventListener("change", (e) => {
