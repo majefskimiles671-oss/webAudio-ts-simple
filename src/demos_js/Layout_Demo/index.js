@@ -1519,24 +1519,39 @@ function renderMidiClip(track, clip) {
         singleClickTimer = null;
         const offsetX = cx - el.getBoundingClientRect().left;
         const offsetSamples = Math.round(pixelsToSeconds(offsetX) * SAMPLE_RATE);
-        const picker = buildMidiChordPicker((chord) => {
-          clip.events.push({ offsetSamples, chordId: chord.id });
-          clip.events.sort((a, b) => a.offsetSamples - b.offsetSamples);
-          rerenderMidiClipEvents(clip, el);
-          markDirty();
-        });
-        picker.style.left = cx + "px";
-        picker.style.top  = cy + "px";
-        document.body.appendChild(picker);
-        setTimeout(() => {
-          const dismiss = (ev) => {
-            if (!picker.contains(ev.target)) {
-              picker.remove();
-              document.removeEventListener("pointerdown", dismiss, { capture: true });
-            }
-          };
-          document.addEventListener("pointerdown", dismiss, { capture: true });
-        }, 0);
+        showContextMenu([
+          {
+            label: "Add chord",
+            action: () => {
+              const picker = buildMidiChordPicker((chord) => {
+                clip.events.push({ offsetSamples, chordId: chord.id });
+                clip.events.sort((a, b) => a.offsetSamples - b.offsetSamples);
+                rerenderMidiClipEvents(clip, el);
+                markDirty();
+              });
+              picker.style.left = cx + "px";
+              picker.style.top  = cy + "px";
+              document.body.appendChild(picker);
+              setTimeout(() => {
+                const dismiss = (ev) => {
+                  if (!picker.contains(ev.target)) {
+                    picker.remove();
+                    document.removeEventListener("pointerdown", dismiss, { capture: true });
+                  }
+                };
+                document.addEventListener("pointerdown", dismiss, { capture: true });
+              }, 0);
+            },
+          },
+          {
+            label: "Delete clip",
+            action: () => {
+              track.midiClips = track.midiClips.filter(c => c !== clip);
+              el.remove();
+              markDirty();
+            },
+          },
+        ], cx, cy);
       }, DBL_MS);
     }
     isDragging = false;
@@ -1586,6 +1601,17 @@ function rerenderMidiClipEvents(clip, el) {
         clip.events.sort((a, b) => a.offsetSamples - b.offsetSamples);
         rerenderMidiClipEvents(clip, el);
         markDirty();
+      } else {
+        showContextMenu([
+          {
+            label: "Delete",
+            action: () => {
+              clip.events = clip.events.filter(x => x !== ev);
+              rerenderMidiClipEvents(clip, el);
+              markDirty();
+            },
+          },
+        ], e.clientX, e.clientY);
       }
       evIsDragging = false;
     });
@@ -1598,6 +1624,33 @@ function rerenderMidiClipEvents(clip, el) {
 function refreshMidiClipDOM(clip) {
   const el = document.querySelector(`.midi-clip[data-clip-id="${clip.id}"]`);
   if (el) rerenderMidiClipEvents(clip, el);
+}
+
+function showContextMenu(items, x, y) {
+  const menu = document.createElement("div");
+  menu.className = "midi-context-menu";
+  for (const item of items) {
+    const btn = document.createElement("button");
+    btn.textContent = item.label;
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      menu.remove();
+      item.action();
+    });
+    menu.appendChild(btn);
+  }
+  menu.style.left = x + "px";
+  menu.style.top  = y + "px";
+  document.body.appendChild(menu);
+  setTimeout(() => {
+    const dismiss = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        document.removeEventListener("pointerdown", dismiss, { capture: true });
+      }
+    };
+    document.addEventListener("pointerdown", dismiss, { capture: true });
+  }, 0);
 }
 
 function buildMidiChordPicker(onSelect) {
@@ -1774,7 +1827,106 @@ function setTheme(name, { silent = false } = {}) {
   if (!silent) markDirty();
 }
 
-document.getElementById("debug-log-project").onclick = () => console.log(serializeProject());
+document.getElementById("debug-log-project").onclick = () => logProject();
+
+function logProject() {
+  console.clear();
+  const spb   = secondsPerBeat();
+  const spbar = secondsPerBar();
+
+  function toBarBeat(sec) {
+    const bar  = Math.floor(sec / spbar);
+    const beat = Math.floor((sec % spbar) / spb);
+    const tick = Math.round(((sec % spb) / spb) * 100);
+    return `${bar + 1}:${beat + 1}.${String(tick).padStart(2, "0")}`;
+  }
+
+  function toDuration(sec) {
+    const m = Math.floor(sec / 60);
+    const s = (sec % 60).toFixed(1);
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  }
+
+  const d = serializeProject();
+  const theme = document.body.getAttribute("data-theme") ?? "—";
+
+  console.group(
+    `%c ♩ PROJECT  •  ${d.bpm} BPM  •  ${d.timeSignature.beats}/${d.timeSignature.noteValue}  •  ${tracks.length} tracks  •  theme: ${theme}`,
+    "font-weight:bold; font-size:13px; color:#7aa2f7"
+  );
+
+  // --- Tracks summary ---
+  console.group("Tracks");
+  console.table(tracks.map((t, i) => ({
+    "#":      i + 1,
+    name:     t.name,
+    clips:    t.clips.length,
+    midi:     t.midiClips.length,
+    gain:     (t.gain ?? 1).toFixed(2),
+    pan:      (t.pan  ?? 0).toFixed(2),
+    scenes:   t.scenes.join(", ") || "—",
+  })));
+
+  for (const t of tracks) {
+    const hasContent = t.clips.length || t.midiClips.length;
+    if (!hasContent) continue;
+    console.group(`"${t.name}"`);
+
+    if (t.clips.length) {
+      console.log("%cAudio clips", "font-weight:bold");
+      console.table(t.clips.map(c => ({
+        id:       c.id.slice(0, 8),
+        start:    toBarBeat(c.startSample / SAMPLE_RATE),
+        duration: toDuration(c.durationSamples / SAMPLE_RATE),
+      })));
+    }
+
+    if (t.midiClips.length) {
+      console.log("%cMIDI clips", "font-weight:bold");
+      console.table(t.midiClips.map(c => {
+        const evRows = c.events.map(ev => {
+          const chord = (typeof chords !== "undefined") && chords.find(ch => ch.id === ev.chordId);
+          return `${toBarBeat(ev.offsetSamples / SAMPLE_RATE)} ${chord?.name ?? "?"}`;
+        });
+        return {
+          id:       c.id.slice(0, 8),
+          start:    toBarBeat(c.startSample / SAMPLE_RATE),
+          duration: toDuration(c.durationSamples / SAMPLE_RATE),
+          events:   evRows.join("  |  ") || "—",
+        };
+      }));
+    }
+
+    console.groupEnd();
+  }
+  console.groupEnd();
+
+  // --- Markers ---
+  if (markers.length) {
+    console.group(`Markers (${markers.length})`);
+    console.table(markers.map(m => {
+      const chord = (typeof chords !== "undefined") && chords.find(c => c.id === m.chordId);
+      return {
+        time:  toBarBeat(m.time),
+        note:  m.note || "—",
+        chord: chord?.name ?? "—",
+      };
+    }));
+    console.groupEnd();
+  }
+
+  // --- Chords ---
+  if (typeof chords !== "undefined" && chords.length) {
+    console.group(`Chords (${chords.length})`);
+    console.table(chords.map(c => ({
+      name:     c.name,
+      baseFret: c.baseFret,
+    })));
+    console.groupEnd();
+  }
+
+  console.groupEnd();
+}
 document.getElementById("debug-toggle-display").onclick = () => document.body.classList.toggle("debug");
 
 
