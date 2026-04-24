@@ -105,9 +105,6 @@ function cdCloneChord(c) {
   };
 }
 
-function cdStringFrets(chord) {
-  return chord.tops.map((top, s) => [top, ...chord.dots[s]]);
-}
 
 function cdGetDialog() {
   return document.getElementById("chord-diagrams-dialog");
@@ -225,6 +222,14 @@ function cdPositionPopover(anchorEl) {
   pop.style.top  = top  + "px";
 }
 
+function cdDebugChord() {
+  const c = _editingChord;
+  if (!c) { console.log("[cdDebug] no chord open in editor"); return; }
+  const { name, baseFret, frets, tops, dots } = c;
+  console.log("[cdDebug] chord:", JSON.stringify({ name, baseFret, frets, tops, dots }));
+}
+window.cdDebugChord = cdDebugChord;
+
 function cdSaveChord() {
   if (!_editingChord) return;
   const idx = chords.findIndex(c => c.id === _editingChord.id);
@@ -260,6 +265,7 @@ function cdCycleTop(s) {
   _editingChord.tops[s] = cycle[(cur + 1) % cycle.length];
   cdRenderEditor();
 }
+
 
 // ============================================================
 // Projection / Rendering (View Layer) -----
@@ -499,6 +505,11 @@ function cdRenderEditorInto(container) {
   cancelBtn.textContent = "Cancel";
   cancelBtn.addEventListener("click", cdShowList);
 
+  const debugBtn = document.createElement("button");
+  debugBtn.className = "cd-btn-cancel";
+  debugBtn.textContent = "Debug";
+  debugBtn.addEventListener("click", cdDebugChord);
+
   const popPlayBtn = document.createElement("button");
   popPlayBtn.className = "cd-btn-cancel cd-btn-play-pop";
   popPlayBtn.textContent = "▶ Play";
@@ -525,6 +536,7 @@ function cdRenderEditorInto(container) {
   rightGroup.appendChild(deleteBtn);
   rightGroup.appendChild(saveBtn);
   footer.appendChild(cancelBtn);
+  footer.appendChild(debugBtn);
   footer.appendChild(rightGroup);
   container.appendChild(playWrap);
   container.appendChild(footer);

@@ -400,6 +400,42 @@ Rule - Add comments before code snippets in this format:
                         <div class="gr-meter-bar" id="master-gr-meter"></div>
                     </div>
                 </div>
+                <div class="master-section">
+                    <div class="master-section-header">
+                        <p class="master-heading">Tanpura</p>
+                        <div class="master-fx-controls">
+                            <button class="master-fx-toggle" id="tanpura-toggle">OFF</button>
+                            <select class="master-preset-select" id="tanpura-mode">
+                                <option value="pluck">Pluck</option>
+                                <option value="synth">Synth</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">Vol</span>
+                        <gain-slider id="tanpura-volume" min="0" max="100" value="60"></gain-slider>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">Rate</span>
+                        <gain-slider id="tanpura-rate" min="0" max="100" value="50"></gain-slider>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">S1</span>
+                        <gain-slider id="tanpura-s1-vol" min="0" max="100" value="100"></gain-slider>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">S2</span>
+                        <gain-slider id="tanpura-s2-vol" min="0" max="100" value="100"></gain-slider>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">S3</span>
+                        <gain-slider id="tanpura-s3-vol" min="0" max="100" value="100"></gain-slider>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">S4</span>
+                        <gain-slider id="tanpura-s4-vol" min="0" max="100" value="100"></gain-slider>
+                    </div>
+                </div>
             </div>
 
             <div id="bottom-panel-content"></div>
@@ -614,6 +650,7 @@ Rule - Add comments before code snippets in this format:
 <script src="./mixdown.js"></script>
 <script src="./tuning.js"></script>
 <script src="./chordPlayer.js"></script>
+<script src="./tanpura.js"></script>
 <script src="./chordDiagrams.js"></script>
 <script src="./midiEngine.js"></script>
 <script src="./index.js"></script>

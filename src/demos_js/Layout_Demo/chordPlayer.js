@@ -12,15 +12,15 @@ function _midiToFreq(midi) {
 // Returns one freq per string (first dot, or open string). Used for normal chords.
 function _chordToFreqs(chord) {
   const freqs = [];
-  cdStringFrets(chord).forEach((frets, s) => {
-    if (frets[0] === "x") return;
-    const fretIndex = frets.indexOf(true);
-    if (fretIndex === -1 && frets[0] !== "o") return;
-    const midi = fretIndex === -1
+  for (let s = 0; s < 6; s++) {
+    if (chord.tops[s] === "x") continue;
+    const r = chord.dots[s].indexOf(true);
+    if (r === -1 && chord.tops[s] !== "o") continue;
+    const midi = r === -1
       ? currentTuning.openMidi(s + 1)
-      : currentTuning.openMidi(s + 1) + (chord.baseFret - 1) + fretIndex;
+      : currentTuning.openMidi(s + 1) + chord.baseFret + r;
     freqs.push(_midiToFreq(midi));
-  });
+  }
   return freqs.reverse();
 }
 

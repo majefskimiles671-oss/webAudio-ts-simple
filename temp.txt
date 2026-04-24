@@ -15,3 +15,6 @@ B=2
 E=1
 
 While you are doing that, I need you to add a general solution for _STRING_ROOT_MIDI so that later we can define
+
+
+I need you to analyze the layout demo code and use this abstraction

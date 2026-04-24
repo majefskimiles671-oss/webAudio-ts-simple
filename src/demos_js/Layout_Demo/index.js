@@ -621,6 +621,7 @@ function applyTransportChange({ play, record }) {
     audioEngineStop();
     midiEngineStop();
     if (videoEl) { videoEl.pause(); videoEl.currentTime = currentTimeSeconds; }
+    tanpuraStop();
   }
 
   if (!wasRecording && recording) { onRecordStart(); startRecordingRange(); }
@@ -3086,6 +3087,10 @@ function onTransportStart() {
   midiEnginePlay(tracks, getPlayheadTime());
   syncTrackMutes();
   if (recording) audioEngineStartRecording(); // record was armed before play — start now
+  if (_tanpuraEnabled) {
+    const cur = markers.find(m => m.id === selectedMarkerId);
+    if (cur) _applyTanpuraMarker(cur);
+  }
 }
 
 // -------- Update Playhead
@@ -3132,6 +3137,7 @@ function updatePlayhead() {
     if (typeof cdHighlightChord === "function") {
       cdHighlightChord(_nextMarker.chordId);
     }
+    if (_tanpuraEnabled) _applyTanpuraMarker(_nextMarker);
   }
 
   if (videoEl && ++_videoDriftFrame >= 90) {
@@ -3965,6 +3971,8 @@ if (_grMeterBar) {
   }
 }
 
+tanpuraInit(getAudioContext());
+
 // Master gain slider
 document.getElementById("master-gain-slider").addEventListener("input", (e) => {
   masterGain = e.target.value;
@@ -4060,6 +4068,76 @@ document.getElementById("comp-preset").addEventListener("change", (e) => {
   document.getElementById("master-comp-ratio").value     = p.ratio;
   audioEngineSetCompressorThreshold(p.thr);
   audioEngineSetCompressorRatio(p.ratio);
+});
+
+// Tanpura controls
+let _tanpuraEnabled = false;
+
+document.getElementById("tanpura-toggle").addEventListener("click", (e) => {
+  const btn = e.currentTarget;
+  const on  = !btn.classList.contains("active");
+  _tanpuraEnabled = on;
+  btn.classList.toggle("active", on);
+  btn.textContent = on ? "ON" : "OFF";
+  if (!on) tanpuraStop();
+});
+
+// Converts a chord object into a sorted, deduplicated list of MIDI note numbers.
+// Muted strings ("x") are skipped; fretted strings use baseFret + row offset; open strings ("o") with no dots use fret 0.
+// e.g. C chord (baseFret 1):
+//   tops: ["o",null,"o",null,null,"x"]  dots: [[F,F,F,F],[T,F,F,F],[F,F,F,F],[F,T,F,F],[F,F,T,F],[F,F,F,F]]
+//   → [48, 52, 55, 60, 64]  (C E G C E, low-E string skipped)
+function _chordToMidiNotes(chord) {
+  const midi = [];
+  for (let s = 0; s < 6; s++) {
+    if (chord.tops[s] === "x") continue;
+    const hasDots = chord.dots[s].some(Boolean);
+    if (hasDots) {
+      chord.dots[s].forEach((dot, r) => {
+        if (dot) midi.push(currentTuning.midiAt(s + 1, chord.baseFret + r));
+      });
+    } else if (chord.tops[s] === "o") {
+      midi.push(currentTuning.midiAt(s + 1, 0));
+    }
+  }
+  const output = midi.sort((a, b) => a - b);
+  console.log("_chordToMidiNotes output:");
+  console.log(output);
+  return output;
+}
+
+function _applyTanpuraMarker(marker) {
+  if (marker.note && /tanpura\s*off/i.test(marker.note)) {
+    tanpuraStop();
+    return;
+  }
+  if (marker.chordId) {
+    const chord = chords.find(c => c.id === marker.chordId);
+    if (!chord) return;
+    const notes = _chordToMidiNotes(chord);
+    console.log("notes:" + notes);
+    if (!notes.length) return;
+    tanpuraSetStrings(notes);
+    if (!tanpuraIsActive()) tanpuraStart();
+  }
+}
+
+document.getElementById("tanpura-volume").addEventListener("input", (e) => {
+  tanpuraSetVolume(e.target.value / 100);
+});
+
+document.getElementById("tanpura-rate").addEventListener("input", (e) => {
+  tanpuraSetRate(parseInt(e.target.value));
+});
+
+document.getElementById("tanpura-mode").addEventListener("change", (e) => {
+  tanpuraSetMode(e.target.value);
+});
+
+[1, 2, 3, 4].forEach((n) => {
+  document.getElementById(`tanpura-s${n}-vol`).addEventListener("input", (e) => {
+    tanpuraSetStringGain(n - 1, e.target.value / 100);
+  });
 });
 
 // DOM Sync - Video Backdrop - Synchronization Layer -----
