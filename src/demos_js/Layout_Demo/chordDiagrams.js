@@ -7,56 +7,61 @@
 
 let chords = [
   {
-    id: crypto.randomUUID(), name: "C", baseFret: 1, frets: 4,
+    id: crypto.randomUUID(), name: "C", baseFret: 1, frets: 4, tab: "chords",
     tops: ["o", null, "o", null, null, "x"],
     dots: [[false,false,false,false],[true,false,false,false],[false,false,false,false],[false,true,false,false],[false,false,true,false],[false,false,false,false]],
   },
   {
-    id: crypto.randomUUID(), name: "D", baseFret: 1, frets: 4,
+    id: crypto.randomUUID(), name: "D", baseFret: 1, frets: 4, tab: "chords",
     tops: [null, null, null, "o", "x", "x"],
     dots: [[false,true,false,false],[false,false,true,false],[false,true,false,false],[false,false,false,false],[false,false,false,false],[false,false,false,false]],
   },
   {
-    id: crypto.randomUUID(), name: "G", baseFret: 1, frets: 4,
+    id: crypto.randomUUID(), name: "G", baseFret: 1, frets: 4, tab: "chords",
     tops: [null, "o", "o", "o", "x", null],
     dots: [[false,false,true,false],[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,false,true,false]],
   },
   {
-    id: crypto.randomUUID(), name: "Am", baseFret: 1, frets: 4,
+    id: crypto.randomUUID(), name: "Am", baseFret: 1, frets: 4, tab: "chords",
     tops: ["o", null, null, null, "o", "x"],
     dots: [[false,false,false,false],[true,false,false,false],[false,true,false,false],[false,true,false,false],[false,false,false,false],[false,false,false,false]],
   },
   {
-    id: crypto.randomUUID(), name: "Em", baseFret: 1, frets: 4,
+    id: crypto.randomUUID(), name: "Em", baseFret: 1, frets: 4, tab: "chords",
     tops: ["o", "o", "o", null, null, "o"],
     dots: [[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,true,false,false],[false,true,false,false],[false,false,false,false]],
   },
   {
-    id: crypto.randomUUID(), name: "Bm", baseFret: 1, frets: 4,
+    id: crypto.randomUUID(), name: "Bm", baseFret: 1, frets: 4, tab: "chords",
     tops: [null, null, null, null, null, "x"],
     dots: [[false,true,false,false],[false,false,true,false],[false,false,false,true],[false,false,false,true],[false,true,false,false],[false,false,false,false]],
   },
   {
-    id: crypto.randomUUID(), name: "F# dim", baseFret: 1, frets: 4,
+    id: crypto.randomUUID(), name: "F# dim", baseFret: 1, frets: 4, tab: "chords",
     tops: [null, null, null, null, "x", "x"],
     dots: [[false,true,false,false],[true,false,false,false],[false,true,false,false],[true,false,false,false],[false,false,false,false],[false,false,false,false]],
   },
   {
-    id: crypto.randomUUID(), name: "C tanpura", baseFret: 1, frets: 6,
+    id: crypto.randomUUID(), name: "C tanpura", baseFret: 1, frets: 6, tab: "tanpura",
     tops: ["x", null, "o", null, "x", null],
     dots: [[false,false,false,false,false,false],[true,false,false,false,false,false],[false,false,false,false,false,false],[false,false,false,false,true,false],[false,false,false,false,false,false],[false,false,true,false,false,false]],
   },
   {
-    id: crypto.randomUUID(), name: "F tanpura", baseFret: 1, frets: 6,
+    id: crypto.randomUUID(), name: "F tanpura", baseFret: 1, frets: 6, tab: "tanpura",
     tops: [null, null, null, "x", null, "x"],
     dots: [[true,false,false,false,false,false],[true,false,false,false,false,false],[false,false,false,false,true,false],[false,false,false,false,false,false],[false,false,true,false,false,false],[false,false,false,false,false,false]],
   },
   {
-    id: crypto.randomUUID(), name: "G tanpura", baseFret: 1, frets: 6,
+    id: crypto.randomUUID(), name: "G tanpura", baseFret: 1, frets: 6, tab: "tanpura",
     tops: [null, null, null, "o", null, "x"],
     dots: [[false,false,true,false,false,false],[false,false,true,false,false,false],[false,false,false,false,false,false],[false,false,false,false,false,false],[false,false,false,false,true,false],[false,false,false,false,false,false]],
   },
 ];
+let cdTabs = [
+  { id: "chords",  name: "Chords"  },
+  { id: "tanpura", name: "Tanpura" },
+];
+let cdActiveTab = "all";
 let currentTuning = tuning([64, 59, 55, 50, 45, 40]);
 let _editingChord = null;
 let _cdDragging = false;
@@ -86,7 +91,7 @@ function cdHighlightChord(id) {
 
 function cdEncodeChords() {
   return btoa(JSON.stringify(chords.map(c => ({
-    name: c.name, baseFret: c.baseFret, frets: c.frets, tops: c.tops, dots: c.dots,
+    name: c.name, baseFret: c.baseFret, frets: c.frets, tops: c.tops, dots: c.dots, tab: c.tab ?? null,
   }))));
 }
 
@@ -106,6 +111,7 @@ function cdMakeBlankChord() {
     frets: 4,
     tops: Array(6).fill(null),
     dots: Array.from({ length: 6 }, () => Array(4).fill(false)),
+    tab: cdActiveTab !== "all" ? cdActiveTab : (cdTabs[0]?.id ?? null),
   };
 }
 
@@ -117,6 +123,7 @@ function cdCloneChord(c) {
     frets: c.frets ?? 5,
     tops: [...c.tops],
     dots: c.dots.map(row => [...row]),
+    tab: c.tab ?? null,
   };
 }
 
@@ -371,18 +378,56 @@ function cdRenderDialog() {
   footer.innerHTML = "";
   cdRenderListInto(body);
   cdRenderListFooterInto(footer);
+  cdRenderTabStrip();
+}
+
+function cdRenderTabStrip() {
+  const dialog = cdGetDialog();
+  let strip = dialog.querySelector(".cd-tab-strip");
+  if (!strip) {
+    strip = document.createElement("div");
+    strip.className = "cd-tab-strip";
+    dialog.appendChild(strip);
+  }
+  strip.innerHTML = "";
+
+  const makeTab = (id, label) => {
+    const el = document.createElement("div");
+    el.className = "cd-tab" + (cdActiveTab === id ? " cd-tab-active" : "");
+    el.textContent = label;
+    el.addEventListener("click", () => { cdActiveTab = id; cdRenderDialog(); });
+    strip.appendChild(el);
+  };
+
+  makeTab("all", "All");
+  for (const t of cdTabs) makeTab(t.id, t.name);
+
+  const addBtn = document.createElement("div");
+  addBtn.className = "cd-tab cd-tab-add";
+  addBtn.textContent = "+";
+  addBtn.title = "Add tab";
+  addBtn.addEventListener("click", () => {
+    const name = prompt("New tab name:");
+    if (!name?.trim()) return;
+    const id = "tab-" + crypto.randomUUID().slice(0, 8);
+    cdTabs.push({ id, name: name.trim() });
+    cdActiveTab = id;
+    cdRenderDialog();
+  });
+  strip.appendChild(addBtn);
 }
 
 function cdRenderListInto(container) {
-  if (chords.length === 0) {
+  const visible = cdActiveTab === "all" ? chords : chords.filter(c => c.tab === cdActiveTab);
+  if (visible.length === 0) {
     const empty = document.createElement("p");
     empty.className = "cd-empty";
-    empty.textContent = "No chords saved yet.";
+    empty.textContent = "No chords in this tab.";
     container.appendChild(empty);
   } else {
     const row = document.createElement("div");
     row.className = "cd-chord-row";
-    for (const chord of chords) {
+    for (const chord of visible) {
       const card = document.createElement("div");
       card.className = "cd-chord-card";
       card.dataset.chordId = chord.id;
@@ -661,9 +706,12 @@ function cdInit() {
   const footer = document.createElement("div");
   footer.id = "chord-diagrams-footer";
 
-  dialog.appendChild(titlebar);
-  dialog.appendChild(body);
-  dialog.appendChild(footer);
+  const inner = document.createElement("div");
+  inner.className = "cd-dialog-inner";
+  inner.appendChild(titlebar);
+  inner.appendChild(body);
+  inner.appendChild(footer);
+  dialog.appendChild(inner);
   document.body.appendChild(dialog);
   dialog.classList.add("cd-visible");
 
@@ -691,6 +739,7 @@ function cdInit() {
         frets:    f,
         tops:     c.tops ?? Array(6).fill(null),
         dots:     Array.isArray(c.dots) ? c.dots : Array.from({ length: 6 }, () => Array(f).fill(false)),
+        tab:      c.tab ?? null,
       });
     }
     cdRenderDialog();
