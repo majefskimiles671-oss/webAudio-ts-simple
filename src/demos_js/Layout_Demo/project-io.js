@@ -76,6 +76,31 @@ function serializeProject() {
       note:       m.note ?? "",
       chordId:    m.chordId ?? null,
     })),
+    mixer: {
+      masterGain:          parseInt(document.getElementById("master-gain-slider").value),
+      masterVolPreset:     document.getElementById("master-vol-preset").value,
+      reverbOn:            document.getElementById("reverb-toggle").classList.contains("active"),
+      reverbPreset:        document.getElementById("reverb-preset").value,
+      reverbWet:           parseInt(document.getElementById("master-reverb-wet").value),
+      reverbSize:          parseInt(document.getElementById("master-reverb-size").value),
+      compOn:              document.getElementById("comp-toggle").classList.contains("active"),
+      compPreset:          document.getElementById("comp-preset").value,
+      compThreshold:       parseFloat(document.getElementById("master-comp-threshold").value),
+      compRatio:           parseFloat(document.getElementById("master-comp-ratio").value),
+      synthLen:            parseInt(document.getElementById("synth-note-length").value),
+      synthLenPreset:      document.getElementById("synth-len-preset").value,
+      tanpuraOn:           document.getElementById("tanpura-toggle").classList.contains("active"),
+      tanpuraMode:         document.getElementById("tanpura-mode").value,
+      tanpuraVol:          parseInt(document.getElementById("tanpura-volume").value),
+      tanpuraRate:         parseInt(document.getElementById("tanpura-rate").value),
+      tanpuraRateSync:     document.getElementById("tanpura-rate-sync").value,
+      tanpuraSynthLen:     parseInt(document.getElementById("tanpura-synth-length").value),
+      tanpuraSynthLenPreset: document.getElementById("tanpura-synth-len-preset").value,
+      tanpuraS1:           parseInt(document.getElementById("tanpura-s1-vol").value),
+      tanpuraS2:           parseInt(document.getElementById("tanpura-s2-vol").value),
+      tanpuraS3:           parseInt(document.getElementById("tanpura-s3-vol").value),
+      tanpuraS4:           parseInt(document.getElementById("tanpura-s4-vol").value),
+    },
     video: videoFile
       ? {
           filename: "video" + (videoFile.name.match(/\.[^.]+$/) ?? [""])[0],
@@ -139,6 +164,69 @@ function deserializeProject(data) {
 
   audioEngineSetCalibratedLatency(data.calibratedLatencyMs ?? 0);
   if (typeof updateCalibrateMenuItem === "function") updateCalibrateMenuItem();
+
+  // ----- Restore mixer -----
+
+  const mx = data.mixer;
+  if (mx) {
+    const mgain = mx.masterGain ?? 100;
+    document.getElementById("master-gain-slider").value = mgain;
+    masterGain = mgain;
+    audioEngineSetMasterGain(mgain / 100);
+    document.getElementById("master-vol-preset").value = mx.masterVolPreset ?? "";
+
+    const reverbOn = mx.reverbOn ?? true;
+    document.getElementById("reverb-toggle").classList.toggle("active", reverbOn);
+    document.getElementById("reverb-toggle").textContent = reverbOn ? "ON" : "OFF";
+    document.getElementById("reverb-preset").value  = mx.reverbPreset ?? "";
+    const rWet  = mx.reverbWet  ?? 20;
+    const rSize = mx.reverbSize ?? 18;
+    document.getElementById("master-reverb-wet").value  = rWet;
+    document.getElementById("master-reverb-size").value = rSize;
+    audioEngineSetReverbWet(reverbOn ? rWet / 100 : 0);
+    audioEngineSetReverbDecay(0.3 + (rSize / 100) * 5.7);
+
+    const compOn = mx.compOn ?? true;
+    document.getElementById("comp-toggle").classList.toggle("active", compOn);
+    document.getElementById("comp-toggle").textContent = compOn ? "ON" : "OFF";
+    document.getElementById("comp-preset").value = mx.compPreset ?? "";
+    const cThr   = mx.compThreshold ?? -6;
+    const cRatio = mx.compRatio     ?? 18;
+    document.getElementById("master-comp-threshold").value = cThr;
+    document.getElementById("master-comp-ratio").value     = cRatio;
+    audioEngineSetCompressorThreshold(compOn ? cThr   : 0);
+    audioEngineSetCompressorRatio    (compOn ? cRatio : 1);
+
+    const sLen = mx.synthLen ?? 50;
+    cpSetSynthMult(sLen / 100);
+    document.getElementById("synth-note-length").value = sLen;
+    document.getElementById("synth-len-preset").value  = mx.synthLenPreset ?? "";
+
+    _tanpuraEnabled = mx.tanpuraOn ?? true;
+    document.getElementById("tanpura-toggle").classList.toggle("active", _tanpuraEnabled);
+    document.getElementById("tanpura-toggle").textContent = _tanpuraEnabled ? "ON" : "OFF";
+    const tMode = mx.tanpuraMode ?? "pluck";
+    tanpuraSetMode(tMode);
+    document.getElementById("tanpura-mode").value = tMode;
+    const tVol = mx.tanpuraVol ?? 50;
+    tanpuraSetVolume(tVol / 100);
+    document.getElementById("tanpura-volume").value = tVol;
+    const tRate = mx.tanpuraRate ?? 50;
+    tanpuraSetRate(tRate);
+    document.getElementById("tanpura-rate").value = tRate;
+    const tRateSync = mx.tanpuraRateSync ?? "free";
+    tanpuraSetRateSync(tRateSync === "free" ? null : parseInt(tRateSync));
+    document.getElementById("tanpura-rate-sync").value = tRateSync;
+    const tsLen = mx.tanpuraSynthLen ?? 100;
+    tanpuraSetSynthMult(tsLen / 100);
+    document.getElementById("tanpura-synth-length").value     = tsLen;
+    document.getElementById("tanpura-synth-len-preset").value = mx.tanpuraSynthLenPreset ?? "";
+    [1, 2, 3, 4].forEach(n => {
+      const val = mx[`tanpuraS${n}`] ?? 50;
+      tanpuraSetStringGain(n - 1, val / 100);
+      document.getElementById(`tanpura-s${n}-vol`).value = val;
+    });
+  }
 
   if (data.theme) setTheme(data.theme, { silent: true });
   document.body.setAttribute("data-notes-font", data.notesMono ? "mono" : "");
