@@ -422,8 +422,8 @@ Rule - Add comments before code snippets in this format:
                         <div class="master-fx-controls">
                             <button class="master-fx-toggle active" id="tanpura-toggle">ON</button>
                             <select class="master-preset-select" id="tanpura-mode">
-                                <option value="pluck">Pluck</option>
-                                <option value="synth" selected>Synth</option>
+                                <option value="pluck" selected>Pluck</option>
+                                <option value="synth">Synth</option>
                             </select>
                         </div>
                     </div>
@@ -434,13 +434,20 @@ Rule - Add comments before code snippets in this format:
                     <div class="master-gain-row">
                         <span class="master-gain-label">Rate</span>
                         <gain-slider id="tanpura-rate" min="0" max="100" value="50"></gain-slider>
+                        <select class="master-preset-select" id="tanpura-rate-sync">
+                            <option value="free" selected>Free</option>
+                            <option value="8">2W</option>
+                            <option value="4">W</option>
+                            <option value="2">H</option>
+                            <option value="1">Q</option>
+                        </select>
                     </div>
                     <div class="master-gain-row">
                         <span class="master-gain-label">Len</span>
-                        <gain-slider id="tanpura-synth-length" min="10" max="100" value="50"></gain-slider>
+                        <gain-slider id="tanpura-synth-length" min="10" max="100" value="100"></gain-slider>
                         <select class="master-preset-select" id="tanpura-synth-len-preset">
-                            <option value="100">Long</option>
-                            <option value="50" selected>Med</option>
+                            <option value="100" selected>Long</option>
+                            <option value="50">Med</option>
                             <option value="25">Short</option>
                         </select>
                     </div>

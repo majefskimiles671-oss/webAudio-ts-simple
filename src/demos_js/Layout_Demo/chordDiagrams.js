@@ -46,6 +46,16 @@ let chords = [
     tops: ["x", null, "o", null, "x", null],
     dots: [[false,false,false,false,false,false],[true,false,false,false,false,false],[false,false,false,false,false,false],[false,false,false,false,true,false],[false,false,false,false,false,false],[false,false,true,false,false,false]],
   },
+  {
+    id: crypto.randomUUID(), name: "F tanpura", baseFret: 1, frets: 6,
+    tops: [null, null, null, "x", null, "x"],
+    dots: [[true,false,false,false,false,false],[true,false,false,false,false,false],[false,false,false,false,true,false],[false,false,false,false,false,false],[false,false,true,false,false,false],[false,false,false,false,false,false]],
+  },
+  {
+    id: crypto.randomUUID(), name: "G tanpura", baseFret: 1, frets: 6,
+    tops: [null, null, null, "o", null, "x"],
+    dots: [[false,false,true,false,false,false],[false,false,true,false,false,false],[false,false,false,false,false,false],[false,false,false,false,false,false],[false,false,false,false,true,false],[false,false,false,false,false,false]],
+  },
 ];
 let currentTuning = tuning([64, 59, 55, 50, 45, 40]);
 let _editingChord = null;
@@ -571,6 +581,45 @@ function cdInitDrag() {
   });
 }
 
+function cdInitResize() {
+  const dialog = cdGetDialog();
+  for (const edge of ['n', 's', 'e', 'w']) {
+    const handle = document.createElement('div');
+    handle.className = `cd-resize-edge cd-resize-${edge}`;
+    dialog.appendChild(handle);
+
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const startX = e.clientX, startY = e.clientY;
+      const startW = dialog.offsetWidth, startH = dialog.offsetHeight;
+      const startL = dialog.offsetLeft,  startT = dialog.offsetTop;
+
+      const onMove = (ev) => {
+        const dx = ev.clientX - startX, dy = ev.clientY - startY;
+        if (edge === 'e') {
+          dialog.style.width = Math.max(200, startW + dx) + 'px';
+        } else if (edge === 'w') {
+          const w = Math.max(200, startW - dx);
+          dialog.style.width = w + 'px';
+          dialog.style.left  = (startL + startW - w) + 'px';
+        } else if (edge === 's') {
+          dialog.style.height = Math.max(120, startH + dy) + 'px';
+        } else if (edge === 'n') {
+          const h = Math.max(120, startH - dy);
+          dialog.style.height = h + 'px';
+          dialog.style.top    = (startT + startH - h) + 'px';
+        }
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+}
+
 // ============================================================
 // Initialization -----
 // ============================================================
@@ -625,6 +674,7 @@ function cdInit() {
     dialog.style.left = (window.innerWidth - dialog.offsetWidth - 50) + "px";
   });
   cdInitDrag();
+  cdInitResize();
   cdRenderDialog();
 
   const _hashChords = window.location.hash.startsWith('#chords=')

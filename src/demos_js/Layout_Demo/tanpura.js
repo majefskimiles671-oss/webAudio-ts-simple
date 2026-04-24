@@ -13,6 +13,8 @@ let _tanpuraSynthMult    = 1;       // envelope length multiplier for synth mode
 let _tanpuraTimerId      = null;
 let _tanpuraStrIdx       = 0;
 let _tanpuraStringGains  = [1, 1, 1, 1];
+let _tanpuraBpm          = 120;   // kept in sync with project BPM
+let _tanpuraSyncBeats    = null;  // null = free slider; 8/4/2/1 = note division in quarter-note beats
 
 function _tanpuraMidiToFreq(midi) {
   return 440 * Math.pow(2, (midi - 69) / 12);
@@ -117,7 +119,10 @@ function _tanpuraPluckNext() {
   }
 
   _tanpuraStrIdx = (_tanpuraStrIdx + 1) % 4;
-  _tanpuraTimerId = setTimeout(_tanpuraPluckNext, _tanpuraRateToInterval(_tanpuraRate) * 1000);
+  const intervalMs = _tanpuraSyncBeats !== null
+    ? (60 / _tanpuraBpm) * _tanpuraSyncBeats * 1000
+    : _tanpuraRateToInterval(_tanpuraRate) * 1000;
+  _tanpuraTimerId = setTimeout(_tanpuraPluckNext, intervalMs);
 }
 
 function tanpuraInit(ctx) {
@@ -177,4 +182,17 @@ function tanpuraSetStringGain(idx, v) {
 
 function tanpuraIsActive() {
   return _tanpuraActive;
+}
+
+function tanpuraSetBPM(bpm) {
+  _tanpuraBpm = bpm;
+}
+
+// beats: null = free slider mode; 8 = double whole, 4 = whole, 2 = half, 1 = quarter
+function tanpuraSetRateSync(beats) {
+  _tanpuraSyncBeats = beats;
+  if (_tanpuraActive) {
+    clearTimeout(_tanpuraTimerId);
+    _tanpuraPluckNext();
+  }
 }

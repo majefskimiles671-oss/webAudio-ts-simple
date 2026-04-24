@@ -2088,6 +2088,7 @@ tempoEl.addEventListener("blur", () => {
   }
 
   bpm = tempoBPM;
+  tanpuraSetBPM(bpm);
   renderTempo();
   syncTimelineMinWidth();
   renderTimelineLayer();
@@ -3972,13 +3973,14 @@ if (_grMeterBar) {
 }
 
 tanpuraInit(getAudioContext());
+tanpuraSetBPM(bpm);
 
 // Apply defaults — mirrors the HTML default values so the audio engine matches on load.
 audioEngineSetMasterGain(0.25);   // -12 dB
 cpSetSynthMult(0.5);              // Med
-tanpuraSetMode("synth");
+tanpuraSetMode("pluck");
 tanpuraSetVolume(0.5);
-tanpuraSetSynthMult(0.5);         // Med
+tanpuraSetSynthMult(1.0);         // Long
 [0, 1, 2, 3].forEach(i => tanpuraSetStringGain(i, 0.5));
 
 // Reverb default: Room
@@ -4146,6 +4148,11 @@ document.getElementById("tanpura-volume").addEventListener("input", (e) => {
 
 document.getElementById("tanpura-rate").addEventListener("input", (e) => {
   tanpuraSetRate(parseInt(e.target.value));
+});
+
+document.getElementById("tanpura-rate-sync").addEventListener("change", (e) => {
+  const v = e.target.value;
+  tanpuraSetRateSync(v === "free" ? null : parseInt(v));
 });
 
 document.getElementById("synth-note-length").addEventListener("input", (e) => {
