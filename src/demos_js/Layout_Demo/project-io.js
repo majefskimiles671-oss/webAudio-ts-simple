@@ -32,12 +32,13 @@ function serializeProject() {
       noteValue: timeSignature.noteValue,
     },
     tracks: tracks.map(track => ({
-      id:      track.id,
-      name:    track.name,
-      gain:    track.gain,
-      pan:     track.pan,
-      opacity: track.opacity,
-      scenes:  [...track.scenes],
+      id:         track.id,
+      name:       track.name,
+      gain:       track.gain,
+      pan:        track.pan,
+      opacity:    track.opacity,
+      instrument: track.instrument,
+      scenes:     [...track.scenes],
       clips:  track.clips.map(clip => {
         const canvas = document.querySelector(`.waveform[data-clip-id="${clip.id}"] .waveform-canvas`);
         const amplitudesRaw = canvas?.dataset?.amplitudes;
@@ -52,6 +53,12 @@ function serializeProject() {
           amplitudes,
         };
       }),
+      midiClips: track.midiClips.map(clip => ({
+        id:              clip.id,
+        startSample:     clip.startSample,
+        durationSamples: clip.durationSamples,
+        events:          clip.events.map(e => ({ offsetSamples: e.offsetSamples, chordId: e.chordId })),
+      })),
     })),
     chordPanel: (typeof cdGetPanelState === "function") ? cdGetPanelState() : undefined,
     tuning: (typeof currentTuning !== "undefined") ? [...currentTuning.openMidiNotes] : [64, 59, 55, 50, 45, 40],
@@ -145,6 +152,29 @@ function deserializeProject(data) {
   bpm       = tempoBPM;
   setTimeSignature(data.timeSignature.beats, data.timeSignature.noteValue);
 
+  // ----- Restore chords (must precede tracks so MIDI clip event labels resolve) -----
+
+  if (typeof currentTuning !== "undefined" && Array.isArray(data.tuning)) {
+    currentTuning = tuning(data.tuning);
+  }
+
+  if (typeof chords !== "undefined") {
+    chords.length = 0;
+    for (const c of (data.chords ?? [])) {
+      const f = c.frets ?? 5;
+      chords.push({
+        id:       c.id,
+        name:     c.name ?? "",
+        baseFret: c.baseFret ?? 1,
+        frets:    f,
+        tops:     c.tops ?? Array(6).fill(null),
+        dots:     c.dots ?? Array.from({ length: 6 }, () => Array(f).fill(false)),
+      });
+    }
+    if (typeof cdRenderDialog === "function") cdRenderDialog();
+    if (typeof cdSetPanelState === "function") cdSetPanelState(data.chordPanel);
+  }
+
   // ----- Restore tracks -----
   // Saved order is newest-first. Iterating in reverse (oldest first) and
   // prepending each track preserves the original DOM order after the loop.
@@ -170,6 +200,11 @@ function deserializeProject(data) {
     if (opEl) opEl.value = track.opacity;
     track.timelineRow.style.setProperty('--row-opacity', track.opacity / 100);
 
+    // Instrument (Pluck / Synth)
+    track.instrument = saved.instrument ?? "pluck";
+    const instrBtn = track.controlRow.querySelector(".instrument-toggle");
+    if (instrBtn) instrBtn.textContent = track.instrument === "synth" ? "Synth" : "Pluck";
+
     // Scene assignments
     track.scenes = saved.scenes ?? [];
     track.scenes.forEach(letter => {
@@ -177,6 +212,18 @@ function deserializeProject(data) {
         .find(b => b.textContent.trim() === letter);
       if (btn) btn.classList.add("active");
     });
+
+    // MIDI clips
+    for (const savedClip of (saved.midiClips ?? [])) {
+      const clip = {
+        id:              savedClip.id,
+        startSample:     savedClip.startSample,
+        durationSamples: savedClip.durationSamples,
+        events:          (savedClip.events ?? []).map(e => ({ offsetSamples: e.offsetSamples, chordId: e.chordId })),
+      };
+      track.midiClips.push(clip);
+      renderMidiClip(track, clip);
+    }
 
     // Clips — restore state with saved IDs, then render waveform
     for (const savedClip of (saved.clips ?? [])) {
@@ -229,29 +276,6 @@ function deserializeProject(data) {
   }
   markers.sort((a, b) => a.time - b.time);
   selectedMarkerId = markers[0]?.id ?? null;
-
-  // ----- Restore chords -----
-
-  if (typeof currentTuning !== "undefined" && Array.isArray(data.tuning)) {
-    currentTuning = tuning(data.tuning);
-  }
-
-  if (typeof chords !== "undefined") {
-    chords.length = 0;
-    for (const c of (data.chords ?? [])) {
-      const f = c.frets ?? 5;
-      chords.push({
-        id:       c.id,
-        name:     c.name ?? "",
-        baseFret: c.baseFret ?? 1,
-        frets:    f,
-        tops:     c.tops ?? Array(6).fill(null),
-        dots:     c.dots ?? Array.from({ length: 6 }, () => Array(f).fill(false)),
-      });
-    }
-    if (typeof cdRenderDialog === "function") cdRenderDialog();
-    if (typeof cdSetPanelState === "function") cdSetPanelState(data.chordPanel);
-  }
 
   // ----- Fresh recording lane -----
 

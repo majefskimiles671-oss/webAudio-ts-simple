@@ -144,6 +144,15 @@ function _synthReleaseAll(ctx) {
   _activeVoices = [];
 }
 
+function cpGetSynthMode() { return _synthMode; }
+
+function cpSetSynthMode(mode) {
+  _synthMode = mode;
+  document.querySelectorAll(".cd-sound-seg .cd-sound-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.textContent.toLowerCase() === mode);
+  });
+}
+
 function cdBuildSoundToggle() {
   const seg = document.createElement("div");
   seg.className = "cd-sound-seg";

@@ -136,8 +136,9 @@ function cdGetPanelState() {
     top:     parseInt(dialog.style.top)    || 80,
     width:   parseInt(dialog.style.width)  || dialog.offsetWidth  || undefined,
     height:  parseInt(dialog.style.height) || dialog.offsetHeight || undefined,
-    zoom:    _cdZoom,
-    visible: dialog.classList.contains("cd-visible"),
+    zoom:      _cdZoom,
+    visible:   dialog.classList.contains("cd-visible"),
+    synthMode: (typeof cpGetSynthMode === "function") ? cpGetSynthMode() : "pluck",
   };
 }
 
@@ -161,6 +162,9 @@ function cdSetPanelState(state) {
   if (state.visible) {
     dialog.classList.add("cd-visible");
     dialog.querySelectorAll(".cd-grid-wrap").forEach(cdSyncFretLabel);
+  }
+  if (state.synthMode != null && typeof cpSetSynthMode === "function") {
+    cpSetSynthMode(state.synthMode);
   }
 }
 

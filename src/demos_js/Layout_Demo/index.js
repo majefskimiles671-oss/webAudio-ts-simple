@@ -1799,7 +1799,12 @@ function scrubToMouseEvent(e) {
 
   const clampedX = Math.max(0, contentX);
 
-  setPlayheadPositionPx(clampedX);
+  if (rulerMode === "bars") {
+    const snappedSeconds = snapToHalfBeat(pixelsToSeconds(clampedX));
+    setPlayheadPositionPx(secondsToPixels(snappedSeconds));
+  } else {
+    setPlayheadPositionPx(clampedX);
+  }
 }
 
 let _lastAnnouncedTransportState = null;
