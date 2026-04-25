@@ -4422,3 +4422,10 @@ function showAudioReconnectBanner(projectId) {
   banner.querySelector('.arb-close').addEventListener('click', () => banner.remove());
 }
 
+document.querySelectorAll('.master-section-header').forEach(header => {
+    header.addEventListener('click', e => {
+        if (e.target.closest('.master-fx-controls, select, button')) return;
+        header.closest('.master-section').classList.toggle('collapsed');
+    });
+});
+

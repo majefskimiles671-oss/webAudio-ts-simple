@@ -101,6 +101,12 @@ function serializeProject() {
       tanpuraS2:           parseInt(document.getElementById("tanpura-s2-vol").value),
       tanpuraS3:           parseInt(document.getElementById("tanpura-s3-vol").value),
       tanpuraS4:           parseInt(document.getElementById("tanpura-s4-vol").value),
+      sectionCollapsed:    Object.fromEntries(
+        [...document.querySelectorAll('.master-section')].map(s => [
+          s.querySelector('.master-heading').textContent.trim().toLowerCase(),
+          s.classList.contains('collapsed'),
+        ])
+      ),
     },
     video: videoFile
       ? {
@@ -226,6 +232,12 @@ function deserializeProject(data) {
       const val = mx[`tanpuraS${n}`] ?? 50;
       tanpuraSetStringGain(n - 1, val / 100);
       document.getElementById(`tanpura-s${n}-vol`).value = val;
+    });
+
+    const sc = mx.sectionCollapsed ?? {};
+    document.querySelectorAll('.master-section').forEach(s => {
+      const name = s.querySelector('.master-heading').textContent.trim().toLowerCase();
+      s.classList.toggle('collapsed', sc[name] ?? false);
     });
   }
 

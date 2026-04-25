@@ -338,19 +338,21 @@ Rule - Add comments before code snippets in this format:
                             <option value="quiet" selected>-12 dB</option>
                         </select>
                     </div>
-                    <div id="master-meter">
-                        <div class="master-meter-row">
-                            <span class="master-ch-label">L</span>
-                            <div class="master-meter-bar" id="master-meter-L"></div>
+                    <div class="master-section-body">
+                        <div id="master-meter">
+                            <div class="master-meter-row">
+                                <span class="master-ch-label">L</span>
+                                <div class="master-meter-bar" id="master-meter-L"></div>
+                            </div>
+                            <div class="master-meter-row">
+                                <span class="master-ch-label">R</span>
+                                <div class="master-meter-bar" id="master-meter-R"></div>
+                            </div>
                         </div>
-                        <div class="master-meter-row">
-                            <span class="master-ch-label">R</span>
-                            <div class="master-meter-bar" id="master-meter-R"></div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Vol</span>
+                            <gain-slider id="master-gain-slider" min="0" max="100" value="25"></gain-slider>
                         </div>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Vol</span>
-                        <gain-slider id="master-gain-slider" min="0" max="100" value="25"></gain-slider>
                     </div>
                 </div>
                 <div class="master-section">
@@ -366,13 +368,15 @@ Rule - Add comments before code snippets in this format:
                         </select>
                         </div>
                     </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Wet</span>
-                        <gain-slider id="master-reverb-wet" min="0" max="100" value="20"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Size</span>
-                        <gain-slider id="master-reverb-size" min="0" max="100" value="18"></gain-slider>
+                    <div class="master-section-body">
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Wet</span>
+                            <gain-slider id="master-reverb-wet" min="0" max="100" value="20"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Size</span>
+                            <gain-slider id="master-reverb-size" min="0" max="100" value="18"></gain-slider>
+                        </div>
                     </div>
                 </div>
                 <div class="master-section">
@@ -388,17 +392,19 @@ Rule - Add comments before code snippets in this format:
                         </select>
                         </div>
                     </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Thr</span>
-                        <gain-slider id="master-comp-threshold" min="-60" max="0" value="-6"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Ratio</span>
-                        <gain-slider id="master-comp-ratio" min="1" max="20" value="18"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">GR</span>
-                        <div class="gr-meter-bar" id="master-gr-meter"></div>
+                    <div class="master-section-body">
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Thr</span>
+                            <gain-slider id="master-comp-threshold" min="-60" max="0" value="-6"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Ratio</span>
+                            <gain-slider id="master-comp-ratio" min="1" max="20" value="18"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">GR</span>
+                            <div class="gr-meter-bar" id="master-gr-meter"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="master-section">
@@ -412,9 +418,11 @@ Rule - Add comments before code snippets in this format:
                             </select>
                         </div>
                     </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Len</span>
-                        <gain-slider id="synth-note-length" min="10" max="100" value="50"></gain-slider>
+                    <div class="master-section-body">
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Len</span>
+                            <gain-slider id="synth-note-length" min="10" max="100" value="50"></gain-slider>
+                        </div>
                     </div>
                 </div>
                 <div class="master-section">
@@ -422,40 +430,42 @@ Rule - Add comments before code snippets in this format:
                         <p class="master-heading">Pluck</p>
                         <div class="master-fx-controls">
                             <select class="master-preset-select" id="pluck-preset">
-                                <option value="" selected>Preset</option>
+                                <option value="">Preset</option>
                                 <option value="soft">Soft</option>
                                 <option value="warm">Warm</option>
                                 <option value="med">Med</option>
-                                <option value="bright">Bright</option>
+                                <option value="bright" selected>Bright</option>
                                 <option value="crisp">Crisp</option>
                                 <option value="punchy">Punchy</option>
                                 <option value="long">Long</option>
                             </select>
                         </div>
                     </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Len</span>
-                        <gain-slider id="pluck-length" min="10" max="200" value="100"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Vol</span>
-                        <gain-slider id="pluck-prominence" min="0" max="100" value="50"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Atk</span>
-                        <gain-slider id="pluck-attack" min="0" max="100" value="10"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Dec</span>
-                        <gain-slider id="pluck-decay" min="0" max="100" value="20"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Sus</span>
-                        <gain-slider id="pluck-sustain" min="0" max="100" value="70"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Rel</span>
-                        <gain-slider id="pluck-release" min="0" max="100" value="15"></gain-slider>
+                    <div class="master-section-body">
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Len</span>
+                            <gain-slider id="pluck-length" min="10" max="200" value="90"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Vol</span>
+                            <gain-slider id="pluck-prominence" min="0" max="100" value="60"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Atk</span>
+                            <gain-slider id="pluck-attack" min="0" max="100" value="4"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Dec</span>
+                            <gain-slider id="pluck-decay" min="0" max="100" value="15"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Sus</span>
+                            <gain-slider id="pluck-sustain" min="0" max="100" value="80"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Rel</span>
+                            <gain-slider id="pluck-release" min="0" max="100" value="12"></gain-slider>
+                        </div>
                     </div>
                 </div>
                 <div class="master-section">
@@ -469,45 +479,47 @@ Rule - Add comments before code snippets in this format:
                             </select>
                         </div>
                     </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Vol</span>
-                        <gain-slider id="tanpura-volume" min="0" max="100" value="50"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Rate</span>
-                        <gain-slider id="tanpura-rate" min="0" max="100" value="50"></gain-slider>
-                        <select class="master-preset-select" id="tanpura-rate-sync">
-                            <option value="free" selected>Free</option>
-                            <option value="8">2W</option>
-                            <option value="4">W</option>
-                            <option value="2">H</option>
-                            <option value="1">Q</option>
-                        </select>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">Len</span>
-                        <gain-slider id="tanpura-synth-length" min="10" max="100" value="100"></gain-slider>
-                        <select class="master-preset-select" id="tanpura-synth-len-preset">
-                            <option value="100" selected>Long</option>
-                            <option value="50">Med</option>
-                            <option value="25">Short</option>
-                        </select>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">S1</span>
-                        <gain-slider id="tanpura-s1-vol" min="0" max="100" value="50"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">S2</span>
-                        <gain-slider id="tanpura-s2-vol" min="0" max="100" value="50"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">S3</span>
-                        <gain-slider id="tanpura-s3-vol" min="0" max="100" value="50"></gain-slider>
-                    </div>
-                    <div class="master-gain-row">
-                        <span class="master-gain-label">S4</span>
-                        <gain-slider id="tanpura-s4-vol" min="0" max="100" value="50"></gain-slider>
+                    <div class="master-section-body">
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Vol</span>
+                            <gain-slider id="tanpura-volume" min="0" max="100" value="50"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Rate</span>
+                            <gain-slider id="tanpura-rate" min="0" max="100" value="50"></gain-slider>
+                            <select class="master-preset-select" id="tanpura-rate-sync">
+                                <option value="free" selected>Free</option>
+                                <option value="8">2W</option>
+                                <option value="4">W</option>
+                                <option value="2">H</option>
+                                <option value="1">Q</option>
+                            </select>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Len</span>
+                            <gain-slider id="tanpura-synth-length" min="10" max="100" value="100"></gain-slider>
+                            <select class="master-preset-select" id="tanpura-synth-len-preset">
+                                <option value="100" selected>Long</option>
+                                <option value="50">Med</option>
+                                <option value="25">Short</option>
+                            </select>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">S1</span>
+                            <gain-slider id="tanpura-s1-vol" min="0" max="100" value="50"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">S2</span>
+                            <gain-slider id="tanpura-s2-vol" min="0" max="100" value="50"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">S3</span>
+                            <gain-slider id="tanpura-s3-vol" min="0" max="100" value="50"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">S4</span>
+                            <gain-slider id="tanpura-s4-vol" min="0" max="100" value="50"></gain-slider>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -5,13 +5,13 @@
 let _synthMode         = "pluck"; // "pluck" | "synth"
 let _synthNoteMult     = 1;       // global length multiplier for all synth note playback
 let _activeVoices      = [];      // { oscs, env } — released on re-trigger
-let _pluckDurationMult = 1;
-let _pluckVolume       = 1;
+let _pluckDurationMult = 0.9;
+let _pluckVolume       = 1.2;
 let _pluckGainNode     = null;
-let _pluckAttack       = 0.02;
-let _pluckDecay        = 0.2;
-let _pluckSustain      = 0.7;
-let _pluckRelease      = 0.3;
+let _pluckAttack       = 0.008;
+let _pluckDecay        = 0.15;
+let _pluckSustain      = 0.8;
+let _pluckRelease      = 0.24;
 
 function _getPluckGainNode(ctx) {
   if (!_pluckGainNode || _pluckGainNode.context !== ctx) {
