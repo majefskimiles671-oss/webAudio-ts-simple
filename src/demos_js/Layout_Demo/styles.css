@@ -265,6 +265,12 @@
 
         .tempo {
             padding: 5px;
+            outline: 1px solid transparent;
+            border-radius: 3px;
+        }
+
+        .tempo:focus {
+            outline-color: var(--accent-primary);
         }
 
 
@@ -396,8 +402,8 @@
         }
 
         #add-midi-track-btn {
-            background: color-mix(in srgb, #9b7ec8 14%, var(--bg-surface));
-            border-color: color-mix(in srgb, #9b7ec8 50%, transparent);
+            background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-surface));
+            border-color: color-mix(in srgb, var(--accent-primary) 50%, transparent);
             color: var(--text-main);
         }
 
@@ -407,8 +413,8 @@
         }
 
         #add-midi-track-btn:hover {
-            background: color-mix(in srgb, #9b7ec8 28%, var(--bg-surface));
-            border-color: #9b7ec8;
+            background: color-mix(in srgb, var(--accent-primary) 28%, var(--bg-surface));
+            border-color: var(--accent-primary);
         }
 
         #controls-scroll-column {
@@ -798,8 +804,10 @@
             height: 18px;
             border-radius: 3px;
             font-size: 11px;
-            line-height: 18px;
-            text-align: center;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
 
             background: transparent;
             border: 1px solid var(--border-subtle);
@@ -1459,30 +1467,6 @@
             --waveform-b: #421848;
         }
 
-        body[data-theme="Ronin"] {
-            /* Surfaces — sumi ink, lacquered wood */
-            --bg-app:     #0c0a08;
-            --bg-surface: #1a1510;
-            --bg-panel:   #120e0a;
-            --bg-button:  #2e2418;
-
-            /* Text — aged washi paper, warm gray */
-            --text-main:   #f0e8d8;
-            --text-muted:  #8a7860;
-            --text-button: #f0e8d8;
-
-            /* UI chrome — dark lacquer */
-            --border-subtle: #3a2e20;
-
-            /* Accents — crimson lacquer, sakura */
-            --accent-primary:   #c8102e;
-            --accent-danger:    #ff4444;
-            --accent-highlight: #f9a8c4;
-
-            /* Waveform */
-            --waveform-a: #120e0a;
-            --waveform-b: #2e2418;
-        }
 
         body[data-theme="Purple Light"] {
             /* Surfaces — soft violet in daylight */
@@ -1509,80 +1493,8 @@
             --waveform-b: #d0c4ee;
         }
 
-        body[data-theme="Fire Light"] {
-            /* Surfaces — warm ember glow in daylight */
-            --bg-app:     #fef3e8;
-            --bg-surface: #fffdf9;
-            --bg-panel:   #fde8d0;
-            --bg-button:  #f5c9a0;
 
-            /* Text — deep charcoal-brown, warm muted */
-            --text-main:   #1c0a04;
-            --text-muted:  #7c3c1c;
-            --text-button: #1c0a04;
 
-            /* UI chrome */
-            --border-subtle: #f0b080;
-
-            /* Accents — deepened orange and amber for light-bg contrast */
-            --accent-primary:   #ea6010;
-            --accent-danger:    #dc2626;
-            --accent-highlight: #e8b800;
-
-            /* Waveform */
-            --waveform-a: #fde8d0;
-            --waveform-b: #f5c9a0;
-        }
-
-        body[data-theme="Earth Light"] {
-            /* Surfaces — warm parchment and sandstone */
-            --bg-app:     #f2ebe0;
-            --bg-surface: #fffcf5;
-            --bg-panel:   #e8dece;
-            --bg-button:  #d4c5ae;
-
-            /* Text — dark warm brown */
-            --text-main:   #1c1712;
-            --text-muted:  #78706a;
-            --text-button: #1c1712;
-
-            /* UI chrome */
-            --border-subtle: #c2b49a;
-
-            /* Accents — lime and amber, deepened for light-bg contrast */
-            --accent-primary:   #6a9e0e;
-            --accent-danger:    #b91c1c;
-            --accent-highlight: #c9870a;
-
-            /* Waveform */
-            --waveform-a: #e8dece;
-            --waveform-b: #d4c5ae;
-        }
-
-        body[data-theme="Cookies Haze Light"] {
-            /* Surfaces — cannabis bud in afternoon sun, sage and warm tan */
-            --bg-app:     #edf3dc;
-            --bg-surface: #f7fced;
-            --bg-panel:   #e0ecca;
-            --bg-button:  #cec09a;
-
-            /* Text — dark warm green-brown, olive muted */
-            --text-main:   #1a1e10;
-            --text-muted:  #586040;
-            --text-button: #1a1e10;
-
-            /* UI chrome */
-            --border-subtle: #b4c490;
-
-            /* Accents — amber pistils, vivid lime trichomes */
-            --accent-primary:   #b07de0;
-            --accent-danger:    #cc3333;
-            --accent-highlight: #7ec010;
-
-            /* Waveform */
-            --waveform-a: #e0ecca;
-            --waveform-b: #cec09a;
-        }
 
         body[data-theme="Studio Light"] {
             /* Surfaces — clean bright studio console */
@@ -1664,30 +1576,6 @@
             --meter-high: #ffbb00;   /* full phosphor brightness */
         }
 
-        body[data-theme="Shaadi"] {
-            /* Surfaces — deep crimson like the bride's lehenga */
-            --bg-app:     #1a0508;
-            --bg-surface: #2a0810;
-            --bg-panel:   #200610;
-            --bg-button:  #3d0c1c;
-
-            /* Text — warm ivory, rose-gold muted */
-            --text-main:   #fde8c0;
-            --text-muted:  #c87060;
-            --text-button: #fde8c0;
-
-            /* UI chrome — deep rose border */
-            --border-subtle: #5a1428;
-
-            /* Accents — rich gold jewelry, saffron bridesmaids */
-            --accent-primary:   #c89010;
-            --accent-danger:    #ff4444;
-            --accent-highlight: #f97316;
-
-            /* Waveform */
-            --waveform-a: #200610;
-            --waveform-b: #3d0c1c;
-        }
 
         body[data-theme="Saffron"] {
             /* Surfaces — dark amber like the bridesmaids' saris in shadow */
@@ -1714,30 +1602,6 @@
             --waveform-b: #3d2000;
         }
 
-        body[data-theme="Gulabi"] {
-            /* Surfaces — deep rose like the flower garlands */
-            --bg-app:     #1a0814;
-            --bg-surface: #2d1020;
-            --bg-panel:   #220d1a;
-            --bg-button:  #400a28;
-
-            /* Text — soft rose-white, muted blush */
-            --text-main:   #fde8f0;
-            --text-muted:  #c87898;
-            --text-button: #fde8f0;
-
-            /* UI chrome — deep rose border */
-            --border-subtle: #5a1840;
-
-            /* Accents — vivid rose, warm ceremony gold */
-            --accent-primary:   #f43f5e;
-            --accent-danger:    #ff6b35;
-            --accent-highlight: #d4a017;
-
-            /* Waveform */
-            --waveform-a: #220d1a;
-            --waveform-b: #400a28;
-        }
 
         body[data-theme="Harvest"] {
             /* Surfaces — shadow grey base, toffee warmth */
@@ -1787,6 +1651,31 @@
             /* Waveform */
             --waveform-a: #4e2426;
             --waveform-b: #634039;
+        }
+
+        body[data-theme="Ember"] {
+            /* Surfaces — near-black with warm amber undertone, zero blue */
+            --bg-app:     #0d0800;
+            --bg-surface: #1a1000;
+            --bg-panel:   #130c00;
+            --bg-button:  #2a1800;
+
+            /* Text — dim amber glow, easy on dark-adapted eyes */
+            --text-main:   #e8a040;
+            --text-muted:  #7a4a10;
+            --text-button: #e8a040;
+
+            /* UI chrome — dark warm border, no cool tones */
+            --border-subtle: #3d2200;
+
+            /* Accents — deep amber primary, burnt orange highlight */
+            --accent-primary:   #e07800;
+            --accent-danger:    #cc2200;
+            --accent-highlight: #ffa030;
+
+            /* Waveform */
+            --waveform-a: #130c00;
+            --waveform-b: #2a1800;
         }
 
         /* x286 — Mars colony newswire ticker */
@@ -3339,6 +3228,11 @@
             font-size: 12px;
             padding: 4px 6px;
             text-align: center;
+            outline: none;
+        }
+
+        .cd-basefret-input:focus {
+            border-color: var(--accent-primary);
         }
 
         .cd-rows-seg {
@@ -3668,9 +3562,135 @@
 
         .vs-col > .vs-group-label:first-child { margin-top: 0; }
 
+        .vs-presets {
+            display: flex;
+            gap: 8px;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-surface);
+        }
+
+        .vs-preset-btn {
+            flex: 1;
+            padding: 6px 0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            background: var(--bg-button);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+        }
+
+        .vs-preset-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .vs-other {
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .vs-other-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            padding: 8px 16px 0;
+        }
+
+        .vs-other-body {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            padding: 8px 16px 16px;
+            gap: 0;
+        }
+
+        .vs-other-body .vs-col:first-child { padding-left: 0; }
+        .vs-other-body .vs-col:last-child  { padding-right: 0; }
+        .vs-other-body .vs-col + .vs-col   { border-left: 1px solid var(--border-subtle); }
+
+        .vs-theme-dropdown {
+            position: relative;
+        }
+
+        .vs-theme-trigger {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            background: var(--bg-button);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+        }
+
+        .vs-theme-trigger:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .vs-theme-trigger .theme-swatch {
+            width: 40px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .vs-theme-arrow {
+            margin-left: auto;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .vs-theme-stars {
+            display: flex;
+            gap: 2px;
+            padding: 4px 2px 0;
+        }
+
+        .vs-star {
+            background: none;
+            border: none;
+            padding: 0 2px;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--border-subtle);
+            line-height: 1;
+        }
+
+        .vs-star.filled {
+            color: #f59e0b;
+        }
+
+        .vs-star:hover,
+        .vs-star:hover ~ .vs-star {
+            color: var(--border-subtle);
+        }
+
+        .vs-theme-stars:hover .vs-star {
+            color: #f59e0b;
+        }
+
+        .vs-theme-stars:hover .vs-star:hover ~ .vs-star {
+            color: var(--border-subtle);
+        }
+
+        .vs-theme-panel {
+            position: fixed;
+            z-index: 10000;
+            width: max-content;
+        }
+
+        .vs-theme-panel[hidden] { display: none; }
+
         .theme-swatch-list {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 4px 0;
             background: #000000;
             padding: 8px;
@@ -3687,6 +3707,7 @@
             border-radius: 6px;
             border: 2px solid transparent;
             cursor: pointer;
+            white-space: nowrap;
         }
 
         .theme-swatch-list label:has(input[type="radio"]:checked) {
@@ -3695,6 +3716,14 @@
 
         .theme-swatch-list input[type="radio"] {
             display: none;
+        }
+
+        .vs-panel-stars {
+            margin-left: auto;
+            padding-left: 6px;
+            color: #ffffff;
+            font-size: 11px;
+            letter-spacing: 1px;
         }
 
         .vs-dialog-body {
@@ -4677,8 +4706,8 @@
 /* Track type visual distinction */
 .is-midi-track.control-row,
 .is-midi-track.timeline-row {
-  border-left: 3px solid #9b7ec8;
-  background: color-mix(in srgb, #7b5ea7 9%, var(--bg-app));
+  border-left: 3px solid var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 9%, var(--bg-app));
 }
 .is-audio-track.control-row,
 .is-audio-track.timeline-row {

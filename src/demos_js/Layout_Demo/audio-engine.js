@@ -201,16 +201,28 @@ let _micStream      = null;
 let _micAnalyser    = null;
 let _mediaRecorder  = null;
 let _recordedChunks = [];
+let _rawMicMode     = false;
+
+function audioEngineIsRawMicMode() { return _rawMicMode; }
 
 async function audioEngineEnsureMicStream() {
   if (!_micStream) {
-    _micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const constraints = _rawMicMode
+      ? { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false }
+      : { audio: true, video: false };
+    _micStream = await navigator.mediaDevices.getUserMedia(constraints);
     if (_audioCtx.state === "suspended") _audioCtx.resume();
     const src = _audioCtx.createMediaStreamSource(_micStream);
     _micAnalyser = _audioCtx.createAnalyser();
     src.connect(_micAnalyser);
   }
   return _micStream;
+}
+
+async function audioEngineToggleRawMicMode() {
+  _rawMicMode = !_rawMicMode;
+  audioEngineCloseMicStream(); // force re-acquire with new constraints on next use
+  return _rawMicMode;
 }
 
 function audioEngineGetInputLevel() {
@@ -238,7 +250,9 @@ function audioEngineStopRecording() {
       const blob = new Blob(chunks, { type: recorder.mimeType });
       try {
         const ab = await blob.arrayBuffer();
-        resolve(await _audioCtx.decodeAudioData(ab));
+        const decoded = await _audioCtx.decodeAudioData(ab);
+        if (_autoNormalize) _normalizeBuffer(decoded);
+        resolve(decoded);
       } catch {
         resolve(null);
       }
@@ -465,9 +479,7 @@ function _generateReverbIR(decaySeconds) {
 }
 _reverbConvolver.buffer = _generateReverbIR(1.5);
 
-function audioEngineNormalizeClip(clipId) {
-  const buf = _buffers.get(clipId);
-  if (!buf) return;
+function _normalizeBuffer(buf) {
   let peak = 0;
   for (let ch = 0; ch < buf.numberOfChannels; ch++) {
     const data = buf.getChannelData(ch);
@@ -483,6 +495,15 @@ function audioEngineNormalizeClip(clipId) {
     for (let i = 0; i < data.length; i++) data[i] *= scale;
   }
 }
+
+function audioEngineNormalizeClip(clipId) {
+  const buf = _buffers.get(clipId);
+  if (buf) _normalizeBuffer(buf);
+}
+
+let _autoNormalize = false;
+function audioEngineIsAutoNormalize() { return _autoNormalize; }
+function audioEngineToggleAutoNormalize() { _autoNormalize = !_autoNormalize; return _autoNormalize; }
 
 function audioEngineSetReverbWet(mix) {
   _dryGain.gain.value = 1 - mix;

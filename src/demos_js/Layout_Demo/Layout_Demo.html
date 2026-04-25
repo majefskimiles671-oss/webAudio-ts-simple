@@ -118,6 +118,8 @@ Rule - Add comments before code snippets in this format:
             <div class="menu-pop" role="menu">
                 <div id="debug-log-project" role="menuitem" tabindex="-1">Log Project State</div>
                 <div id="debug-toggle-display" role="menuitem" tabindex="-1">Toggle Debug Display</div>
+                <div id="debug-toggle-raw-mic" role="menuitem" tabindex="-1">Mic: Default (noise suppressed)</div>
+                <div id="debug-toggle-auto-normalize" role="menuitem" tabindex="-1">Auto-normalize: Off</div>
                 <div id="menu-calibrate-latency" role="menuitem" tabindex="-1">Calibrate Latency…</div>
             </div>
         </div>
@@ -566,6 +568,11 @@ Rule - Add comments before code snippets in this format:
 <div id="view-settings-overlay" class="view-settings-overlay" hidden>
     <div class="view-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="view-settings-title">
         <h2 class="view-settings-title" id="view-settings-title">View Settings</h2>
+        <div class="vs-presets">
+            <button class="vs-preset-btn" data-preset="minimal">Minimal</button>
+            <button class="vs-preset-btn" data-preset="standard">Standard</button>
+            <button class="vs-preset-btn" data-preset="full">Full</button>
+        </div>
         <div class="view-settings-body">
             <div class="vs-col">
                 <span class="vs-group-label">Transport</span>
@@ -574,8 +581,6 @@ Rule - Add comments before code snippets in this format:
                 <label><input type="checkbox" data-view-key="tempo"> Tempo &amp; Time Sig</label>
                 <label><input type="checkbox" data-view-key="metronome"> Metronome</label>
                 <label><input type="checkbox" data-view-key="zoom"> Zoom Slider</label>
-                <label><input type="radio" name="vs-ruler" value="bars"> Ruler: Bars</label>
-                <label><input type="radio" name="vs-ruler" value="seconds"> Ruler: Seconds</label>
             </div>
             <div class="vs-col">
                 <span class="vs-group-label">Track</span>
@@ -586,32 +591,52 @@ Rule - Add comments before code snippets in this format:
                 <label><input type="checkbox" data-view-key="notes"> Marker Notes</label>
                 <label><input type="checkbox" data-view-key="chordDiagrams"> Chord Diagrams</label>
                 <label><input type="checkbox" id="vs-notes-font-mono"> Notes Font: Monospace</label>
-                <label>Marker Lookahead: <input type="number" id="vs-marker-lookahead" min="0" max="8" step="0.5" style="width:3em"> beats</label>
             </div>
-            <div class="vs-col">
-                <span class="vs-group-label">Theme</span>
-                <div class="theme-swatch-list">
-                <label><input type="radio" name="vs-theme" value="studio"><span class="theme-swatch" style="--sb:#0f172a;--sc:#020617;--sa:#38bdf8;--sd:#7dd3fc"></span> Studio</label>
-                <label><input type="radio" name="vs-theme" value="dark"><span class="theme-swatch" style="--sb:#1f2937;--sc:#111827;--sa:#ff9500;--sd:#ffd400"></span> Dark</label>
-                <label><input type="radio" name="vs-theme" value="Cookies Haze"><span class="theme-swatch" style="--sb:#1e1a30;--sc:#160f1e;--sa:#c87d1a;--sd:#c6f135"></span> Cookies Haze</label>
-                <label><input type="radio" name="vs-theme" value="Fire"><span class="theme-swatch" style="--sb:#3b1410;--sc:#2a0f0a;--sa:#f97316;--sd:#fde047"></span> Fire</label>
-                <label><input type="radio" name="vs-theme" value="Earth"><span class="theme-swatch" style="--sb:#3a372f;--sc:#2b2a25;--sa:#84cc16;--sd:#eab308"></span> Earth</label>
-                <label><input type="radio" name="vs-theme" value="x286"><span class="theme-swatch" style="--sb:#160c00;--sc:#0c0700;--sa:#ff7700;--sd:#ffcc00"></span> x286</label>
-                <label><input type="radio" name="vs-theme" value="Red Light"><span class="theme-swatch" style="--sb:#1c0404;--sc:#0e0000;--sa:#e03030;--sd:#ff9090"></span> Red Light</label>
-                <label><input type="radio" name="vs-theme" value="Purple Dark"><span class="theme-swatch" style="--sb:#1a1030;--sc:#0f0820;--sa:#a855f7;--sd:#e879f9"></span> Purple Dark</label>
-                <label><input type="radio" name="vs-theme" value="Rangoli"><span class="theme-swatch" style="--sb:#2e1032;--sc:#1c0a1e;--sa:#f59e0b;--sd:#e879f9"></span> Rangoli</label>
-                <label><input type="radio" name="vs-theme" value="Ronin"><span class="theme-swatch" style="--sb:#1a1510;--sc:#0c0a08;--sa:#c8102e;--sd:#f9a8c4"></span> Ronin</label>
-                <label><input type="radio" name="vs-theme" value="Purple Light"><span class="theme-swatch" style="--sb:#faf8ff;--sc:#f0ebfb;--sa:#7c3aed;--sd:#c084fc"></span> Purple Light</label>
-                <label><input type="radio" name="vs-theme" value="Fire Light"><span class="theme-swatch" style="--sb:#fffdf9;--sc:#fef3e8;--sa:#ea6010;--sd:#e8b800"></span> Fire Light</label>
-                <label><input type="radio" name="vs-theme" value="Studio Light"><span class="theme-swatch" style="--sb:#ffffff;--sc:#f0f0f0;--sa:#0a84ff;--sd:#30c060"></span> Studio Light</label>
-                <label><input type="radio" name="vs-theme" value="Earth Light"><span class="theme-swatch" style="--sb:#fffcf5;--sc:#f2ebe0;--sa:#6a9e0e;--sd:#c9870a"></span> Earth Light</label>
-                <label><input type="radio" name="vs-theme" value="Cookies Haze Light"><span class="theme-swatch" style="--sb:#f7fced;--sc:#edf3dc;--sa:#b07de0;--sd:#7ec010"></span> Cookies Haze Light</label>
-                <label><input type="radio" name="vs-theme" value="Ice9"><span class="theme-swatch" style="--sb:#eef6fd;--sc:#d8eaf7;--sa:#0077b6;--sd:#48cae4"></span> Ice9</label>
-                <label><input type="radio" name="vs-theme" value="Shaadi"><span class="theme-swatch" style="--sb:#2a0810;--sc:#1a0508;--sa:#c89010;--sd:#f97316"></span> Shaadi</label>
-                <label><input type="radio" name="vs-theme" value="Saffron"><span class="theme-swatch" style="--sb:#2d1400;--sc:#1c0d00;--sa:#f97316;--sd:#fbbf24"></span> Saffron</label>
-                <label><input type="radio" name="vs-theme" value="Gulabi"><span class="theme-swatch" style="--sb:#2d1020;--sc:#1a0814;--sa:#f43f5e;--sd:#d4a017"></span> Gulabi</label>
-                <label><input type="radio" name="vs-theme" value="Harvest"><span class="theme-swatch" style="--sb:#3a2818;--sc:#1f1e23;--sa:#f3aa0d;--sd:#bb3036"></span> Harvest</label>
-                <label><input type="radio" name="vs-theme" value="Canyon"><span class="theme-swatch" style="--sb:#634039;--sc:#3d1218;--sa:#ea7d46;--sd:#d68c72"></span> Canyon</label>
+        </div>
+        <div class="vs-other">
+            <span class="vs-other-label">Other</span>
+            <div class="vs-other-body">
+                <div class="vs-col">
+                    <span class="vs-group-label">Ruler</span>
+                    <label><input type="radio" name="vs-ruler" value="bars"> Bars</label>
+                    <label><input type="radio" name="vs-ruler" value="seconds"> Seconds</label>
+                    <span class="vs-group-label">Marker Lookahead</span>
+                    <label><input type="number" id="vs-marker-lookahead" min="0" max="8" step="0.5" style="width:3em"> beats</label>
+                </div>
+                <div class="vs-col">
+                    <span class="vs-group-label">Theme</span>
+                    <div class="vs-theme-dropdown">
+                        <button class="vs-theme-trigger" id="vs-theme-trigger" type="button">
+                            <span class="theme-swatch" id="vs-theme-trigger-swatch"></span>
+                            <span id="vs-theme-trigger-name"></span>
+                            <span class="vs-theme-arrow">▾</span>
+                        </button>
+                        <div class="vs-theme-stars" id="vs-theme-stars">
+                            <button class="vs-star" data-star="1" type="button">&#9733;</button>
+                            <button class="vs-star" data-star="2" type="button">&#9733;</button>
+                            <button class="vs-star" data-star="3" type="button">&#9733;</button>
+                            <button class="vs-star" data-star="4" type="button">&#9733;</button>
+                            <button class="vs-star" data-star="5" type="button">&#9733;</button>
+                        </div>
+                        <div class="theme-swatch-list vs-theme-panel" id="vs-theme-panel" hidden>
+                        <label><input type="radio" name="vs-theme" value="studio"><span class="theme-swatch" style="--sb:#0f172a;--sc:#020617;--sa:#38bdf8;--sd:#7dd3fc"></span> Studio</label>
+                        <label><input type="radio" name="vs-theme" value="dark"><span class="theme-swatch" style="--sb:#1f2937;--sc:#111827;--sa:#ff9500;--sd:#ffd400"></span> Dark</label>
+                        <label><input type="radio" name="vs-theme" value="Cookies Haze"><span class="theme-swatch" style="--sb:#1e1a30;--sc:#160f1e;--sa:#c87d1a;--sd:#c6f135"></span> Cookies Haze</label>
+                        <label><input type="radio" name="vs-theme" value="Fire"><span class="theme-swatch" style="--sb:#3b1410;--sc:#2a0f0a;--sa:#f97316;--sd:#fde047"></span> Fire</label>
+                        <label><input type="radio" name="vs-theme" value="Earth"><span class="theme-swatch" style="--sb:#3a372f;--sc:#2b2a25;--sa:#84cc16;--sd:#eab308"></span> Earth</label>
+                        <label><input type="radio" name="vs-theme" value="x286"><span class="theme-swatch" style="--sb:#160c00;--sc:#0c0700;--sa:#ff7700;--sd:#ffcc00"></span> x286</label>
+                        <label><input type="radio" name="vs-theme" value="Red Light"><span class="theme-swatch" style="--sb:#1c0404;--sc:#0e0000;--sa:#e03030;--sd:#ff9090"></span> Red Light</label>
+                        <label><input type="radio" name="vs-theme" value="Purple Dark"><span class="theme-swatch" style="--sb:#1a1030;--sc:#0f0820;--sa:#a855f7;--sd:#e879f9"></span> Purple Dark</label>
+                        <label><input type="radio" name="vs-theme" value="Rangoli"><span class="theme-swatch" style="--sb:#2e1032;--sc:#1c0a1e;--sa:#f59e0b;--sd:#e879f9"></span> Rangoli</label>
+                        <label><input type="radio" name="vs-theme" value="Purple Light"><span class="theme-swatch" style="--sb:#faf8ff;--sc:#f0ebfb;--sa:#7c3aed;--sd:#c084fc"></span> Purple Light</label>
+                        <label><input type="radio" name="vs-theme" value="Studio Light"><span class="theme-swatch" style="--sb:#ffffff;--sc:#f0f0f0;--sa:#0a84ff;--sd:#30c060"></span> Studio Light</label>
+                        <label><input type="radio" name="vs-theme" value="Ice9"><span class="theme-swatch" style="--sb:#eef6fd;--sc:#d8eaf7;--sa:#0077b6;--sd:#48cae4"></span> Ice9</label>
+                        <label><input type="radio" name="vs-theme" value="Saffron"><span class="theme-swatch" style="--sb:#2d1400;--sc:#1c0d00;--sa:#f97316;--sd:#fbbf24"></span> Saffron</label>
+                        <label><input type="radio" name="vs-theme" value="Harvest"><span class="theme-swatch" style="--sb:#3a2818;--sc:#1f1e23;--sa:#f3aa0d;--sd:#bb3036"></span> Harvest</label>
+                        <label><input type="radio" name="vs-theme" value="Canyon"><span class="theme-swatch" style="--sb:#634039;--sc:#3d1218;--sa:#ea7d46;--sd:#d68c72"></span> Canyon</label>
+                        <label><input type="radio" name="vs-theme" value="Ember"><span class="theme-swatch" style="--sb:#1a1000;--sc:#0d0800;--sa:#e07800;--sd:#ffa030"></span> Ember</label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

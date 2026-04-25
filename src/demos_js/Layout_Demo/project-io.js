@@ -21,9 +21,10 @@ function serializeProject() {
   return {
     version: 1,
     id:         projectId,
-    theme:      document.body.getAttribute("data-theme") ?? "earth",
-    notesMono:  document.body.getAttribute("data-notes-font") === "mono",
-    viewState:  { ...viewState },
+    theme:        document.body.getAttribute("data-theme") ?? "earth",
+    notesMono:    document.body.getAttribute("data-notes-font") === "mono",
+    viewState:    { ...viewState },
+    themeRatings: { ...themeRatings },
     activeScene: document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim() ?? null,
     sampleRate: SAMPLE_RATE,
     bpm:        tempoBPM,
@@ -248,6 +249,10 @@ function deserializeProject(data) {
   if (data.viewState) {
     Object.assign(viewState, data.viewState);
     applyViewState();
+  }
+  if (data.themeRatings) {
+    Object.keys(themeRatings).forEach(k => delete themeRatings[k]);
+    Object.assign(themeRatings, data.themeRatings);
   }
 
   const sr  = data.sampleRate ?? SAMPLE_RATE;

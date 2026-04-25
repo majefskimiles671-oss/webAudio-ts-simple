@@ -1817,7 +1817,7 @@ function _renderMidiNotesMiniature(clip, el) {
   const pitches = clip.notes.map(n => n.pitch);
   const minP = Math.min(...pitches), maxP = Math.max(...pitches);
   const range = Math.max(maxP - minP, 11);
-  ctx2.fillStyle = "#7ec8e3";
+  ctx2.fillStyle = getComputedStyle(document.body).getPropertyValue("--accent-primary").trim() || "#7ec8e3";
   for (const n of clip.notes) {
     const x = Math.round((n.startSamples / clip.durationSamples) * w);
     const nw = Math.max(2, Math.round((n.durationSamples / clip.durationSamples) * w));
@@ -2109,6 +2109,22 @@ function setTheme(name, { silent = false } = {}) {
 }
 
 document.getElementById("debug-log-project").onclick = () => logProject();
+
+{
+  const btn = document.getElementById("debug-toggle-raw-mic");
+  btn.onclick = async () => {
+    const isRaw = await audioEngineToggleRawMicMode();
+    btn.textContent = isRaw ? "Mic: Raw (no processing)" : "Mic: Default (noise suppressed)";
+  };
+}
+
+{
+  const btn = document.getElementById("debug-toggle-auto-normalize");
+  btn.onclick = () => {
+    const on = audioEngineToggleAutoNormalize();
+    btn.textContent = on ? "Auto-normalize: On" : "Auto-normalize: Off";
+  };
+}
 
 function logProject() {
   console.clear();
@@ -3001,8 +3017,8 @@ document.addEventListener("keydown", (e) => {
     || document.activeElement?.tagName === "TEXTAREA"
     || document.activeElement?.isContentEditable;
 
-  // Laptop keyboard → MIDI note input (takes priority when recording an armed MIDI track)
-  if (!editable && recording) {
+  // Laptop keyboard → MIDI note input (plays whenever a MIDI track is armed; records only when recording)
+  if (!editable) {
     const pitch = KEY_NOTE_MAP[e.key];
     const armedMidiTrack = tracks.find(t => t.type === 'midi' && t.armed);
     if (pitch !== undefined && armedMidiTrack && !_activeKeys.has(e.key)) {
@@ -3012,7 +3028,7 @@ document.addEventListener("keydown", (e) => {
       const freq = _midiToFreq(pitch);
       const now = ctx.currentTime;
       const nodes = cpScheduleNoteAt(freq, ctx, now, 10, 100, armedMidiTrack.instrument ?? "pluck");
-      const startSample = Math.round(getPlayheadTime() * SAMPLE_RATE);
+      const startSample = recording ? Math.round(getPlayheadTime() * SAMPLE_RATE) : null;
       _liveKeyNotes.set(e.key, { nodes, pitch, startSample });
       return;
     }
@@ -3706,10 +3722,95 @@ makeViewToggle("toggle-notes",           "notes");
 
 // ----- View Settings Dialog - Event Handlers -----
 const _viewSettingsOverlay = document.getElementById("view-settings-overlay");
+
+const VS_PRESETS = {
+  minimal:  { scenes: false, markerTransport: false, tempo: true,  metronome: false, zoom: false, solo: false, bottomPanel: false, master: false, notes: false, chordDiagrams: false },
+  standard: { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  notes: true,  chordDiagrams: false },
+  full:     { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  notes: true,  chordDiagrams: true  },
+};
+
+_viewSettingsOverlay.querySelectorAll(".vs-preset-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const preset = VS_PRESETS[btn.dataset.preset];
+    if (!preset) return;
+    Object.assign(viewState, preset);
+    applyViewState();
+    _viewSettingsOverlay.querySelectorAll("[data-view-key]").forEach(cb => {
+      cb.checked = viewState[cb.dataset.viewKey];
+    });
+  });
+});
 let _viewStateSnapshot = null;
 let _themeSnapshot = null;
 let _rulerSnapshot = null;
 let _notesFontSnapshot = null;
+
+const _vsThemePanel   = document.getElementById("vs-theme-panel");
+const _vsThemeTrigger = document.getElementById("vs-theme-trigger");
+
+const themeRatings = JSON.parse(localStorage.getItem("themeRatings") || "{}");
+
+function _syncThemeStars() {
+  const theme   = document.body.getAttribute("data-theme") ?? "";
+  const rating  = themeRatings[theme] ?? 0;
+  document.querySelectorAll("#vs-theme-stars .vs-star").forEach(btn => {
+    btn.classList.toggle("filled", Number(btn.dataset.star) <= rating);
+  });
+  _syncPanelStars();
+}
+
+function _syncPanelStars() {
+  _vsThemePanel.querySelectorAll("label").forEach(lbl => {
+    const radio  = lbl.querySelector("input[type='radio']");
+    if (!radio) return;
+    const rating = themeRatings[radio.value] ?? 0;
+    let starsEl  = lbl.querySelector(".vs-panel-stars");
+    if (!starsEl) {
+      starsEl = document.createElement("span");
+      starsEl.className = "vs-panel-stars";
+      lbl.appendChild(starsEl);
+    }
+    starsEl.textContent = "★".repeat(rating);
+  });
+}
+
+function _syncThemeTrigger() {
+  const checked = _viewSettingsOverlay.querySelector("[name='vs-theme']:checked");
+  if (!checked) return;
+  const lbl    = checked.closest("label");
+  const swatch = lbl?.querySelector(".theme-swatch");
+  const name   = lbl?.textContent.trim();
+  if (swatch) document.getElementById("vs-theme-trigger-swatch").setAttribute("style", swatch.getAttribute("style"));
+  if (name)   document.getElementById("vs-theme-trigger-name").textContent = name;
+  _syncThemeStars();
+}
+
+document.getElementById("vs-theme-stars").addEventListener("click", (e) => {
+  const btn = e.target.closest(".vs-star");
+  if (!btn) return;
+  const theme  = document.body.getAttribute("data-theme") ?? "";
+  const val    = Number(btn.dataset.star);
+  themeRatings[theme] = themeRatings[theme] === val ? 0 : val;
+  localStorage.setItem("themeRatings", JSON.stringify(themeRatings));
+  _syncThemeStars();
+  markDirty();
+});
+
+_vsThemeTrigger.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (!_vsThemePanel.hidden) { _vsThemePanel.hidden = true; return; }
+  _vsThemePanel.style.top       = "50%";
+  _vsThemePanel.style.left      = "50%";
+  _vsThemePanel.style.transform = "translate(-50%, -50%)";
+  _syncPanelStars();
+  _vsThemePanel.hidden = false;
+});
+
+document.addEventListener("click", (e) => {
+  if (!_vsThemePanel.hidden && !_vsThemeTrigger.contains(e.target)) {
+    _vsThemePanel.hidden = true;
+  }
+});
 
 document.getElementById("view-settings-open").addEventListener("click", () => {
   _viewStateSnapshot = { ...viewState };
@@ -3727,6 +3828,8 @@ document.getElementById("view-settings-open").addEventListener("click", () => {
   });
   document.getElementById("vs-notes-font-mono").checked = _notesFontSnapshot === "mono";
   document.getElementById("vs-marker-lookahead").value = viewState.markerLookaheadBeats;
+  _vsThemePanel.hidden = true;
+  _syncThemeTrigger();
   _viewSettingsOverlay.hidden = false;
 });
 
@@ -3737,7 +3840,12 @@ _viewSettingsOverlay.addEventListener("change", e => {
     applyViewState();
     return;
   }
-  if (e.target.name === "vs-theme") { setTheme(e.target.value); return; }
+  if (e.target.name === "vs-theme") {
+    setTheme(e.target.value);
+    _syncThemeTrigger();
+    _vsThemePanel.hidden = true;
+    return;
+  }
   if (e.target.name === "vs-ruler") { setRulerMode(e.target.value); return; }
   if (e.target.id === "vs-notes-font-mono") {
     document.body.setAttribute("data-notes-font", e.target.checked ? "mono" : "");
@@ -3754,6 +3862,10 @@ document.getElementById("view-settings-cancel").addEventListener("click", () => 
   setRulerMode(_rulerSnapshot);
   document.body.setAttribute("data-notes-font", _notesFontSnapshot || "");
   document.getElementById("vs-marker-lookahead").value = viewState.markerLookaheadBeats;
+  _viewSettingsOverlay.querySelectorAll("[name='vs-theme']").forEach(r => {
+    r.checked = r.value === _themeSnapshot;
+  });
+  _syncThemeTrigger();
   _viewSettingsOverlay.hidden = true;
 });
 
