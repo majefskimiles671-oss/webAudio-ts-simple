@@ -35,6 +35,7 @@
             background: #111;
             font-family: system-ui, sans-serif;
             overflow: hidden;
+            user-select: none;
         }
 
         body {

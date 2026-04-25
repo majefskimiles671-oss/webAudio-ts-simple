@@ -3736,8 +3736,9 @@ const _viewSettingsOverlay = document.getElementById("view-settings-overlay");
 
 const VS_PRESETS = {
   minimal:  { scenes: false, markerTransport: false, tempo: true,  metronome: false, zoom: false, solo: false, bottomPanel: false, master: false, notes: false, chordDiagrams: false },
+  simple:   { scenes: false, markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: false, bottomPanel: false, master: false, notes: false, chordDiagrams: false },
   standard: { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  notes: true,  chordDiagrams: false },
-  full:     { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  notes: true,  chordDiagrams: true  },
+  compose:  { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  notes: true,  chordDiagrams: true  },
 };
 
 _viewSettingsOverlay.querySelectorAll(".vs-preset-btn").forEach(btn => {
