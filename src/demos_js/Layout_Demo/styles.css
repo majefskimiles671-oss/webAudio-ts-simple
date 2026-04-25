@@ -1364,28 +1364,28 @@
 
         body[data-theme="Fire"] {
             /* Surfaces */
-            --bg-app: #2a0f0a;
-            --bg-surface: #3b1410;
-            --bg-panel: #4a1a14;
+            --bg-app: #27110d;
+            --bg-surface: #371714;
+            --bg-panel: #451e19;
 
             /* Text */
-            --text-main: #fef2f2;
-            --text-muted: #fca5a5;
-            --text-button: #fef2f2;
+            --text-main: #fdf3f3;
+            --text-muted: #f3aeae;
+            --text-button: #fdf3f3;
 
             /* UI chrome */
-            --border-subtle: #7c2d12;
+            --border-subtle: #71321d;
 
             /* Accents */
-            --accent-primary: #f97316;
-            --accent-danger: #dc2626;
-            --accent-highlight: #fde047;
+            --accent-primary: #e2772d;
+            --accent-danger: #ca3838;
+            --accent-highlight: #ebd459;
 
             /* Empty track background (quiet) */
-            --waveform-a: #4a1a14;
-            --waveform-b: #5c241c;
+            --waveform-a: #451e19;
+            --waveform-b: #562922;
 
-            --bg-button: #6b1e14;
+            --bg-button: #62251d;
         }
 
         body[data-theme="Earth"] {
@@ -1496,52 +1496,52 @@
 
         body[data-theme="Purple Dark"] {
             /* Surfaces — deep violet night */
-            --bg-app:     #0f0820;
-            --bg-surface: #1a1030;
-            --bg-panel:   #140c28;
-            --bg-button:  #2e1c58;
+            --bg-app:     #120e1a;
+            --bg-surface: #1d1828;
+            --bg-panel:   #171321;
+            --bg-button:  #342b49;
 
             /* Text — soft lavender, muted violet */
-            --text-main:   #e8d8ff;
-            --text-muted:  #9070c0;
-            --text-button: #e8d8ff;
+            --text-main:   #eae2f5;
+            --text-muted:  #9484ac;
+            --text-button: #eae2f5;
 
             /* UI chrome */
-            --border-subtle: #3a2068;
+            --border-subtle: #3f3256;
 
             /* Accents — vivid violet, electric pink */
-            --accent-primary:   #a855f7;
-            --accent-danger:    #ef4444;
-            --accent-highlight: #e879f9;
+            --accent-primary:   #a77dcf;
+            --accent-danger:    #c46f6f;
+            --accent-highlight: #d199d9;
 
             /* Waveform */
-            --waveform-a: #140c28;
-            --waveform-b: #2e1c58;
+            --waveform-a: #171321;
+            --waveform-b: #342b49;
         }
 
         body[data-theme="Rangoli"] {
             /* Surfaces — night sky of a Hindu wedding, deep jewel plum */
-            --bg-app:     #1c0a1e;
-            --bg-surface: #2e1032;
-            --bg-panel:   #240c28;
-            --bg-button:  #421848;
+            --bg-app:     #1a0d1c;
+            --bg-surface: #2b142e;
+            --bg-panel:   #211025;
+            --bg-button:  #3e1e42;
 
             /* Text — warm gold, amber muted */
-            --text-main:   #fde8b0;
-            --text-muted:  #c8905a;
-            --text-button: #fde8b0;
+            --text-main:   #f3e4ba;
+            --text-muted:  #ba9068;
+            --text-button: #f3e4ba;
 
             /* UI chrome — deep plum border */
-            --border-subtle: #5c2860;
+            --border-subtle: #562f59;
 
             /* Accents — saffron marigold, magenta */
-            --accent-primary:   #f59e0b;
-            --accent-danger:    #dc2626;
-            --accent-highlight: #e879f9;
+            --accent-primary:   #d89728;
+            --accent-danger:    #c53d3d;
+            --accent-highlight: #dc89e9;
 
             /* Waveform */
-            --waveform-a: #240c28;
-            --waveform-b: #421848;
+            --waveform-a: #211025;
+            --waveform-b: #3e1e42;
         }
 
 
@@ -1600,27 +1600,27 @@
 
         body[data-theme="Red Light"] {
             /* Surfaces — recording booth under the ON AIR lamp */
-            --bg-app:     #0e0000;
-            --bg-surface: #1c0404;
-            --bg-panel:   #140202;
-            --bg-button:  #2c0808;
+            --bg-app:     #0c0202;
+            --bg-surface: #180808;
+            --bg-panel:   #110505;
+            --bg-button:  #270d0d;
 
             /* Text — warm pinkish-white, dim red muted */
-            --text-main:   #ffd8d8;
-            --text-muted:  #aa4444;
-            --text-button: #ffd8d8;
+            --text-main:   #f9dede;
+            --text-muted:  #9b5353;
+            --text-button: #f9dede;
 
             /* UI chrome */
-            --border-subtle: #3d0a0a;
+            --border-subtle: #351212;
 
             /* Accents — vivid red primary, hot pink highlight */
-            --accent-primary:   #e03030;
-            --accent-danger:    #ff6060;
-            --accent-highlight: #ff9090;
+            --accent-primary:   #c64a4a;
+            --accent-danger:    #e77878;
+            --accent-highlight: #eea1a1;
 
             /* Waveform */
-            --waveform-a: #1c0404;
-            --waveform-b: #280606;
+            --waveform-a: #180808;
+            --waveform-b: #230b0b;
         }
 
         body[data-theme="x286"] {
@@ -1683,26 +1683,26 @@
         body[data-theme="Harvest"] {
             /* Surfaces — shadow grey base, toffee warmth */
             --bg-app:     #1f1e23;
-            --bg-surface: #3a2818;
-            --bg-panel:   #2a2014;
-            --bg-button:  #45563e;
+            --bg-surface: #37281b;
+            --bg-panel:   #282016;
+            --bg-button:  #465440;
 
             /* Text — pearl beige, toffee muted */
-            --text-main:   #e7d8b8;
-            --text-muted:  #885941;
-            --text-button: #e7d8b8;
+            --text-main:   #e3d7bc;
+            --text-muted:  #835b46;
+            --text-button: #e3d7bc;
 
             /* UI chrome — dark granite shadow */
-            --border-subtle: #2e3828;
+            --border-subtle: #2e3729;
 
             /* Accents — amber honey primary, intense cherry danger */
-            --accent-primary:   #f3aa0d;
-            --accent-danger:    #bb3036;
-            --accent-highlight: #bb3036;
+            --accent-primary:   #e2a41e;
+            --accent-danger:    #b13a40;
+            --accent-highlight: #b13a40;
 
             /* Waveform */
-            --waveform-a: #2a2014;
-            --waveform-b: #3a2818;
+            --waveform-a: #282016;
+            --waveform-b: #37281b;
         }
 
         body[data-theme="Canyon"] {
@@ -1821,204 +1821,6 @@
 
             --waveform-a: hsl(0, 0%, 83%);
             --waveform-b: hsl(0, 0%, 90%);
-        }
-
-        /* new1/2/3 — same V values as base1/2/3; H and S from Madhya Pradesh emblem */
-
-        body[data-theme="new1"] {
-            /* HSV(8°, 82%, V) — crimson from emblem seal band */
-            --bg-app:     #1a0705;
-            --bg-surface: #290c07;
-            --bg-panel:   #120503;
-            --bg-button:  #732115;
-
-            --text-main:   #eb442a;
-            --text-muted:  #992c1c;
-            --text-button: #1f0906;
-
-            --border-subtle: #591a10;
-
-            --accent-primary:   #bf3722;
-            --accent-danger:    #8c2919;
-            --accent-highlight: #e04128;
-
-            --waveform-a: #2e0d08;
-            --waveform-b: #210a06;
-        }
-
-        body[data-theme="new2"] {
-            /* HSV(128°, 65%, V) — forest green from emblem foliage */
-            --bg-app:     #24662d;
-            --bg-surface: #2d8038;
-            --bg-panel:   #1d5425;
-            --bg-button:  #3aa648;
-
-            --text-main:   #57f76c;
-            --text-muted:  #43bf54;
-            --text-button: #123316;
-
-            --border-subtle: #318c3d;
-
-            --accent-primary:   #50e664;
-            --accent-danger:    #3eb34e;
-            --accent-highlight: #55f26a;
-
-            --waveform-a: #287332;
-            --waveform-b: #215e29;
-        }
-
-        body[data-theme="new3"] {
-            /* HSV(28°, 88%, V) — saffron from emblem outer ring */
-            --bg-app:     #e0771b;
-            --bg-surface: #f2811d;
-            --bg-panel:   #cc6c18;
-            --bg-button:  #b86116;
-
-            --text-main:   #140b02;
-            --text-muted:  #592f0b;
-            --text-button: #1f1004;
-
-            --border-subtle: #a65814;
-
-            --accent-primary:   #944e12;
-            --accent-danger:    #733d0e;
-            --accent-highlight: #7a410f;
-
-            --waveform-a: #d47019;
-            --waveform-b: #e67a1c;
-        }
-
-        /* India1/2/3 — all three emblem colors mixed; base1 V values throughout          */
-        /*   crimson  H=8°  S=82%  →  R=V       G=V·0.289  B=V·0.180                    */
-        /*   saffron  H=28° S=88%  →  R=V       G=V·0.531  B=V·0.120                    */
-        /*   green    H=128°S=65%  →  R=V·0.350 G=V        B=V·0.437                    */
-
-        body[data-theme="India1"] {
-            /* bg: crimson  |  text/buttons: saffron  |  accents: green */
-            --bg-app:     #1a0705;   /* crimson  V=10 */
-            --bg-surface: #290c07;   /* crimson  V=16 */
-            --bg-panel:   #120503;   /* crimson  V= 7 */
-            --bg-button:  #733d0e;   /* saffron  V=45 */
-
-            --text-main:   #eb7d1c;  /* saffron  V=92 */
-            --text-muted:  #995112;  /* saffron  V=60 */
-            --text-button: #1f1004;  /* saffron  V=12 */
-
-            --border-subtle: #1f5927; /* green   V=35 */
-
-            --accent-primary:   #43bf54; /* green    V=75 */
-            --accent-danger:    #8c2919; /* crimson  V=55 */
-            --accent-highlight: #e0771b; /* saffron  V=88 */
-
-            --waveform-a: #2e0d08;   /* crimson  V=18 */
-            --waveform-b: #210a06;   /* crimson  V=13 */
-        }
-
-        body[data-theme="India2"] {
-            /* bg: green  |  text: saffron  |  buttons/border/danger: crimson  |  accents: saffron */
-            --bg-app:     #091a0b;   /* green    V=10 */
-            --bg-surface: #0e2912;   /* green    V=16 */
-            --bg-panel:   #061208;   /* green    V= 7 */
-            --bg-button:  #732115;   /* crimson  V=45 */
-
-            --text-main:   #eb7d1c;  /* saffron  V=92 */
-            --text-muted:  #995112;  /* saffron  V=60 */
-            --text-button: #0b1f0d;  /* green    V=12 */
-
-            --border-subtle: #591a10; /* crimson  V=35 */
-
-            --accent-primary:   #bf6517; /* saffron  V=75 */
-            --accent-danger:    #8c2919; /* crimson  V=55 */
-            --accent-highlight: #e0771b; /* saffron  V=88 */
-
-            --waveform-a: #102e14;   /* green    V=18 */
-            --waveform-b: #0c210e;   /* green    V=13 */
-        }
-
-        body[data-theme="India3"] {
-            /* bg: saffron  |  text/highlight: green  |  buttons/border: green  |  accents: crimson */
-            --bg-app:     #1a0d03;   /* saffron  V=10 */
-            --bg-surface: #291605;   /* saffron  V=16 */
-            --bg-panel:   #120902;   /* saffron  V= 7 */
-            --bg-button:  #287332;   /* green    V=45 */
-
-            --text-main:   #52eb67;  /* green    V=92 */
-            --text-muted:  #369943;  /* green    V=60 */
-            --text-button: #1f1004;  /* saffron  V=12 */
-
-            --border-subtle: #1f5927; /* green    V=35 */
-
-            --accent-primary:   #bf3722; /* crimson  V=75 */
-            --accent-danger:    #8c2919; /* crimson  V=55 */
-            --accent-highlight: #4fe062; /* green    V=88 */
-
-            --waveform-a: #2e1806;   /* saffron  V=18 */
-            --waveform-b: #211104;   /* saffron  V=13 */
-        }
-
-        /* base2.India1/2/3 — same color roles as India1/2/3; base2 V values throughout */
-
-        body[data-theme="base2.India1"] {
-            /* bg: crimson  |  text/buttons: saffron  |  accents: green */
-            --bg-app:     #661e12;   /* crimson  V=40 */
-            --bg-surface: #802517;   /* crimson  V=50 */
-            --bg-panel:   #54180f;   /* crimson  V=33 */
-            --bg-button:  #a65814;   /* saffron  V=65 */
-
-            --text-main:   #f7831e;  /* saffron  V=97 */
-            --text-muted:  #bf6517;  /* saffron  V=75 */
-            --text-button: #331b06;  /* saffron  V=20 */
-
-            --border-subtle: #318c3d; /* green   V=55 */
-
-            --accent-primary:   #50e664; /* green    V=90 */
-            --accent-danger:    #b33420; /* crimson  V=70 */
-            --accent-highlight: #f2811d; /* saffron  V=95 */
-
-            --waveform-a: #732115;   /* crimson  V=45 */
-            --waveform-b: #5e1b11;   /* crimson  V=37 */
-        }
-
-        body[data-theme="base2.India2"] {
-            /* bg: green  |  text: saffron  |  buttons/border/danger: crimson  |  accents: saffron */
-            --bg-app:     #24662d;   /* green    V=40 */
-            --bg-surface: #2d8038;   /* green    V=50 */
-            --bg-panel:   #1d5425;   /* green    V=33 */
-            --bg-button:  #a6301e;   /* crimson  V=65 */
-
-            --text-main:   #f7831e;  /* saffron  V=97 */
-            --text-muted:  #bf6517;  /* saffron  V=75 */
-            --text-button: #123316;  /* green    V=20 */
-
-            --border-subtle: #8c2919; /* crimson  V=55 */
-
-            --accent-primary:   #e67a1c; /* saffron  V=90 */
-            --accent-danger:    #b33420; /* crimson  V=70 */
-            --accent-highlight: #f2811d; /* saffron  V=95 */
-
-            --waveform-a: #287332;   /* green    V=45 */
-            --waveform-b: #215e29;   /* green    V=37 */
-        }
-
-        body[data-theme="base2.India3"] {
-            /* bg: saffron  |  text/highlight: green  |  buttons/border: green  |  accents: crimson */
-            --bg-app:     #66360c;   /* saffron  V=40 */
-            --bg-surface: #80430f;   /* saffron  V=50 */
-            --bg-panel:   #542c0a;   /* saffron  V=33 */
-            --bg-button:  #3aa648;   /* green    V=65 */
-
-            --text-main:   #57f76c;  /* green    V=97 */
-            --text-muted:  #43bf54;  /* green    V=75 */
-            --text-button: #331b06;  /* saffron  V=20 */
-
-            --border-subtle: #318c3d; /* green    V=55 */
-
-            --accent-primary:   #e64229; /* crimson  V=90 */
-            --accent-danger:    #b33420; /* crimson  V=70 */
-            --accent-highlight: #55f26a; /* green    V=95 */
-
-            --waveform-a: #733d0e;   /* saffron  V=45 */
-            --waveform-b: #5e320b;   /* saffron  V=37 */
         }
 
         /* x286 — Mars colony newswire ticker */
@@ -4093,6 +3895,46 @@
 
         .vs-theme-stars:hover .vs-star:hover ~ .vs-star {
             color: var(--border-subtle);
+        }
+
+        .vs-hue {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 2px 0;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .vs-hue input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent-primary);
+        }
+
+        #vs-hue-val {
+            min-width: 36px;
+            text-align: right;
+            color: var(--text-main);
+        }
+
+        .vs-saturation {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 2px 0;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .vs-saturation input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent-primary);
+        }
+
+        #vs-saturation-val {
+            min-width: 36px;
+            text-align: right;
+            color: var(--text-main);
         }
 
         .vs-theme-panel {

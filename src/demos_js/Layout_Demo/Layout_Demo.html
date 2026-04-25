@@ -618,6 +618,16 @@ Rule - Add comments before code snippets in this format:
                             <button class="vs-star" data-star="4" type="button">&#9733;</button>
                             <button class="vs-star" data-star="5" type="button">&#9733;</button>
                         </div>
+                        <div class="vs-hue">
+                            <span class="vs-hue-label">Hue</span>
+                            <input type="range" id="vs-hue" min="-180" max="180" value="0" step="1">
+                            <span id="vs-hue-val">0°</span>
+                        </div>
+                        <div class="vs-saturation">
+                            <span class="vs-saturation-label">Saturation</span>
+                            <input type="range" id="vs-saturation" min="0" max="200" value="100" step="1">
+                            <span id="vs-saturation-val">100%</span>
+                        </div>
                         <div class="theme-swatch-list vs-theme-panel" id="vs-theme-panel" hidden>
                         <label><input type="radio" name="vs-theme" value="studio"><span class="theme-swatch" style="--sb:#0f172a;--sc:#020617;--sa:#38bdf8;--sd:#7dd3fc"></span> Studio</label>
                         <label><input type="radio" name="vs-theme" value="dark"><span class="theme-swatch" style="--sb:#1f2937;--sc:#111827;--sa:#ff9500;--sd:#ffd400"></span> Dark</label>
@@ -638,15 +648,6 @@ Rule - Add comments before code snippets in this format:
 <label><input type="radio" name="vs-theme" value="base1"><span class="theme-swatch" style="--sb:#292929;--sc:#1a1a1a;--sa:#bfbfbf;--sd:#e0e0e0"></span> base1</label>
                         <label><input type="radio" name="vs-theme" value="base2"><span class="theme-swatch" style="--sb:#808080;--sc:#666666;--sa:#e6e6e6;--sd:#f2f2f2"></span> base2</label>
                         <label><input type="radio" name="vs-theme" value="base3"><span class="theme-swatch" style="--sb:#f2f2f2;--sc:#e0e0e0;--sa:#b8b8b8;--sd:#262626"></span> base3</label>
-                        <label><input type="radio" name="vs-theme" value="new1"><span class="theme-swatch" style="--sb:#290c07;--sc:#1a0705;--sa:#bf3722;--sd:#e04128"></span> new1</label>
-                        <label><input type="radio" name="vs-theme" value="new2"><span class="theme-swatch" style="--sb:#2d8038;--sc:#24662d;--sa:#50e664;--sd:#55f26a"></span> new2</label>
-                        <label><input type="radio" name="vs-theme" value="new3"><span class="theme-swatch" style="--sb:#f2811d;--sc:#e0771b;--sa:#944e12;--sd:#7a410f"></span> new3</label>
-                        <label><input type="radio" name="vs-theme" value="India1"><span class="theme-swatch" style="--sb:#290c07;--sc:#1a0705;--sa:#43bf54;--sd:#e0771b"></span> India1</label>
-                        <label><input type="radio" name="vs-theme" value="India2"><span class="theme-swatch" style="--sb:#0e2912;--sc:#091a0b;--sa:#bf6517;--sd:#e0771b"></span> India2</label>
-                        <label><input type="radio" name="vs-theme" value="India3"><span class="theme-swatch" style="--sb:#291605;--sc:#1a0d03;--sa:#bf3722;--sd:#4fe062"></span> India3</label>
-                        <label><input type="radio" name="vs-theme" value="base2.India1"><span class="theme-swatch" style="--sb:#802517;--sc:#661e12;--sa:#50e664;--sd:#f2811d"></span> base2.India1</label>
-                        <label><input type="radio" name="vs-theme" value="base2.India2"><span class="theme-swatch" style="--sb:#2d8038;--sc:#24662d;--sa:#e67a1c;--sd:#f2811d"></span> base2.India2</label>
-                        <label><input type="radio" name="vs-theme" value="base2.India3"><span class="theme-swatch" style="--sb:#80430f;--sc:#66360c;--sa:#e64229;--sd:#55f26a"></span> base2.India3</label>
                         </div>
                     </div>
                 </div>

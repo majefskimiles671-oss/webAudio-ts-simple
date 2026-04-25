@@ -238,6 +238,8 @@ const viewState = {
   solo:                 true,
   chordDiagrams:        true,
   markerLookaheadBeats: 1,
+  hue:                  0,
+  saturation:           100,
 };
 
 // Authority - View State - Apply -----
@@ -266,6 +268,15 @@ function applyViewState() {
 
   const cdDialog = document.getElementById("chord-diagrams-dialog");
   if (cdDialog) cdDialog.classList.toggle("cd-visible", viewState.chordDiagrams);
+
+  const filters = [];
+  if (viewState.hue !== 0) {
+    const theme = document.body.getAttribute("data-theme") ?? "";
+    if (theme.toLowerCase().includes("base")) filters.push(`sepia(1)`);
+    filters.push(`hue-rotate(${viewState.hue}deg)`);
+  }
+  if (viewState.saturation !== 100) filters.push(`saturate(${viewState.saturation}%)`);
+  document.body.style.filter = filters.join(' ');
 }
 
 //  Transport State
@@ -3835,6 +3846,10 @@ document.getElementById("view-settings-open").addEventListener("click", () => {
   });
   document.getElementById("vs-notes-font-mono").checked = _notesFontSnapshot === "mono";
   document.getElementById("vs-marker-lookahead").value = viewState.markerLookaheadBeats;
+  document.getElementById("vs-hue").value = viewState.hue;
+  document.getElementById("vs-hue-val").textContent = viewState.hue + "°";
+  document.getElementById("vs-saturation").value = viewState.saturation;
+  document.getElementById("vs-saturation-val").textContent = viewState.saturation + "%";
   _vsThemePanel.hidden = true;
   _syncThemeTrigger();
   _viewSettingsOverlay.hidden = false;
@@ -3860,6 +3875,42 @@ _viewSettingsOverlay.addEventListener("change", e => {
   if (e.target.id === "vs-marker-lookahead") {
     viewState.markerLookaheadBeats = Math.max(0, parseFloat(e.target.value) || 0);
   }
+  if (e.target.id === "vs-hue") {
+    viewState.hue = parseInt(e.target.value);
+    document.getElementById("vs-hue-val").textContent = viewState.hue + "°";
+    applyViewState();
+  }
+  if (e.target.id === "vs-saturation") {
+    viewState.saturation = parseInt(e.target.value);
+    document.getElementById("vs-saturation-val").textContent = viewState.saturation + "%";
+    applyViewState();
+  }
+});
+
+document.getElementById("vs-hue").addEventListener("input", e => {
+  viewState.hue = parseInt(e.target.value);
+  document.getElementById("vs-hue-val").textContent = viewState.hue + "°";
+  applyViewState();
+});
+
+document.getElementById("vs-hue").addEventListener("dblclick", () => {
+  viewState.hue = 0;
+  document.getElementById("vs-hue").value = 0;
+  document.getElementById("vs-hue-val").textContent = "0°";
+  applyViewState();
+});
+
+document.getElementById("vs-saturation").addEventListener("input", e => {
+  viewState.saturation = parseInt(e.target.value);
+  document.getElementById("vs-saturation-val").textContent = viewState.saturation + "%";
+  applyViewState();
+});
+
+document.getElementById("vs-saturation").addEventListener("dblclick", () => {
+  viewState.saturation = 100;
+  document.getElementById("vs-saturation").value = 100;
+  document.getElementById("vs-saturation-val").textContent = "100%";
+  applyViewState();
 });
 
 document.getElementById("view-settings-cancel").addEventListener("click", () => {
@@ -3869,6 +3920,10 @@ document.getElementById("view-settings-cancel").addEventListener("click", () => 
   setRulerMode(_rulerSnapshot);
   document.body.setAttribute("data-notes-font", _notesFontSnapshot || "");
   document.getElementById("vs-marker-lookahead").value = viewState.markerLookaheadBeats;
+  document.getElementById("vs-hue").value = viewState.hue;
+  document.getElementById("vs-hue-val").textContent = viewState.hue + "°";
+  document.getElementById("vs-saturation").value = viewState.saturation;
+  document.getElementById("vs-saturation-val").textContent = viewState.saturation + "%";
   _viewSettingsOverlay.querySelectorAll("[name='vs-theme']").forEach(r => {
     r.checked = r.value === _themeSnapshot;
   });
