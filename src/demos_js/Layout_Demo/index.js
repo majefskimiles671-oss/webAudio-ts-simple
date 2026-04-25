@@ -3760,7 +3760,8 @@ function _syncThemeStars() {
 }
 
 function _syncPanelStars() {
-  _vsThemePanel.querySelectorAll("label").forEach(lbl => {
+  const labels = [..._vsThemePanel.querySelectorAll("label")];
+  labels.forEach(lbl => {
     const radio  = lbl.querySelector("input[type='radio']");
     if (!radio) return;
     const rating = themeRatings[radio.value] ?? 0;
@@ -3772,6 +3773,12 @@ function _syncPanelStars() {
     }
     starsEl.textContent = "★".repeat(rating);
   });
+  labels.sort((a, b) => {
+    const ra = themeRatings[a.querySelector("input")?.value] ?? 0;
+    const rb = themeRatings[b.querySelector("input")?.value] ?? 0;
+    return rb - ra;
+  });
+  labels.forEach(lbl => _vsThemePanel.appendChild(lbl));
 }
 
 function _syncThemeTrigger() {
@@ -4307,6 +4314,7 @@ function renderBottomPanel() {
     textarea.placeholder = "Add notes…";
     textarea.value = marker.note ?? "";
     textarea.rows = 1;
+    textarea.spellcheck = false;
 
     row.addEventListener("click", (e) => {
       if (e.target === textarea || e.target.closest(".chord-picker")) return;
@@ -4810,4 +4818,103 @@ document.querySelectorAll('.master-section-header').forEach(header => {
 
 pianoRollInit();
 syncRecordBtnEnabled();
+
+// Custom themed preset dropdowns — replaces native <select> visually while
+// keeping the original element (and its ID/listeners) intact.
+// Menu is portalled to <body> to escape any ancestor stacking contexts.
+(function() {
+  const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+  let openMenu = null;
+
+  function closeAll() {
+    if (openMenu) {
+      openMenu.menu.classList.remove('open');
+      openMenu.wrapper.classList.remove('open');
+      openMenu = null;
+    }
+  }
+
+  document.addEventListener('click', closeAll);
+  window.addEventListener('scroll', closeAll, { capture: true, passive: true });
+
+  function initCustomSelect(sel) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'csel';
+    sel.parentNode.insertBefore(wrapper, sel);
+    wrapper.appendChild(sel);
+    sel.hidden = true;
+
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'csel-trigger';
+
+    // Menu lives on <body> to escape stacking contexts.
+    const menu = document.createElement('div');
+    menu.className = 'csel-menu';
+    document.body.appendChild(menu);
+
+    wrapper.appendChild(trigger);
+
+    function syncUI() {
+      const idx = sel.selectedIndex;
+      trigger.firstChild?.remove();
+      trigger.prepend(document.createTextNode(idx >= 0 ? sel.options[idx].text : ''));
+      menu.querySelectorAll('.csel-opt').forEach(opt =>
+        opt.classList.toggle('active', opt.dataset.value === valueDescriptor.get.call(sel))
+      );
+    }
+
+    Array.from(sel.options).forEach(opt => {
+      const item = document.createElement('div');
+      item.className = 'csel-opt';
+      item.dataset.value = opt.value;
+      item.textContent = opt.text;
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sel.value = opt.value;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        closeAll();
+      });
+      menu.appendChild(item);
+    });
+
+    syncUI();
+
+    function positionMenu() {
+      const rect = trigger.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      menu.style.minWidth = rect.width + 'px';
+      if (spaceAbove > spaceBelow) {
+        menu.style.top = '';
+        menu.style.bottom = (window.innerHeight - rect.top + 2) + 'px';
+      } else {
+        menu.style.bottom = '';
+        menu.style.top = (rect.bottom + 2) + 'px';
+      }
+      menu.style.left = rect.left + 'px';
+    }
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = openMenu?.wrapper === wrapper;
+      closeAll();
+      if (!isOpen) {
+        positionMenu();
+        menu.classList.add('open');
+        wrapper.classList.add('open');
+        openMenu = { menu, wrapper };
+      }
+    });
+
+    // Intercept programmatic .value= so the trigger label stays current.
+    Object.defineProperty(sel, 'value', {
+      get() { return valueDescriptor.get.call(this); },
+      set(v) { valueDescriptor.set.call(this, v); syncUI(); },
+      configurable: true,
+    });
+  }
+
+  document.querySelectorAll('.master-preset-select').forEach(initCustomSelect);
+})();
 

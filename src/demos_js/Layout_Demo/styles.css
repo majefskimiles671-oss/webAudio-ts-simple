@@ -48,11 +48,81 @@
             color: var(--text-button);
         }
 
-        input[type="radio"],
-        input[type="checkbox"],
         input[type="range"] {
             accent-color: var(--accent-primary);
         }
+
+        /* Themed checkboxes */
+        input[type="checkbox"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 13px;
+            height: 13px;
+            border: 1.5px solid var(--border-subtle);
+            background: var(--bg-surface);
+            border-radius: 2px;
+            cursor: pointer;
+            flex-shrink: 0;
+            vertical-align: middle;
+        }
+
+        input[type="checkbox"]:checked {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 10 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 5l2.5 2.5L8 3' stroke='%23000' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        input[type="checkbox"]:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Themed radio buttons */
+        input[type="radio"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border: 1.5px solid var(--border-subtle);
+            background: var(--bg-surface);
+            border-radius: 50%;
+            cursor: pointer;
+            flex-shrink: 0;
+            vertical-align: middle;
+        }
+
+        input[type="radio"]:checked {
+            border-color: var(--accent-primary);
+            background-image: radial-gradient(circle, var(--accent-primary) 42%, transparent 46%);
+        }
+
+        /* Themed number inputs */
+        input[type="number"] {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: inherit;
+            padding: 3px 5px;
+            outline: none;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--accent-primary);
+        }
+
+        input[type="number"]::selection {
+            background: color-mix(in srgb, var(--accent-highlight) 45%, transparent);
+            color: var(--text-main);
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+        }
+
+        input[type="number"] { -moz-appearance: textfield; }
 
         /* ----- Prevent Text Selection on Interactive UI ----- */
         .marker-transport,
@@ -271,6 +341,11 @@
 
         .tempo:focus {
             outline-color: var(--accent-primary);
+        }
+
+        .tempo::selection {
+            background: color-mix(in srgb, var(--accent-highlight) 45%, transparent);
+            color: var(--text-main);
         }
 
 
@@ -1678,6 +1753,97 @@
             --waveform-b: #2a1800;
         }
 
+
+        body[data-theme="Telugu"] {
+            /* BLACK — near-black backgrounds */
+            --bg-app:     #0a0505;
+            --bg-surface: #1e0a0a;
+            --bg-panel:   #060303;
+            --bg-button:  #2c1212;
+
+            /* WHITE — bright warm white text */
+            --text-main:   #f0e8d0;
+            --text-muted:  #907840;
+            --text-button: #f0e8d0;
+
+            /* RED — crimson border from the seal band */
+            --border-subtle: #501818;
+
+            /* GOLD — emblem gilded border as primary accent */
+            --accent-primary:   #c89020;
+            --accent-danger:    #cc2020;
+            --accent-highlight: #e8c030;
+
+            /* GREEN — forest foliage from emblem center */
+            --waveform-a: #0c1a08;
+            --waveform-b: #162808;
+        }
+
+        /* base1/2/3 — pure grayscale; all colors are HSV(0, 0, V%) = hsl(0, 0%, V%) */
+
+        body[data-theme="base1"] {
+            /* dark shell */
+            --bg-app:     hsl(0, 0%, 10%);
+            --bg-surface: hsl(0, 0%, 16%);
+            --bg-panel:   hsl(0, 0%,  7%);
+            --bg-button:  hsl(0, 0%, 45%);
+
+            --text-main:   hsl(0, 0%, 92%);
+            --text-muted:  hsl(0, 0%, 60%);
+            --text-button: hsl(0, 0%, 12%);
+
+            --border-subtle: hsl(0, 0%, 35%);
+
+            --accent-primary:   hsl(0, 0%, 75%);
+            --accent-danger:    hsl(0, 0%, 55%);
+            --accent-highlight: hsl(0, 0%, 88%);
+
+            --waveform-a: hsl(0, 0%, 18%);
+            --waveform-b: hsl(0, 0%, 13%);
+        }
+
+        body[data-theme="base2"] {
+            /* mid-gray shell */
+            --bg-app:     hsl(0, 0%, 40%);
+            --bg-surface: hsl(0, 0%, 50%);
+            --bg-panel:   hsl(0, 0%, 33%);
+            --bg-button:  hsl(0, 0%, 65%);
+
+            --text-main:   hsl(0, 0%, 97%);
+            --text-muted:  hsl(0, 0%, 75%);
+            --text-button: hsl(0, 0%, 20%);
+
+            --border-subtle: hsl(0, 0%, 55%);
+
+            --accent-primary:   hsl(0, 0%, 90%);
+            --accent-danger:    hsl(0, 0%, 70%);
+            --accent-highlight: hsl(0, 0%, 95%);
+
+            --waveform-a: hsl(0, 0%, 45%);
+            --waveform-b: hsl(0, 0%, 37%);
+        }
+
+        body[data-theme="base3"] {
+            /* light shell */
+            --bg-app:     hsl(0, 0%, 88%);
+            --bg-surface: hsl(0, 0%, 95%);
+            --bg-panel:   hsl(0, 0%, 80%);
+            --bg-button:  hsl(0, 0%, 72%);
+
+            --text-main:   hsl(0, 0%,  8%);
+            --text-muted:  hsl(0, 0%, 35%);
+            --text-button: hsl(0, 0%, 12%);
+
+            --border-subtle: hsl(0, 0%, 65%);
+
+            --accent-primary:   hsl(0, 0%, 58%);
+            --accent-danger:    hsl(0, 0%, 45%);
+            --accent-highlight: hsl(0, 0%, 48%);
+
+            --waveform-a: hsl(0, 0%, 83%);
+            --waveform-b: hsl(0, 0%, 90%);
+        }
+
         /* x286 — Mars colony newswire ticker */
         #x286-newswire {
             display: none;
@@ -2387,14 +2553,76 @@
             padding-top: 0;
         }
 
-        .master-preset-select {
+        /* Custom themed preset dropdowns */
+        .csel {
+            position: relative;
+            display: inline-flex;
+        }
+
+        .csel-trigger {
+            -webkit-appearance: none;
+            appearance: none;
             background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
             border-radius: 4px;
             color: var(--text-muted);
             font-size: 10px;
-            padding: 2px 4px;
+            font-family: inherit;
+            padding: 2px 6px;
             cursor: pointer;
+            outline: none;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .csel-trigger::after {
+            content: '';
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 3px solid transparent;
+            border-right: 3px solid transparent;
+            border-top: 3px solid currentColor;
+            opacity: 0.6;
+            flex-shrink: 0;
+        }
+
+        .csel-trigger:focus,
+        .csel.open .csel-trigger {
+            border-color: var(--accent-primary);
+            color: var(--text-main);
+        }
+
+        .csel-menu {
+            display: none;
+            position: fixed;
+            z-index: 99999;
+            background: var(--bg-surface);
+            border: 1px solid var(--accent-primary);
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+            overflow: hidden;
+        }
+
+        .csel-menu.open { display: block; }
+
+        .csel-opt {
+            padding: 4px 8px;
+            font-size: 10px;
+            color: var(--text-main);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .csel-opt:hover {
+            background: color-mix(in srgb, var(--accent-primary) 20%, var(--bg-surface));
+        }
+
+        .csel-opt.active {
+            color: var(--accent-primary);
+            font-weight: 600;
         }
 
         .master-fx-controls {
@@ -2417,7 +2645,7 @@
 
         .master-fx-toggle.active {
             background: var(--accent-primary);
-            color: var(--bg-base);
+            color: var(--bg-app);
             border-color: var(--accent-primary);
         }
 
@@ -2576,6 +2804,16 @@
         .panel-marker-note:focus {
             outline: 1px solid var(--accent-primary);
             border-color: var(--accent-primary);
+        }
+
+        .panel-marker-note::placeholder {
+            color: var(--text-muted);
+            opacity: 1;
+        }
+
+        .panel-marker-note::selection {
+            background: color-mix(in srgb, var(--accent-highlight) 45%, transparent);
+            color: var(--text-main);
         }
 
         body[data-notes-font="mono"] .panel-marker-note {
@@ -3257,7 +3495,7 @@
 
         .cd-rows-btn.active {
             background: var(--accent-primary);
-            color: var(--bg-base);
+            color: var(--bg-app);
         }
 
         .cd-rows-btn:not(.active):hover {
@@ -3287,7 +3525,7 @@
 
         .cd-sound-btn.active {
             background: var(--accent-primary);
-            color: var(--bg-base);
+            color: var(--bg-app);
             font-weight: 600;
         }
 
