@@ -34,6 +34,7 @@ function serializeProject() {
     tracks: tracks.map(track => ({
       id:         track.id,
       name:       track.name,
+      type:       track.type ?? 'audio',
       gain:       track.gain,
       pan:        track.pan,
       opacity:    track.opacity,
@@ -285,7 +286,7 @@ function deserializeProject(data) {
   const savedTracks = data.tracks ?? [];
   for (let i = savedTracks.length - 1; i >= 0; i--) {
     const saved = savedTracks[i];
-    const track = createTrack(saved.name, { prepend: true });
+    const track = createTrack(saved.name, { prepend: true, type: saved.type ?? 'audio' });
 
     // Gain
     track.gain = saved.gain ?? 80;

@@ -1026,7 +1026,11 @@
         }
 
         .waveform {
-            cursor: pointer;
+            cursor: grab;
+        }
+
+        .waveform.wf-dragging {
+            cursor: grabbing;
         }
 
         .waveform.selected {
@@ -4604,7 +4608,8 @@
   background: var(--bg-hover, color-mix(in srgb, var(--accent-primary) 15%, transparent));
 }
 
-#add-midi-track-btn {
+#add-midi-track-btn,
+#add-audio-track-btn {
   font-size: 10px;
   padding: 2px 7px;
   border-radius: 3px;
@@ -4613,10 +4618,46 @@
   border: 1px solid var(--border);
   color: var(--text-primary);
   flex-shrink: 0;
+}
+#add-midi-track-btn {
   margin-left: auto;
 }
-#add-midi-track-btn:hover {
+#add-midi-track-btn:hover,
+#add-audio-track-btn:hover {
   background: var(--bg-hover, color-mix(in srgb, var(--accent-primary) 15%, transparent));
+}
+
+/* Record Arm Button */
+.arm-btn {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted, #888);
+  line-height: 1;
+}
+.arm-btn.arm-active {
+  background: #c0392b;
+  border-color: #e74c3c;
+  color: #fff;
+}
+.arm-btn:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+.arm-btn.arm-active:hover {
+  background: #e74c3c;
+  color: #fff;
+}
+
+/* Track type visual distinction */
+.is-midi-track.control-row {
+  border-left: 3px solid #7b5ea7;
+}
+.is-audio-track.control-row {
+  border-left: 3px solid transparent;
 }
 
 /* MIDI clip block on the timeline */

@@ -175,6 +175,15 @@ let rulerMode = "bars"; // "seconds" | "bars"
 let recordStartTime = null;
 let recordingTrackRow = null;
 let recordingLaneTrack = null;  // the current (unpromoted) recording lane track object
+let armedRecordTarget = null;   // armed audio track already in tracks[] (used instead of recording lane)
+
+// Keyboard → MIDI note map (two-row piano layout, C4=60)
+const KEY_NOTE_MAP = {
+  'a': 60, 'w': 61, 's': 62, 'e': 63, 'd': 64, 'f': 65, 't': 66,
+  'g': 67, 'y': 68, 'h': 69, 'u': 70, 'j': 71, 'k': 72, 'o': 73, 'l': 74, 'p': 75,
+};
+const _liveKeyNotes = new Map(); // key → { nodes, pitch, startSample, clip }
+const _activeKeys   = new Set();
 
 //  Track State
 const tracks = [];        // promoted tracks only, front = newest (matches DOM order)
@@ -195,6 +204,7 @@ let _markerDragState = null; // { markerId }  — set while dragging a marker
 
 //  Clip Selection
 const selectedClipIds = new Set();
+let _audioDragJustCompleted = false;
 
 //  Musical Grid
 let bpm = 120; // beats per minute
@@ -738,13 +748,15 @@ function promptUniqueName(conflictingName, excludeTrack) {
   });
 }
 
-function createTrack(label, { prepend = false } = {}) {
+function createTrack(label, { prepend = false, type = 'audio' } = {}) {
   label = label.slice(0, 30);
   // State object is created first so all event listeners can close over it.
   // controlRow and timelineRow are assigned after DOM construction.
   const track = {
     id:          crypto.randomUUID(),
     name:        label,
+    type,
+    armed:       false,
     gain:        80,
     pan:         0,
     opacity:     100,
@@ -849,6 +861,18 @@ function createTrack(label, { prepend = false } = {}) {
     syncTrackMutes();
   }, { signal });
 
+  const armBtn = document.createElement("button");
+  armBtn.className = "arm-btn";
+  armBtn.textContent = "●";
+  armBtn.title = "Arm track for recording";
+  armBtn.setAttribute("aria-label", "Record arm");
+  armBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    track.armed = !track.armed;
+    armBtn.classList.toggle("arm-active", track.armed);
+  }, { signal });
+  soloBtn.after(armBtn);
+
   const trackEditBtn = controlFrag.querySelector(".track-edit-btn");
   trackEditBtn.addEventListener("click", () => {
     if (tracks.indexOf(track) === -1) return;  // recording lane — not in tracks, protected
@@ -925,34 +949,38 @@ function createTrack(label, { prepend = false } = {}) {
     }
   });
 
-  // Instrument toggle + add-MIDI button
-  const trackRow3 = document.createElement("div");
-  trackRow3.className = "track-row-3";
+  // Instrument toggle + add-MIDI button (MIDI tracks only)
+  if (type === 'midi') {
+    const trackRow3 = document.createElement("div");
+    trackRow3.className = "track-row-3";
 
-  const instrBtn = document.createElement("button");
-  instrBtn.className = "instrument-toggle";
-  instrBtn.textContent = "Pluck";
-  instrBtn.title = "Switch instrument (Pluck / Synth)";
-  instrBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    track.instrument = track.instrument === "pluck" ? "synth" : "pluck";
-    instrBtn.textContent = track.instrument === "synth" ? "Synth" : "Pluck";
-  }, { signal });
+    const instrBtn = document.createElement("button");
+    instrBtn.className = "instrument-toggle";
+    instrBtn.textContent = "Pluck";
+    instrBtn.title = "Switch instrument (Pluck / Synth)";
+    instrBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      track.instrument = track.instrument === "pluck" ? "synth" : "pluck";
+      instrBtn.textContent = track.instrument === "synth" ? "Synth" : "Pluck";
+    }, { signal });
 
-  const addMidiBtn = document.createElement("button");
-  addMidiBtn.className = "add-midi-clip-btn";
-  addMidiBtn.textContent = "+ MIDI";
-  addMidiBtn.title = "Add MIDI clip at playhead";
-  addMidiBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    addMidiClipToTrack(track);
-  }, { signal });
+    const addMidiBtn = document.createElement("button");
+    addMidiBtn.className = "add-midi-clip-btn";
+    addMidiBtn.textContent = "+ MIDI";
+    addMidiBtn.title = "Add MIDI clip at playhead";
+    addMidiBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      addMidiClipToTrack(track);
+    }, { signal });
 
-  trackRow3.append(instrBtn, addMidiBtn);
-  controlRow.querySelector(".row-inner").appendChild(trackRow3);
+    trackRow3.append(instrBtn, addMidiBtn);
+    controlRow.querySelector(".row-inner").appendChild(trackRow3);
+  }
 
   track.controlRow  = controlRow;
   track.timelineRow = timelineRow;
+  controlRow.classList.add(type === 'midi' ? 'is-midi-track' : 'is-audio-track');
+  timelineRow.classList.add(type === 'midi' ? 'is-midi-track' : 'is-audio-track');
   track.meterEl     = meterEl;
   return track;
 }
@@ -967,7 +995,7 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
   // Also check the recording lane — it isn't in `tracks` yet when onRecordStop fires
   const track = findTrackByTimelineRow(timelineRow)
     ?? (recordingLaneTrack?.timelineRow === timelineRow ? recordingLaneTrack : null);
-  if (track) track.clips.push(clip);
+  if (track && track.type !== 'midi') track.clips.push(clip);
 
   // Render waveform DOM element
   const rowInner = timelineRow.querySelector(".row-inner");
@@ -991,6 +1019,46 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
 
   waveform.appendChild(canvas);
   attachClipDeleteButton(waveform);
+
+  // Drag to move audio clip
+  const AUDIO_DRAG_THRESHOLD = 5;
+  let wfDragStartX = 0, wfDragStartSample = 0, wfIsDragging = false;
+
+  waveform.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    wfDragStartX = e.clientX;
+    wfDragStartSample = clip.startSample;
+    wfIsDragging = false;
+    waveform.setPointerCapture(e.pointerId);
+  });
+
+  waveform.addEventListener("pointermove", (e) => {
+    if (!waveform.hasPointerCapture(e.pointerId)) return;
+    const deltaX = e.clientX - wfDragStartX;
+    if (!wfIsDragging && Math.abs(deltaX) > AUDIO_DRAG_THRESHOLD) {
+      wfIsDragging = true;
+      waveform.classList.add("wf-dragging");
+    }
+    if (wfIsDragging) {
+      let newSec = Math.max(0, wfDragStartSample / SAMPLE_RATE + pixelsToSeconds(deltaX));
+      if (rulerMode === "bars") newSec = snapToHalfBeat(newSec);
+      clip.startSample = Math.round(newSec * SAMPLE_RATE);
+      waveform.dataset.startSeconds = newSec;
+      waveform.style.left = secondsToPixels(newSec) + "px";
+    }
+  });
+
+  waveform.addEventListener("pointerup", (e) => {
+    if (!waveform.hasPointerCapture(e.pointerId)) return;
+    waveform.releasePointerCapture(e.pointerId);
+    waveform.classList.remove("wf-dragging");
+    if (wfIsDragging) {
+      _audioDragJustCompleted = true;
+      markDirty();
+    }
+    wfIsDragging = false;
+  });
+
   rowInner.appendChild(waveform);
 }
 
@@ -1051,7 +1119,29 @@ function reorderTrack(dragged, insertBefore) {
 
 function onRecordStart() {
   inRecordingSession = true;
-  recordingTrackRow = recordingLaneTrack.timelineRow;
+  const armedAudioTrack = tracks.find(t => t.type === 'audio' && t.armed);
+  if (armedAudioTrack) {
+    armedRecordTarget = armedAudioTrack;
+    recordingTrackRow = armedAudioTrack.timelineRow;
+  } else {
+    armedRecordTarget = null;
+    recordingTrackRow = recordingLaneTrack.timelineRow;
+  }
+  // Create a recording clip on any armed MIDI tracks
+  const armedMidiTrack = tracks.find(t => t.type === 'midi' && t.armed);
+  if (armedMidiTrack) {
+    const startSec = getPlayheadTime();
+    const clip = {
+      id:              crypto.randomUUID(),
+      startSample:     Math.round(startSec * SAMPLE_RATE),
+      durationSamples: Math.round(8 * secondsPerBar() * SAMPLE_RATE),
+      events:          [],
+      notes:           [],
+    };
+    armedMidiTrack.midiClips.push(clip);
+    renderMidiClip(armedMidiTrack, clip);
+    markDirty();
+  }
   if (playing) audioEngineStartRecording(); // armed while playing — start immediately
   // if not playing, onTransportStart() will call audioEngineStartRecording() when play begins
   timelineArea.scrollTop = 0;
@@ -1059,13 +1149,37 @@ function onRecordStart() {
 }
 
 async function onRecordStop() {
-  if (!recordingTrackRow) return;
+  // Flush any keys still held during MIDI recording
+  _activeKeys.forEach(key => {
+    const live = _liveKeyNotes.get(key);
+    if (live) {
+      _liveKeyNotes.delete(key);
+      live.nodes.forEach(n => { try { n.stop(); } catch (_) {} });
+      if (live.clip && Array.isArray(live.clip.notes)) {
+        const endSample = Math.round(getPlayheadTime() * SAMPLE_RATE);
+        live.clip.notes.push({
+          pitch:           live.pitch,
+          startSamples:    Math.max(0, live.startSample - live.clip.startSample),
+          durationSamples: Math.max(Math.round(0.05 * SAMPLE_RATE), endSample - live.startSample),
+          velocity:        100,
+        });
+      }
+    }
+  });
+  _activeKeys.clear();
 
-  const startTime = recordStartTime;          // capture before clearRecordingRange() nulls it
-  const endTime   = getPlayheadTime();
-  const duration  = Math.max(0, endTime - startTime);
-  const row       = recordingTrackRow;
-  recordingTrackRow = null;
+  if (!recordingTrackRow) {
+    armedRecordTarget = null;
+    return;
+  }
+
+  const startTime      = recordStartTime;    // capture before clearRecordingRange() nulls it
+  const endTime        = getPlayheadTime();
+  const duration       = Math.max(0, endTime - startTime);
+  const row            = recordingTrackRow;
+  const wasArmedTarget = armedRecordTarget;
+  recordingTrackRow  = null;
+  armedRecordTarget  = null;
 
   const audioBuffer = await audioEngineStopRecording();
 
@@ -1082,6 +1196,13 @@ async function onRecordStop() {
       audioEngineStoreBuffer(clip.id, audioBuffer);
       updateClipWaveform(clip.id, audioBuffer, clipTrack.timelineRow);
     }
+  }
+
+  if (wasArmedTarget) {
+    // Recording went to an already-promoted armed track — no lane promotion needed.
+    // promoteRecordingLane() (called synchronously from applyTransportChange) already
+    // set inRecordingSession = false and bailed because the recording lane has no waveform.
+    return;
   }
 
   // Synchronous promoteRecordingLane() in applyTransportChange bailed (no waveform yet).
@@ -1456,6 +1577,7 @@ function drawDummyWaveform(canvas) {
 // Projection/Rendering - MIDI Clips -----
 
 function addMidiClipToTrack(track) {
+  if (track.type !== 'midi') return;
   const startSec = getPlayheadTime();
   const durSec   = 4 * secondsPerBar();
   const clip = {
@@ -1473,7 +1595,7 @@ function addMidiClipToTrack(track) {
 function addMidiTrack() {
   trackCount += 1;
   const { name } = pickTrackName();
-  const track = createTrack(name);
+  const track = createTrack(name, { type: 'midi' });
   tracks.push(track);
 
   const clip = {
@@ -1486,6 +1608,18 @@ function addMidiTrack() {
   track.midiClips.push(clip);
   renderMidiClip(track, clip);
 
+  syncTimelineMinWidth();
+  syncTimelineOverlay();
+  updateSceneMask();
+  updateSoloMask();
+  markDirty();
+}
+
+function addAudioTrack() {
+  trackCount += 1;
+  const { name } = pickTrackName();
+  const track = createTrack(name, { type: 'audio' });
+  tracks.push(track);
   syncTimelineMinWidth();
   syncTimelineOverlay();
   updateSceneMask();
@@ -2544,6 +2678,7 @@ function hideClipPopup() {
 timelineArea.addEventListener("click", (e) => {
   const waveform = e.target.closest(".waveform");
   if (waveform) {
+    if (_audioDragJustCompleted) { _audioDragJustCompleted = false; return; }
     const clipId = waveform.dataset.clipId;
     if (e.metaKey || e.ctrlKey) {
       toggleClipSelection(clipId);
@@ -2752,6 +2887,7 @@ document.getElementById("track-edit-close-btn").addEventListener("click", closeT
 document.getElementById("track-edit-delete-btn").addEventListener("click", _executeDeleteTrack);
 document.getElementById("track-edit-duplicate-btn").addEventListener("click", _executeDuplicateTrack);
 document.getElementById("add-midi-track-btn").addEventListener("click", addMidiTrack);
+document.getElementById("add-audio-track-btn").addEventListener("click", addAudioTrack);
 document.getElementById("track-edit-dialog").addEventListener("click", (e) => {
   if (e.target === e.currentTarget) closeTrackEditDialog();
 });
@@ -2857,6 +2993,24 @@ document.addEventListener("keydown", (e) => {
     || document.activeElement?.tagName === "TEXTAREA"
     || document.activeElement?.isContentEditable;
 
+  // Laptop keyboard → MIDI note input (takes priority when recording an armed MIDI track)
+  if (!editable && recording) {
+    const pitch = KEY_NOTE_MAP[e.key];
+    const armedMidiTrack = tracks.find(t => t.type === 'midi' && t.armed);
+    if (pitch !== undefined && armedMidiTrack && !_activeKeys.has(e.key)) {
+      e.preventDefault();
+      _activeKeys.add(e.key);
+      const ctx = getAudioContext();
+      const freq = _midiToFreq(pitch);
+      const now = ctx.currentTime;
+      const nodes = cpScheduleNoteAt(freq, ctx, now, 10, 100, armedMidiTrack.instrument ?? "pluck");
+      const clip = armedMidiTrack.midiClips[armedMidiTrack.midiClips.length - 1];
+      const startSample = clip ? Math.round(getPlayheadTime() * SAMPLE_RATE) : null;
+      _liveKeyNotes.set(e.key, { nodes, pitch, startSample, clip });
+      return;
+    }
+  }
+
   if (e.key === "Escape") {
     deselectClip(); hideClipPopup();
     document.getElementById("shortcut-help-overlay").hidden = true;
@@ -2918,6 +3072,27 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "c" && !editable) {
     viewState.chordDiagrams = !viewState.chordDiagrams;
     applyViewState();
+  }
+});
+
+document.addEventListener("keyup", (e) => {
+  if (!_activeKeys.has(e.key)) return;
+  _activeKeys.delete(e.key);
+  const live = _liveKeyNotes.get(e.key);
+  if (!live) return;
+  _liveKeyNotes.delete(e.key);
+  live.nodes.forEach(n => { try { n.stop(); } catch (_) {} });
+  if (live.clip && live.startSample !== null && Array.isArray(live.clip.notes)) {
+    const endSample = Math.round(getPlayheadTime() * SAMPLE_RATE);
+    live.clip.notes.push({
+      pitch:           live.pitch,
+      startSamples:    Math.max(0, live.startSample - live.clip.startSample),
+      durationSamples: Math.max(Math.round(0.05 * SAMPLE_RATE), endSample - live.startSample),
+      velocity:        100,
+    });
+    const clipEl = document.querySelector(`.midi-clip[data-clip-id="${live.clip.id}"]`);
+    if (clipEl) rerenderMidiClipEvents(live.clip, clipEl);
+    markDirty();
   }
 });
 
