@@ -1463,6 +1463,7 @@ function addMidiClipToTrack(track) {
     startSample:     Math.round(startSec * SAMPLE_RATE),
     durationSamples: Math.round(durSec   * SAMPLE_RATE),
     events:          [],
+    notes:           undefined,
   };
   track.midiClips.push(clip);
   renderMidiClip(track, clip);
@@ -1480,6 +1481,7 @@ function addMidiTrack() {
     startSample:     0,
     durationSamples: Math.round(8 * secondsPerBar() * SAMPLE_RATE),
     events:          [],
+    notes:           undefined,
   };
   track.midiClips.push(clip);
   renderMidiClip(track, clip);
@@ -1542,6 +1544,13 @@ function renderMidiClip(track, clip) {
         const offsetX = cx - el.getBoundingClientRect().left;
         const offsetSamples = Math.round(pixelsToSeconds(offsetX) * SAMPLE_RATE);
         showContextMenu([
+          {
+            label: "Edit Notes",
+            action: () => {
+              if (!Array.isArray(clip.notes)) clip.notes = [];
+              pianoRollOpen(clip, track);
+            },
+          },
           {
             label: "Add chord",
             action: () => {
@@ -1612,14 +1621,15 @@ function renderMidiClip(track, clip) {
   // Left-edge resize handle
   const leftHandle = document.createElement("div");
   leftHandle.className = "midi-clip-handle midi-clip-handle-left";
-  let lStartX = 0, lStartSample = 0, lStartDur = 0, lOrigOffsets = [];
+  let lStartX = 0, lStartSample = 0, lStartDur = 0, lOrigOffsets = [], lOrigNoteStarts = [];
   leftHandle.addEventListener("pointerdown", (e) => {
     if (e.button !== 0) return;
     e.stopPropagation();
-    lStartX      = e.clientX;
-    lStartSample = clip.startSample;
-    lStartDur    = clip.durationSamples;
-    lOrigOffsets = clip.events.map(ev => ev.offsetSamples);
+    lStartX          = e.clientX;
+    lStartSample     = clip.startSample;
+    lStartDur        = clip.durationSamples;
+    lOrigOffsets     = clip.events.map(ev => ev.offsetSamples);
+    lOrigNoteStarts  = (clip.notes ?? []).map(n => n.startSamples);
     leftHandle.setPointerCapture(e.pointerId);
   });
   leftHandle.addEventListener("pointermove", (e) => {
@@ -1635,6 +1645,9 @@ function renderMidiClip(track, clip) {
     clip.durationSamples = newDur;
     clip.events.forEach((ev, i) => {
       ev.offsetSamples = Math.max(0, lOrigOffsets[i] - sampleDelta);
+    });
+    (clip.notes ?? []).forEach((n, i) => {
+      n.startSamples = Math.max(0, lOrigNoteStarts[i] - sampleDelta);
     });
     el.style.left  = secondsToPixels(clip.startSample / SAMPLE_RATE) + "px";
     el.style.width = computeWaveformWidth(clip.durationSamples / SAMPLE_RATE) + "px";
@@ -1652,8 +1665,39 @@ function renderMidiClip(track, clip) {
   rowInner.appendChild(el);
 }
 
+function _renderMidiNotesMiniature(clip, el) {
+  let canvas = el.querySelector(".midi-notes-miniature");
+  if (!canvas) {
+    canvas = document.createElement("canvas");
+    canvas.className = "midi-notes-miniature";
+    el.appendChild(canvas);
+  }
+  const w = el.offsetWidth || Math.round(computeWaveformWidth(clip.durationSamples / SAMPLE_RATE));
+  const h = 36;
+  canvas.width  = w;
+  canvas.height = h;
+  const ctx2 = canvas.getContext("2d");
+  ctx2.clearRect(0, 0, w, h);
+  if (!clip.notes?.length) return;
+  const pitches = clip.notes.map(n => n.pitch);
+  const minP = Math.min(...pitches), maxP = Math.max(...pitches);
+  const range = Math.max(maxP - minP, 11);
+  ctx2.fillStyle = "#7ec8e3";
+  for (const n of clip.notes) {
+    const x = Math.round((n.startSamples / clip.durationSamples) * w);
+    const nw = Math.max(2, Math.round((n.durationSamples / clip.durationSamples) * w));
+    const y  = Math.round(((maxP - n.pitch) / range) * (h - 4)) + 2;
+    ctx2.fillRect(x, y, nw, 3);
+  }
+}
+
 function rerenderMidiClipEvents(clip, el) {
   el.querySelectorAll(".midi-event").forEach(n => n.remove());
+  el.querySelectorAll(".midi-notes-miniature").forEach(n => n.remove());
+  if (Array.isArray(clip.notes)) {
+    _renderMidiNotesMiniature(clip, el);
+    return;
+  }
   for (const ev of clip.events) {
     const chord = (typeof chords !== "undefined") && chords.find(c => c.id === ev.chordId);
     const evEl = document.createElement("div");
@@ -3381,6 +3425,50 @@ document.getElementById("menu-import-wav").addEventListener("click", () => {
   input.click();
 });
 
+// Event Handlers - MIDI Import/Export - Intent Layer -----
+document.getElementById("menu-import-midi").addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".mid,.midi,audio/midi";
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    const buf = await file.arrayBuffer();
+    let parsed;
+    try { parsed = parseMidiFile(buf); } catch (err) { alert("Could not parse MIDI file: " + err.message); return; }
+    const noteTracks = midiToNotes(parsed, SAMPLE_RATE);
+    if (!noteTracks.length) { alert("No notes found in MIDI file."); return; }
+
+    for (let i = 0; i < noteTracks.length; i++) {
+      const notes = noteTracks[i];
+      if (!notes.length) continue;
+      const label = (file.name.replace(/\.midi?$/i, "") + (noteTracks.length > 1 ? ` (${i + 1})` : "")).slice(0, 30);
+      const track = createTrack(label, { prepend: false });
+      tracks.push(track);
+      const maxEnd = Math.max(...notes.map(n => n.startSamples + n.durationSamples));
+      const clip = {
+        id:              crypto.randomUUID(),
+        startSample:     0,
+        durationSamples: maxEnd,
+        events:          [],
+        notes,
+      };
+      track.midiClips.push(clip);
+      renderMidiClip(track, clip);
+    }
+    syncTimelineMinWidth();
+    syncTimelineOverlay();
+    updateSceneMask();
+    updateSoloMask();
+    markDirty();
+  };
+  input.click();
+});
+
+document.getElementById("menu-export-midi").addEventListener("click", () => {
+  exportProjectAsMidi(tracks, tempoBPM, SAMPLE_RATE);
+});
+
 // Event Handlers - Video Backdrop - Intent Layer -----
 document.getElementById("menu-load-video").addEventListener("click", () => {
   const input = document.createElement("input");
@@ -4428,4 +4516,6 @@ document.querySelectorAll('.master-section-header').forEach(header => {
         header.closest('.master-section').classList.toggle('collapsed');
     });
 });
+
+pianoRollInit();
 

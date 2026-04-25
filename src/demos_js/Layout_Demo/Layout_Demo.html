@@ -90,9 +90,11 @@ Rule - Add comments before code snippets in this format:
                 <div id="menu-open-project" role="menuitem" tabindex="-1">Open Project</div>
                 <div id="menu-save-project" role="menuitem" tabindex="-1">Save Project</div>
                 <div id="menu-import-wav" role="menuitem" tabindex="-1">Import WAV…</div>
+                <div id="menu-import-midi" role="menuitem" tabindex="-1">Import MIDI…</div>
                 <div id="menu-load-video" role="menuitem" tabindex="-1">Load Video…</div>
                 <hr />
                 <div id="menu-export-mixdown" role="menuitem" tabindex="-1">Export Mixdown…</div>
+                <div id="menu-export-midi" role="menuitem" tabindex="-1">Export MIDI…</div>
             </div>
         </div>
 
@@ -644,6 +646,21 @@ Rule - Add comments before code snippets in this format:
 </div>
 
 <!-- Loop Editor Panel -->
+<div id="piano-roll-panel" hidden>
+    <div class="piano-roll-header">
+        <span id="piano-roll-title">Piano Roll</span>
+        <div class="piano-roll-toolbar">
+            <button id="piano-roll-snap" class="piano-roll-tool-btn active" title="Snap to grid">⊞ Snap</button>
+        </div>
+        <button class="piano-roll-close-btn" id="piano-roll-close">✕</button>
+    </div>
+    <div class="piano-roll-body">
+        <canvas id="piano-roll-keys"></canvas>
+        <canvas id="piano-roll-canvas"></canvas>
+    </div>
+    <div class="piano-roll-resize-handle"></div>
+</div>
+
 <div id="loop-editor-panel" hidden>
     <div class="loop-editor-header">
         <span id="loop-editor-track-name">Loop Editor</span>
@@ -752,6 +769,9 @@ Rule - Add comments before code snippets in this format:
 <script src="./chordPlayer.js"></script>
 <script src="./tanpura.js"></script>
 <script src="./chordDiagrams.js"></script>
+<script src="./midiParser.js"></script>
+<script src="./midiExport.js"></script>
+<script src="./pianoRoll.js"></script>
 <script src="./midiEngine.js"></script>
 <script src="./index.js"></script>
 <script src="./x286-newswire.js"></script>

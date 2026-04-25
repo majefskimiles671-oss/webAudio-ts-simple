@@ -98,15 +98,15 @@ function _ksGenerate(freq, sampleRate, durationSec) {
   return output;
 }
 
-function _ksPluck(ctx, freq, startTime, durationSec = 3.5) {
+function _ksPluck(ctx, freq, startTime, durationSec = 3.5, gainMult = 1) {
   const samples = _ksGenerate(freq, ctx.sampleRate, durationSec);
   const buf = ctx.createBuffer(1, samples.length, ctx.sampleRate);
   buf.copyToChannel(samples, 0);
 
-  const A = _pluckAttack, D = _pluckDecay, S = _pluckSustain, R = _pluckRelease;
+  const A = _pluckAttack, D = _pluckDecay, S = _pluckSustain * gainMult, R = _pluckRelease;
   const env = ctx.createGain();
   env.gain.setValueAtTime(0, startTime);
-  env.gain.linearRampToValueAtTime(1.0, startTime + A);
+  env.gain.linearRampToValueAtTime(gainMult, startTime + A);
   env.gain.linearRampToValueAtTime(S, startTime + A + D);
   const releaseStart = Math.max(startTime + A + D, startTime + durationSec - R);
   env.gain.setValueAtTime(S, releaseStart);
@@ -121,7 +121,7 @@ function _ksPluck(ctx, freq, startTime, durationSec = 3.5) {
   return src;
 }
 
-function _synthPlayNote(ctx, freq, startTime, durationSec) {
+function _synthPlayNote(ctx, freq, startTime, durationSec, gainMult = 1) {
   const env    = ctx.createGain();
   const filter = ctx.createBiquadFilter();
   filter.type            = "lowpass";
@@ -145,9 +145,9 @@ function _synthPlayNote(ctx, freq, startTime, durationSec) {
   filter.connect(env);
   env.connect(getMasterGainNode());
 
-  const A = 0.35 * _synthNoteMult, D = 0.15 * _synthNoteMult, S = 0.65, R = 1.2 * _synthNoteMult;
+  const A = 0.35 * _synthNoteMult, D = 0.15 * _synthNoteMult, S = 0.65 * gainMult, R = 1.2 * _synthNoteMult;
   env.gain.setValueAtTime(0,   startTime);
-  env.gain.linearRampToValueAtTime(1.0, startTime + A);
+  env.gain.linearRampToValueAtTime(gainMult, startTime + A);
   env.gain.linearRampToValueAtTime(S,   startTime + A + D);
   env.gain.setValueAtTime(S,            startTime + durationSec);
   env.gain.linearRampToValueAtTime(0,   startTime + durationSec + R);
@@ -265,6 +265,17 @@ function playChordSpaced(chord) {
 }
 
 // Chord Player - Scheduling - Playback -----
+// Schedules a single MIDI note at an exact WebAudio time. Returns stoppable nodes.
+function cpScheduleNoteAt(freq, ctx, audioTime, durationSec, velocity = 100, mode = "pluck") {
+  const gainMult = velocity / 127;
+  if (mode === "pluck") {
+    const src = _ksPluck(ctx, freq, audioTime, Math.max(durationSec, 0.1) * _pluckDurationMult, gainMult);
+    return src ? [src] : [];
+  }
+  const voice = _synthPlayNote(ctx, freq, audioTime, durationSec * _synthNoteMult, gainMult);
+  return voice?.oscs ?? [];
+}
+
 // Schedules a strum at an exact WebAudio time. Returns stoppable nodes for cancellation.
 function cpScheduleChordAt(chord, ctx, audioTime, mode = "pluck") {
   const freqs = _chordToFreqs(chord);

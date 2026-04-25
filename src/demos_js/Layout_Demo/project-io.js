@@ -58,6 +58,7 @@ function serializeProject() {
         startSample:     clip.startSample,
         durationSamples: clip.durationSamples,
         events:          clip.events.map(e => ({ offsetSamples: e.offsetSamples, chordId: e.chordId })),
+        notes:           clip.notes?.map(n => ({ pitch: n.pitch, startSamples: n.startSamples, durationSamples: n.durationSamples, velocity: n.velocity })),
       })),
     })),
     chordPanel: (typeof cdGetPanelState === "function") ? cdGetPanelState() : undefined,
@@ -322,6 +323,7 @@ function deserializeProject(data) {
         startSample:     savedClip.startSample,
         durationSamples: savedClip.durationSamples,
         events:          (savedClip.events ?? []).map(e => ({ offsetSamples: e.offsetSamples, chordId: e.chordId })),
+        notes:           savedClip.notes ? savedClip.notes.map(n => ({ pitch: n.pitch, startSamples: n.startSamples, durationSamples: n.durationSamples, velocity: n.velocity ?? 100 })) : undefined,
       };
       track.midiClips.push(clip);
       renderMidiClip(track, clip);

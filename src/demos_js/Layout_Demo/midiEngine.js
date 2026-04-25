@@ -39,9 +39,19 @@ function midiEnginePlay(tracks, playheadSeconds) {
         const nodes = cpScheduleChordAt(chord, ctx, audioTime, track.instrument ?? "pluck");
         _scheduledMidiNodes.push(...nodes);
       }
+
+      for (const n of (clip.notes ?? [])) {
+        const evAbsTime = clipStart + n.startSamples / SAMPLE_RATE;
+        if (evAbsTime < playheadSeconds || evAbsTime >= clipEnd) continue;
+        const audioTime = now + (evAbsTime - playheadSeconds);
+        const durationSec = n.durationSamples / SAMPLE_RATE;
+        const nodes = cpScheduleNoteAt(_midiToFreq(n.pitch), ctx, audioTime, durationSec, n.velocity ?? 100, track.instrument ?? "pluck");
+        _scheduledMidiNodes.push(...nodes);
+      }
     }
   }
 }
+
 
 function midiEngineStop() {
   _scheduledMidiNodes.forEach(n => { try { n.stop(0); } catch (_) {} });

@@ -4219,6 +4219,112 @@
             border-radius: 0 0 8px 0;
         }
 
+        /* ----- Piano Roll Panel ----- */
+
+        #piano-roll-panel {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 960px;
+            min-width: 400px;
+            height: 480px;
+            min-height: 260px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+            z-index: 5100;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #piano-roll-panel[hidden] { display: none; }
+
+        .piano-roll-header {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-weight: 600;
+            font-size: 13px;
+            gap: 10px;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .piano-roll-header:active { cursor: grabbing; }
+
+        #piano-roll-title { flex: 1; }
+
+        .piano-roll-toolbar { display: flex; gap: 4px; }
+
+        .piano-roll-tool-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 11px;
+            padding: 2px 8px;
+        }
+
+        .piano-roll-tool-btn.active {
+            border-color: var(--accent-primary);
+            color: var(--text-main);
+        }
+
+        .piano-roll-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .piano-roll-close-btn:hover { color: var(--text-main); }
+
+        .piano-roll-body {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        #piano-roll-keys {
+            width: 44px;
+            flex-shrink: 0;
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        #piano-roll-canvas {
+            flex: 1;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .piano-roll-resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 14px;
+            height: 14px;
+            cursor: nwse-resize;
+            background: linear-gradient(135deg, transparent 40%, var(--border-subtle) 40%);
+            border-radius: 0 0 8px 0;
+        }
+
+        .midi-notes-miniature {
+            position: absolute;
+            top: 4px;
+            left: 0;
+            pointer-events: none;
+        }
+
         /* ----- Clip Popup ----- */
 
         #clip-popup {
