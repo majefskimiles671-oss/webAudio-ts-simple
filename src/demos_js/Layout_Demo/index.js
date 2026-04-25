@@ -4418,7 +4418,7 @@ markers.push({ id: ORIGIN_MARKER_ID, time: secondsPerBar() * 0, note: "", chordI
 // markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 8, note: "Chorus begins\nBig energy here\nDon't forget the drop\nRide it out to bar 12" });
 selectedMarkerId = ORIGIN_MARKER_ID;
 
-setTheme("Earth", { silent: true });
+setTheme("Dark", { silent: true });
 
 // Populate master meter segments
 document.querySelectorAll(".master-meter-bar").forEach(bar => {
