@@ -19,6 +19,8 @@
 
             --border-subtle: #6b6b6b;
 
+            --arm-active-text: #fff;
+
             /* Meter segment colors */
             --meter-low:  #00e676;
             --meter-mid:  #ffd400;
@@ -1119,7 +1121,7 @@
             top: 0;
             bottom: 0;
             width: 3px;
-            background: #ff9500;
+            background: var(--accent-primary);
             z-index: 10;
         }
 
@@ -1753,36 +1755,11 @@
             --waveform-b: #2a1800;
         }
 
-
-        body[data-theme="Telugu"] {
-            /* BLACK — near-black backgrounds */
-            --bg-app:     #0a0505;
-            --bg-surface: #1e0a0a;
-            --bg-panel:   #060303;
-            --bg-button:  #2c1212;
-
-            /* WHITE — bright warm white text */
-            --text-main:   #f0e8d0;
-            --text-muted:  #907840;
-            --text-button: #f0e8d0;
-
-            /* RED — crimson border from the seal band */
-            --border-subtle: #501818;
-
-            /* GOLD — emblem gilded border as primary accent */
-            --accent-primary:   #c89020;
-            --accent-danger:    #cc2020;
-            --accent-highlight: #e8c030;
-
-            /* GREEN — forest foliage from emblem center */
-            --waveform-a: #0c1a08;
-            --waveform-b: #162808;
-        }
-
         /* base1/2/3 — pure grayscale; all colors are HSV(0, 0, V%) = hsl(0, 0%, V%) */
 
         body[data-theme="base1"] {
             /* dark shell */
+            --arm-active-text: #111;
             --bg-app:     hsl(0, 0%, 10%);
             --bg-surface: hsl(0, 0%, 16%);
             --bg-panel:   hsl(0, 0%,  7%);
@@ -1804,6 +1781,7 @@
 
         body[data-theme="base2"] {
             /* mid-gray shell */
+            --arm-active-text: #111;
             --bg-app:     hsl(0, 0%, 40%);
             --bg-surface: hsl(0, 0%, 50%);
             --bg-panel:   hsl(0, 0%, 33%);
@@ -1825,6 +1803,7 @@
 
         body[data-theme="base3"] {
             /* light shell */
+            --arm-active-text: #111;
             --bg-app:     hsl(0, 0%, 88%);
             --bg-surface: hsl(0, 0%, 95%);
             --bg-panel:   hsl(0, 0%, 80%);
@@ -1842,6 +1821,204 @@
 
             --waveform-a: hsl(0, 0%, 83%);
             --waveform-b: hsl(0, 0%, 90%);
+        }
+
+        /* new1/2/3 — same V values as base1/2/3; H and S from Madhya Pradesh emblem */
+
+        body[data-theme="new1"] {
+            /* HSV(8°, 82%, V) — crimson from emblem seal band */
+            --bg-app:     #1a0705;
+            --bg-surface: #290c07;
+            --bg-panel:   #120503;
+            --bg-button:  #732115;
+
+            --text-main:   #eb442a;
+            --text-muted:  #992c1c;
+            --text-button: #1f0906;
+
+            --border-subtle: #591a10;
+
+            --accent-primary:   #bf3722;
+            --accent-danger:    #8c2919;
+            --accent-highlight: #e04128;
+
+            --waveform-a: #2e0d08;
+            --waveform-b: #210a06;
+        }
+
+        body[data-theme="new2"] {
+            /* HSV(128°, 65%, V) — forest green from emblem foliage */
+            --bg-app:     #24662d;
+            --bg-surface: #2d8038;
+            --bg-panel:   #1d5425;
+            --bg-button:  #3aa648;
+
+            --text-main:   #57f76c;
+            --text-muted:  #43bf54;
+            --text-button: #123316;
+
+            --border-subtle: #318c3d;
+
+            --accent-primary:   #50e664;
+            --accent-danger:    #3eb34e;
+            --accent-highlight: #55f26a;
+
+            --waveform-a: #287332;
+            --waveform-b: #215e29;
+        }
+
+        body[data-theme="new3"] {
+            /* HSV(28°, 88%, V) — saffron from emblem outer ring */
+            --bg-app:     #e0771b;
+            --bg-surface: #f2811d;
+            --bg-panel:   #cc6c18;
+            --bg-button:  #b86116;
+
+            --text-main:   #140b02;
+            --text-muted:  #592f0b;
+            --text-button: #1f1004;
+
+            --border-subtle: #a65814;
+
+            --accent-primary:   #944e12;
+            --accent-danger:    #733d0e;
+            --accent-highlight: #7a410f;
+
+            --waveform-a: #d47019;
+            --waveform-b: #e67a1c;
+        }
+
+        /* India1/2/3 — all three emblem colors mixed; base1 V values throughout          */
+        /*   crimson  H=8°  S=82%  →  R=V       G=V·0.289  B=V·0.180                    */
+        /*   saffron  H=28° S=88%  →  R=V       G=V·0.531  B=V·0.120                    */
+        /*   green    H=128°S=65%  →  R=V·0.350 G=V        B=V·0.437                    */
+
+        body[data-theme="India1"] {
+            /* bg: crimson  |  text/buttons: saffron  |  accents: green */
+            --bg-app:     #1a0705;   /* crimson  V=10 */
+            --bg-surface: #290c07;   /* crimson  V=16 */
+            --bg-panel:   #120503;   /* crimson  V= 7 */
+            --bg-button:  #733d0e;   /* saffron  V=45 */
+
+            --text-main:   #eb7d1c;  /* saffron  V=92 */
+            --text-muted:  #995112;  /* saffron  V=60 */
+            --text-button: #1f1004;  /* saffron  V=12 */
+
+            --border-subtle: #1f5927; /* green   V=35 */
+
+            --accent-primary:   #43bf54; /* green    V=75 */
+            --accent-danger:    #8c2919; /* crimson  V=55 */
+            --accent-highlight: #e0771b; /* saffron  V=88 */
+
+            --waveform-a: #2e0d08;   /* crimson  V=18 */
+            --waveform-b: #210a06;   /* crimson  V=13 */
+        }
+
+        body[data-theme="India2"] {
+            /* bg: green  |  text: saffron  |  buttons/border/danger: crimson  |  accents: saffron */
+            --bg-app:     #091a0b;   /* green    V=10 */
+            --bg-surface: #0e2912;   /* green    V=16 */
+            --bg-panel:   #061208;   /* green    V= 7 */
+            --bg-button:  #732115;   /* crimson  V=45 */
+
+            --text-main:   #eb7d1c;  /* saffron  V=92 */
+            --text-muted:  #995112;  /* saffron  V=60 */
+            --text-button: #0b1f0d;  /* green    V=12 */
+
+            --border-subtle: #591a10; /* crimson  V=35 */
+
+            --accent-primary:   #bf6517; /* saffron  V=75 */
+            --accent-danger:    #8c2919; /* crimson  V=55 */
+            --accent-highlight: #e0771b; /* saffron  V=88 */
+
+            --waveform-a: #102e14;   /* green    V=18 */
+            --waveform-b: #0c210e;   /* green    V=13 */
+        }
+
+        body[data-theme="India3"] {
+            /* bg: saffron  |  text/highlight: green  |  buttons/border: green  |  accents: crimson */
+            --bg-app:     #1a0d03;   /* saffron  V=10 */
+            --bg-surface: #291605;   /* saffron  V=16 */
+            --bg-panel:   #120902;   /* saffron  V= 7 */
+            --bg-button:  #287332;   /* green    V=45 */
+
+            --text-main:   #52eb67;  /* green    V=92 */
+            --text-muted:  #369943;  /* green    V=60 */
+            --text-button: #1f1004;  /* saffron  V=12 */
+
+            --border-subtle: #1f5927; /* green    V=35 */
+
+            --accent-primary:   #bf3722; /* crimson  V=75 */
+            --accent-danger:    #8c2919; /* crimson  V=55 */
+            --accent-highlight: #4fe062; /* green    V=88 */
+
+            --waveform-a: #2e1806;   /* saffron  V=18 */
+            --waveform-b: #211104;   /* saffron  V=13 */
+        }
+
+        /* base2.India1/2/3 — same color roles as India1/2/3; base2 V values throughout */
+
+        body[data-theme="base2.India1"] {
+            /* bg: crimson  |  text/buttons: saffron  |  accents: green */
+            --bg-app:     #661e12;   /* crimson  V=40 */
+            --bg-surface: #802517;   /* crimson  V=50 */
+            --bg-panel:   #54180f;   /* crimson  V=33 */
+            --bg-button:  #a65814;   /* saffron  V=65 */
+
+            --text-main:   #f7831e;  /* saffron  V=97 */
+            --text-muted:  #bf6517;  /* saffron  V=75 */
+            --text-button: #331b06;  /* saffron  V=20 */
+
+            --border-subtle: #318c3d; /* green   V=55 */
+
+            --accent-primary:   #50e664; /* green    V=90 */
+            --accent-danger:    #b33420; /* crimson  V=70 */
+            --accent-highlight: #f2811d; /* saffron  V=95 */
+
+            --waveform-a: #732115;   /* crimson  V=45 */
+            --waveform-b: #5e1b11;   /* crimson  V=37 */
+        }
+
+        body[data-theme="base2.India2"] {
+            /* bg: green  |  text: saffron  |  buttons/border/danger: crimson  |  accents: saffron */
+            --bg-app:     #24662d;   /* green    V=40 */
+            --bg-surface: #2d8038;   /* green    V=50 */
+            --bg-panel:   #1d5425;   /* green    V=33 */
+            --bg-button:  #a6301e;   /* crimson  V=65 */
+
+            --text-main:   #f7831e;  /* saffron  V=97 */
+            --text-muted:  #bf6517;  /* saffron  V=75 */
+            --text-button: #123316;  /* green    V=20 */
+
+            --border-subtle: #8c2919; /* crimson  V=55 */
+
+            --accent-primary:   #e67a1c; /* saffron  V=90 */
+            --accent-danger:    #b33420; /* crimson  V=70 */
+            --accent-highlight: #f2811d; /* saffron  V=95 */
+
+            --waveform-a: #287332;   /* green    V=45 */
+            --waveform-b: #215e29;   /* green    V=37 */
+        }
+
+        body[data-theme="base2.India3"] {
+            /* bg: saffron  |  text/highlight: green  |  buttons/border: green  |  accents: crimson */
+            --bg-app:     #66360c;   /* saffron  V=40 */
+            --bg-surface: #80430f;   /* saffron  V=50 */
+            --bg-panel:   #542c0a;   /* saffron  V=33 */
+            --bg-button:  #3aa648;   /* green    V=65 */
+
+            --text-main:   #57f76c;  /* green    V=97 */
+            --text-muted:  #43bf54;  /* green    V=75 */
+            --text-button: #331b06;  /* saffron  V=20 */
+
+            --border-subtle: #318c3d; /* green    V=55 */
+
+            --accent-primary:   #e64229; /* crimson  V=90 */
+            --accent-danger:    #b33420; /* crimson  V=70 */
+            --accent-highlight: #55f26a; /* green    V=95 */
+
+            --waveform-a: #733d0e;   /* saffron  V=45 */
+            --waveform-b: #5e320b;   /* saffron  V=37 */
         }
 
         /* x286 — Mars colony newswire ticker */
@@ -3902,7 +4079,7 @@
         }
 
         .vs-star.filled {
-            color: #f59e0b;
+            color: var(--accent-highlight);
         }
 
         .vs-star:hover,
@@ -3911,7 +4088,7 @@
         }
 
         .vs-theme-stars:hover .vs-star {
-            color: #f59e0b;
+            color: var(--accent-highlight);
         }
 
         .vs-theme-stars:hover .vs-star:hover ~ .vs-star {
@@ -3959,7 +4136,7 @@
         .vs-panel-stars {
             margin-left: auto;
             padding-left: 6px;
-            color: #ffffff;
+            color: var(--text-main);
             font-size: 11px;
             letter-spacing: 1px;
         }
@@ -4928,17 +5105,17 @@
   line-height: 1;
 }
 .arm-btn.arm-active {
-  background: #c0392b;
-  border-color: #e74c3c;
-  color: #fff;
+  background: var(--accent-danger);
+  border-color: var(--accent-danger);
+  color: var(--arm-active-text);
 }
 .arm-btn:hover {
-  border-color: #e74c3c;
-  color: #e74c3c;
+  border-color: var(--accent-danger);
+  color: var(--accent-danger);
 }
 .arm-btn.arm-active:hover {
-  background: #e74c3c;
-  color: #fff;
+  background: color-mix(in srgb, var(--accent-danger) 80%, white);
+  color: var(--arm-active-text);
 }
 
 /* Track type visual distinction */
