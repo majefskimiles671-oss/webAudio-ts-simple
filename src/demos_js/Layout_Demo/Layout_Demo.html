@@ -419,6 +419,47 @@ Rule - Add comments before code snippets in this format:
                 </div>
                 <div class="master-section">
                     <div class="master-section-header">
+                        <p class="master-heading">Pluck</p>
+                        <div class="master-fx-controls">
+                            <select class="master-preset-select" id="pluck-preset">
+                                <option value="" selected>Preset</option>
+                                <option value="soft">Soft</option>
+                                <option value="warm">Warm</option>
+                                <option value="med">Med</option>
+                                <option value="bright">Bright</option>
+                                <option value="crisp">Crisp</option>
+                                <option value="punchy">Punchy</option>
+                                <option value="long">Long</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">Len</span>
+                        <gain-slider id="pluck-length" min="10" max="200" value="100"></gain-slider>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">Vol</span>
+                        <gain-slider id="pluck-prominence" min="0" max="100" value="50"></gain-slider>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">Atk</span>
+                        <gain-slider id="pluck-attack" min="0" max="100" value="10"></gain-slider>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">Dec</span>
+                        <gain-slider id="pluck-decay" min="0" max="100" value="20"></gain-slider>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">Sus</span>
+                        <gain-slider id="pluck-sustain" min="0" max="100" value="70"></gain-slider>
+                    </div>
+                    <div class="master-gain-row">
+                        <span class="master-gain-label">Rel</span>
+                        <gain-slider id="pluck-release" min="0" max="100" value="15"></gain-slider>
+                    </div>
+                </div>
+                <div class="master-section">
+                    <div class="master-section-header">
                         <p class="master-heading">Tanpura</p>
                         <div class="master-fx-controls">
                             <button class="master-fx-toggle active" id="tanpura-toggle">ON</button>

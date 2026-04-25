@@ -2,9 +2,25 @@
 // Karplus-Strong plucked-string synthesis for chord diagram playback.
 // Algorithm runs in JS (pre-computed buffer), avoiding WebAudio feedback graph instability.
 
-let _synthMode     = "pluck"; // "pluck" | "synth"
-let _synthNoteMult = 1;       // global length multiplier for all synth note playback
-let _activeVoices  = [];      // { oscs, env } — released on re-trigger
+let _synthMode         = "pluck"; // "pluck" | "synth"
+let _synthNoteMult     = 1;       // global length multiplier for all synth note playback
+let _activeVoices      = [];      // { oscs, env } — released on re-trigger
+let _pluckDurationMult = 1;
+let _pluckVolume       = 1;
+let _pluckGainNode     = null;
+let _pluckAttack       = 0.02;
+let _pluckDecay        = 0.2;
+let _pluckSustain      = 0.7;
+let _pluckRelease      = 0.3;
+
+function _getPluckGainNode(ctx) {
+  if (!_pluckGainNode || _pluckGainNode.context !== ctx) {
+    _pluckGainNode = ctx.createGain();
+    _pluckGainNode.gain.value = _pluckVolume;
+    _pluckGainNode.connect(getMasterGainNode());
+  }
+  return _pluckGainNode;
+}
 
 function _midiToFreq(midi) {
   return 440 * Math.pow(2, (midi - 69) / 12);
@@ -87,11 +103,21 @@ function _ksPluck(ctx, freq, startTime, durationSec = 3.5) {
   const buf = ctx.createBuffer(1, samples.length, ctx.sampleRate);
   buf.copyToChannel(samples, 0);
 
+  const A = _pluckAttack, D = _pluckDecay, S = _pluckSustain, R = _pluckRelease;
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(0, startTime);
+  env.gain.linearRampToValueAtTime(1.0, startTime + A);
+  env.gain.linearRampToValueAtTime(S, startTime + A + D);
+  const releaseStart = Math.max(startTime + A + D, startTime + durationSec - R);
+  env.gain.setValueAtTime(S, releaseStart);
+  env.gain.linearRampToValueAtTime(0, releaseStart + R);
+
   const src = ctx.createBufferSource();
   src.buffer = buf;
-  src.connect(getMasterGainNode());
+  src.connect(env);
+  env.connect(_getPluckGainNode(ctx));
   src.start(startTime);
-  src.addEventListener("ended", () => src.disconnect());
+  src.addEventListener("ended", () => { src.disconnect(); env.disconnect(); });
   return src;
 }
 
@@ -148,6 +174,15 @@ function _synthReleaseAll(ctx) {
 function cpGetSynthMode()  { return _synthMode; }
 function cpGetSynthMult()  { return _synthNoteMult; }
 function cpSetSynthMult(m) { _synthNoteMult = m; }
+function cpSetPluckMult(m)    { _pluckDurationMult = m; }
+function cpSetPluckVolume(v) {
+  _pluckVolume = v;
+  if (_pluckGainNode) _pluckGainNode.gain.value = v;
+}
+function cpSetPluckAttack(a)  { _pluckAttack  = a; }
+function cpSetPluckDecay(d)   { _pluckDecay   = d; }
+function cpSetPluckSustain(s) { _pluckSustain = s; }
+function cpSetPluckRelease(r) { _pluckRelease = r; }
 
 function cpSetSynthMode(mode) {
   _synthMode = mode;
@@ -191,10 +226,10 @@ function playChordStrum(chord) {
   }
   if (_isScale(chord)) {
     const freqs = _scaleToFreqs(chord);
-    freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5, 0.375));
+    freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5, 0.375 * _pluckDurationMult));
   } else {
     const freqs = _chordToFreqs(chord);
-    freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.022));
+    freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.022, 3.5 * _pluckDurationMult));
   }
 }
 
@@ -222,10 +257,10 @@ function playChordSpaced(chord) {
     const asc  = _scaleToFreqs(chord);
     const desc = [...asc].reverse();
     const sequence = [...asc, ...desc.slice(1)];
-    sequence.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5, 0.375));
+    sequence.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5, 0.375 * _pluckDurationMult));
   } else {
     const freqs = _chordToFreqs(chord);
-    freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5));
+    freqs.forEach((freq, i) => _ksPluck(ctx, freq, now + i * 0.5, 3.5 * _pluckDurationMult));
   }
 }
 
@@ -237,7 +272,7 @@ function cpScheduleChordAt(chord, ctx, audioTime, mode = "pluck") {
   freqs.forEach((freq, i) => {
     const t = audioTime + i * 0.022;
     if (mode === "pluck") {
-      const src = _ksPluck(ctx, freq, t, 3.5);
+      const src = _ksPluck(ctx, freq, t, 3.5 * _pluckDurationMult);
       if (src) nodes.push(src);
     } else {
       const voice = _synthPlayNote(ctx, freq, t, 2.0 * _synthNoteMult);

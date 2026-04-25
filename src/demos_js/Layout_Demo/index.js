@@ -4192,6 +4192,65 @@ document.getElementById("synth-len-preset").addEventListener("change", (e) => {
   if (playing) midiEnginePlay(tracks, getPlayheadTime());
 });
 
+document.getElementById("pluck-length").addEventListener("input", (e) => {
+  cpSetPluckMult(e.target.value / 100);
+  document.getElementById("pluck-preset").value = "";
+  if (playing) midiEnginePlay(tracks, getPlayheadTime());
+});
+
+document.getElementById("pluck-prominence").addEventListener("input", (e) => {
+  cpSetPluckVolume(e.target.value / 50);
+  document.getElementById("pluck-preset").value = "";
+});
+
+document.getElementById("pluck-attack").addEventListener("input", (e) => {
+  cpSetPluckAttack(e.target.value * 0.002);
+  document.getElementById("pluck-preset").value = "";
+});
+
+document.getElementById("pluck-decay").addEventListener("input", (e) => {
+  cpSetPluckDecay(e.target.value * 0.01);
+  document.getElementById("pluck-preset").value = "";
+});
+
+document.getElementById("pluck-sustain").addEventListener("input", (e) => {
+  cpSetPluckSustain(e.target.value / 100);
+  document.getElementById("pluck-preset").value = "";
+});
+
+document.getElementById("pluck-release").addEventListener("input", (e) => {
+  cpSetPluckRelease(e.target.value * 0.02);
+  document.getElementById("pluck-preset").value = "";
+});
+
+const _pluckPresets = {
+  soft:   { len:  50, prm: 30, atk: 40, dec: 30, sus: 60, rel: 30 },
+  warm:   { len: 130, prm: 45, atk: 20, dec: 40, sus: 75, rel: 25 },
+  med:    { len: 100, prm: 50, atk: 10, dec: 20, sus: 70, rel: 15 },
+  bright: { len:  90, prm: 60, atk:  4, dec: 15, sus: 80, rel: 12 },
+  crisp:  { len:  65, prm: 70, atk:  2, dec:  8, sus: 90, rel:  8 },
+  punchy: { len:  80, prm: 90, atk:  0, dec: 10, sus: 85, rel: 10 },
+  long:   { len: 180, prm: 40, atk: 20, dec: 50, sus: 65, rel: 40 },
+};
+
+document.getElementById("pluck-preset").addEventListener("change", (e) => {
+  const p = _pluckPresets[e.target.value];
+  if (!p) return;
+  document.getElementById("pluck-length").value     = p.len;
+  document.getElementById("pluck-prominence").value = p.prm;
+  document.getElementById("pluck-attack").value     = p.atk;
+  document.getElementById("pluck-decay").value      = p.dec;
+  document.getElementById("pluck-sustain").value    = p.sus;
+  document.getElementById("pluck-release").value    = p.rel;
+  cpSetPluckMult(p.len / 100);
+  cpSetPluckVolume(p.prm / 50);
+  cpSetPluckAttack(p.atk * 0.002);
+  cpSetPluckDecay(p.dec * 0.01);
+  cpSetPluckSustain(p.sus / 100);
+  cpSetPluckRelease(p.rel * 0.02);
+  if (playing) midiEnginePlay(tracks, getPlayheadTime());
+});
+
 document.getElementById("tanpura-mode").addEventListener("change", (e) => {
   tanpuraSetMode(e.target.value);
 });
