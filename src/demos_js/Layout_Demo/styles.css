@@ -366,7 +366,49 @@
             background: var(--bg-panel);
             display: flex;
             align-items: center;
+            gap: 6px;
             padding: 0 10px;
+        }
+
+        #controls-column-spacer .meter {
+            flex: 1;
+            min-width: 0;
+            max-width: 80px;
+            margin-left: auto;
+        }
+
+        #add-audio-track-btn,
+        #add-midi-track-btn {
+            font-size: 11px;
+            padding: 3px 11px;
+            border-radius: 50px;
+            cursor: pointer;
+            flex-shrink: 0;
+            font-weight: 500;
+            line-height: 1;
+            border: 1px solid;
+        }
+
+        #add-audio-track-btn {
+            background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-surface));
+            border-color: color-mix(in srgb, var(--accent-primary) 50%, transparent);
+            color: var(--text-main);
+        }
+
+        #add-midi-track-btn {
+            background: color-mix(in srgb, #9b7ec8 14%, var(--bg-surface));
+            border-color: color-mix(in srgb, #9b7ec8 50%, transparent);
+            color: var(--text-main);
+        }
+
+        #add-audio-track-btn:hover {
+            background: color-mix(in srgb, var(--accent-primary) 28%, var(--bg-surface));
+            border-color: var(--accent-primary);
+        }
+
+        #add-midi-track-btn:hover {
+            background: color-mix(in srgb, #9b7ec8 28%, var(--bg-surface));
+            border-color: #9b7ec8;
         }
 
         #controls-scroll-column {
@@ -768,6 +810,26 @@
         .track-scene.active {
             background: var(--accent-primary);
             color: black;
+            border-color: var(--accent-primary);
+        }
+
+        .track-scenes .instrument-toggle,
+        .track-scenes .add-midi-clip-btn {
+            font-size: 11px;
+            padding: 3px 11px;
+            border-radius: 50px;
+            cursor: pointer;
+            background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-surface));
+            border: 1px solid color-mix(in srgb, var(--accent-primary) 50%, transparent);
+            color: var(--text-main);
+            font-weight: 500;
+            white-space: nowrap;
+            margin-right: auto;
+        }
+
+        .track-scenes .instrument-toggle:hover,
+        .track-scenes .add-midi-clip-btn:hover {
+            background: color-mix(in srgb, var(--accent-primary) 28%, var(--bg-surface));
             border-color: var(--accent-primary);
         }
 
@@ -4585,40 +4647,7 @@
    MIDI Clips
    ============================================================ */
 
-.instrument-toggle,
-.add-midi-clip-btn {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 3px;
-  cursor: pointer;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-}
 
-.instrument-toggle:hover,
-.add-midi-clip-btn:hover {
-  background: var(--bg-hover, color-mix(in srgb, var(--accent-primary) 15%, transparent));
-}
-
-#add-midi-track-btn,
-#add-audio-track-btn {
-  font-size: 10px;
-  padding: 2px 7px;
-  border-radius: 3px;
-  cursor: pointer;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  flex-shrink: 0;
-}
-#add-midi-track-btn {
-  margin-left: auto;
-}
-#add-midi-track-btn:hover,
-#add-audio-track-btn:hover {
-  background: var(--bg-hover, color-mix(in srgb, var(--accent-primary) 15%, transparent));
-}
 
 /* Record Arm Button */
 .arm-btn {
@@ -4646,10 +4675,13 @@
 }
 
 /* Track type visual distinction */
-.is-midi-track.control-row {
-  border-left: 3px solid #7b5ea7;
+.is-midi-track.control-row,
+.is-midi-track.timeline-row {
+  border-left: 3px solid #9b7ec8;
+  background: color-mix(in srgb, #7b5ea7 9%, var(--bg-app));
 }
-.is-audio-track.control-row {
+.is-audio-track.control-row,
+.is-audio-track.timeline-row {
   border-left: 3px solid transparent;
 }
 

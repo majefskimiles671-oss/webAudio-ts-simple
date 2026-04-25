@@ -182,8 +182,9 @@ const KEY_NOTE_MAP = {
   'a': 60, 'w': 61, 's': 62, 'e': 63, 'd': 64, 'f': 65, 't': 66,
   'g': 67, 'y': 68, 'h': 69, 'u': 70, 'j': 71, 'k': 72, 'o': 73, 'l': 74, 'p': 75,
 };
-const _liveKeyNotes = new Map(); // key → { nodes, pitch, startSample, clip }
+const _liveKeyNotes = new Map(); // key → { nodes, pitch, startSample }
 const _activeKeys   = new Set();
+let _pendingMidiNotes = []; // accumulated during MIDI recording, flushed at onRecordStop
 
 //  Track State
 const tracks = [];        // promoted tracks only, front = newest (matches DOM order)
@@ -868,9 +869,13 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
   armBtn.setAttribute("aria-label", "Record arm");
   armBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    track.armed = !track.armed;
-    armBtn.classList.toggle("arm-active", track.armed);
-    syncRecordBtnEnabled();
+    if (!track.armed) {
+      armTrackExclusive(track);
+    } else {
+      track.armed = false;
+      armBtn.classList.remove("arm-active");
+      syncRecordBtnEnabled();
+    }
   }, { signal });
   soloBtn.after(armBtn);
 
@@ -1124,21 +1129,7 @@ function onRecordStart() {
     armedRecordTarget = null;
     recordingTrackRow = null;
   }
-  // Create a recording clip on any armed MIDI tracks
-  const armedMidiTrack = tracks.find(t => t.type === 'midi' && t.armed);
-  if (armedMidiTrack) {
-    const startSec = getPlayheadTime();
-    const clip = {
-      id:              crypto.randomUUID(),
-      startSample:     Math.round(startSec * SAMPLE_RATE),
-      durationSamples: Math.round(8 * secondsPerBar() * SAMPLE_RATE),
-      events:          [],
-      notes:           [],
-    };
-    armedMidiTrack.midiClips.push(clip);
-    renderMidiClip(armedMidiTrack, clip);
-    markDirty();
-  }
+  _pendingMidiNotes = [];
   if (playing && recordingTrackRow) audioEngineStartRecording(); // armed while playing — start immediately
   // if not playing, onTransportStart() will call audioEngineStartRecording() when play begins
   timelineArea.scrollTop = 0;
@@ -1146,17 +1137,17 @@ function onRecordStart() {
 }
 
 async function onRecordStop() {
-  // Flush any keys still held during MIDI recording
+  // Flush any keys still held during MIDI recording → collect to _pendingMidiNotes
   _activeKeys.forEach(key => {
     const live = _liveKeyNotes.get(key);
     if (live) {
       _liveKeyNotes.delete(key);
       live.nodes.forEach(n => { try { n.stop(); } catch (_) {} });
-      if (live.clip && Array.isArray(live.clip.notes)) {
+      if (live.startSample !== null) {
         const endSample = Math.round(getPlayheadTime() * SAMPLE_RATE);
-        live.clip.notes.push({
+        _pendingMidiNotes.push({
           pitch:           live.pitch,
-          startSamples:    Math.max(0, live.startSample - live.clip.startSample),
+          startSample:     live.startSample,
           durationSamples: Math.max(Math.round(0.05 * SAMPLE_RATE), endSample - live.startSample),
           velocity:        100,
         });
@@ -1165,35 +1156,58 @@ async function onRecordStop() {
   });
   _activeKeys.clear();
 
-  if (!recordingTrackRow) {
+  const startTime = recordStartTime;    // capture before clearRecordingRange() nulls it
+  const endTime   = getPlayheadTime();
+
+  // Handle audio recording
+  if (recordingTrackRow) {
+    const duration = Math.max(0, endTime - startTime);
+    const row = recordingTrackRow;
+    recordingTrackRow = null;
     armedRecordTarget = null;
-    return;
-  }
 
-  const startTime      = recordStartTime;    // capture before clearRecordingRange() nulls it
-  const endTime        = getPlayheadTime();
-  const duration       = Math.max(0, endTime - startTime);
-  const row = recordingTrackRow;
-  recordingTrackRow = null;
-  armedRecordTarget = null;
+    const audioBuffer = await audioEngineStopRecording();
 
-  const audioBuffer = await audioEngineStopRecording();
+    const _latencyOffset = audioEngineGetCalibratedLatency() / 1000;
+    addClipToTrack(row, Math.max(0, startTime - _latencyOffset), duration);
 
-  const _latencyOffset = audioEngineGetCalibratedLatency() / 1000;
-  addClipToTrack(row, Math.max(0, startTime - _latencyOffset), duration);
-
-  // Use row reference to find the track — it may have been promoted to `tracks`
-  // by the synchronous applyTransportChange IDLE transition before this await resumed.
-  const clipTrack = findTrackByTimelineRow(row)
-    ?? (recordingLaneTrack?.timelineRow === row ? recordingLaneTrack : null);
-  if (audioBuffer && clipTrack) {
-    const clip = clipTrack.clips[clipTrack.clips.length - 1];
-    if (clip) {
-      audioEngineStoreBuffer(clip.id, audioBuffer);
-      updateClipWaveform(clip.id, audioBuffer, clipTrack.timelineRow);
+    // Use row reference to find the track — it may have been promoted to `tracks`
+    // by the synchronous applyTransportChange IDLE transition before this await resumed.
+    const clipTrack = findTrackByTimelineRow(row)
+      ?? (recordingLaneTrack?.timelineRow === row ? recordingLaneTrack : null);
+    if (audioBuffer && clipTrack) {
+      const clip = clipTrack.clips[clipTrack.clips.length - 1];
+      if (clip) {
+        audioEngineStoreBuffer(clip.id, audioBuffer);
+        updateClipWaveform(clip.id, audioBuffer, clipTrack.timelineRow);
+      }
     }
+  } else {
+    armedRecordTarget = null;
   }
 
+  // Create MIDI clip from recorded notes
+  const armedMidiTrack = tracks.find(t => t.type === 'midi' && t.armed);
+  if (armedMidiTrack && _pendingMidiNotes.length > 0) {
+    const clipStartSample = Math.round(startTime * SAMPLE_RATE);
+    const clipDuration    = Math.max(Math.round((endTime - startTime) * SAMPLE_RATE), Math.round(0.1 * SAMPLE_RATE));
+    const clip = {
+      id:              crypto.randomUUID(),
+      startSample:     clipStartSample,
+      durationSamples: clipDuration,
+      events:          [],
+      notes:           _pendingMidiNotes.map(n => ({
+        pitch:           n.pitch,
+        startSamples:    Math.max(0, n.startSample - clipStartSample),
+        durationSamples: n.durationSamples,
+        velocity:        n.velocity,
+      })),
+    };
+    armedMidiTrack.midiClips.push(clip);
+    renderMidiClip(armedMidiTrack, clip);
+    markDirty();
+  }
+  _pendingMidiNotes = [];
 }
 
 // ============================================================
@@ -1576,22 +1590,24 @@ function addMidiClipToTrack(track) {
   markDirty();
 }
 
+function armTrackExclusive(track) {
+  tracks.forEach(t => {
+    if (t !== track && t.type === track.type && t.armed) {
+      t.armed = false;
+      t.controlRow.querySelector('.arm-btn').classList.remove('arm-active');
+    }
+  });
+  track.armed = true;
+  track.controlRow.querySelector('.arm-btn').classList.add('arm-active');
+  syncRecordBtnEnabled();
+}
+
 function addMidiTrack() {
   trackCount += 1;
   const { name } = pickTrackName();
   const track = createTrack(name, { type: 'midi' });
   tracks.push(track);
-
-  const clip = {
-    id:              crypto.randomUUID(),
-    startSample:     0,
-    durationSamples: Math.round(8 * secondsPerBar() * SAMPLE_RATE),
-    events:          [],
-    notes:           undefined,
-  };
-  track.midiClips.push(clip);
-  renderMidiClip(track, clip);
-
+  armTrackExclusive(track);
   syncTimelineMinWidth();
   syncTimelineOverlay();
   updateSceneMask();
@@ -1604,6 +1620,7 @@ function addAudioTrack() {
   const { name } = pickTrackName();
   const track = createTrack(name, { type: 'audio' });
   tracks.push(track);
+  armTrackExclusive(track);
   syncTimelineMinWidth();
   syncTimelineOverlay();
   updateSceneMask();
@@ -2995,9 +3012,8 @@ document.addEventListener("keydown", (e) => {
       const freq = _midiToFreq(pitch);
       const now = ctx.currentTime;
       const nodes = cpScheduleNoteAt(freq, ctx, now, 10, 100, armedMidiTrack.instrument ?? "pluck");
-      const clip = armedMidiTrack.midiClips[armedMidiTrack.midiClips.length - 1];
-      const startSample = clip ? Math.round(getPlayheadTime() * SAMPLE_RATE) : null;
-      _liveKeyNotes.set(e.key, { nodes, pitch, startSample, clip });
+      const startSample = Math.round(getPlayheadTime() * SAMPLE_RATE);
+      _liveKeyNotes.set(e.key, { nodes, pitch, startSample });
       return;
     }
   }
@@ -3073,17 +3089,14 @@ document.addEventListener("keyup", (e) => {
   if (!live) return;
   _liveKeyNotes.delete(e.key);
   live.nodes.forEach(n => { try { n.stop(); } catch (_) {} });
-  if (live.clip && live.startSample !== null && Array.isArray(live.clip.notes)) {
+  if (live.startSample !== null) {
     const endSample = Math.round(getPlayheadTime() * SAMPLE_RATE);
-    live.clip.notes.push({
+    _pendingMidiNotes.push({
       pitch:           live.pitch,
-      startSamples:    Math.max(0, live.startSample - live.clip.startSample),
+      startSample:     live.startSample,
       durationSamples: Math.max(Math.round(0.05 * SAMPLE_RATE), endSample - live.startSample),
       velocity:        100,
     });
-    const clipEl = document.querySelector(`.midi-clip[data-clip-id="${live.clip.id}"]`);
-    if (clipEl) rerenderMidiClipEvents(live.clip, clipEl);
-    markDirty();
   }
 });
 
