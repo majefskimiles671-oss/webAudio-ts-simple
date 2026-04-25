@@ -125,7 +125,7 @@
             -webkit-appearance: none;
         }
 
-        input[type="number"] { -moz-appearance: textfield; }
+        input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
         /* ----- Prevent Text Selection on Interactive UI ----- */
         .marker-transport,
@@ -4264,8 +4264,6 @@
             cursor: pointer;
         }
 
-        .mixdown-mode-group input[type="checkbox"] {
-        }
 
         /* Done state file list */
 
@@ -4904,7 +4902,7 @@
             font-size: 11px;
             padding: 3px 7px !important;
         }
-}
+/* } */
 
 /* ============================================================
    MIDI Clips
