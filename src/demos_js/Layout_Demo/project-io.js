@@ -21,7 +21,7 @@ function serializeProject() {
   return {
     version: 1,
     id:         projectId,
-    theme:        document.body.getAttribute("data-theme") ?? "dark",
+    theme:        document.body.getAttribute("data-theme") ?? "Ice9",
     notesMono:    document.body.getAttribute("data-notes-font") === "mono",
     viewState:    { ...viewState },
     themeRatings: { ...themeRatings },

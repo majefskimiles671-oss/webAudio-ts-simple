@@ -246,15 +246,16 @@ const viewState = {
 // Authority - View State - Apply -----
 function applyViewState() {
   const toggles = [
-    ["scenes",          "hide-scenes",          "toggle-scenes",          "Hide Scenes",           "Show Scenes"],
-    ["markerTransport", "hide-marker-transport", "toggle-marker-transport","Hide Marker Transport", "Show Marker Transport"],
-    ["tempo",           "hide-tempo",            "toggle-tempo",           "Hide Tempo & Time Sig", "Show Tempo & Time Sig"],
-    ["metronome",       "hide-metronome",        "toggle-metronome",       "Hide Metronome",        "Show Metronome"],
-    ["zoom",            "hide-zoom",             "toggle-zoom",            "Hide Zoom Slider",      "Show Zoom Slider"],
-    ["solo",            "hide-solo",             "toggle-solo",            "Hide Solo Buttons",     "Show Solo Buttons"],
-    ["master",          "hide-master",           "toggle-master",          "Hide Master Controls",  "Show Master Controls"],
-    ["effects",         "hide-effects",          "toggle-effects",         "Hide Effects",          "Show Effects"],
-    ["notes",           "hide-notes",            "toggle-notes",           "Hide Marker Notes",     "Show Marker Notes"],
+    ["scenes",          "hide-scenes",          "toggle-scenes",           "Hide Scenes",           "Show Scenes"],
+    ["markerTransport", "hide-marker-transport", "toggle-marker-transport", "Hide Marker Transport", "Show Marker Transport"],
+    ["tempo",           "hide-tempo",            "toggle-tempo",            "Hide Tempo & Time Sig", "Show Tempo & Time Sig"],
+    ["metronome",       "hide-metronome",        "toggle-metronome",        "Hide Metronome",        "Show Metronome"],
+    ["zoom",            "hide-zoom",             "toggle-zoom",             "Hide Zoom Slider",      "Show Zoom Slider"],
+    ["solo",            "hide-solo",             "toggle-solo",             "Hide Solo Buttons",     "Show Solo Buttons"],
+    ["bottomPanel",     "hide-bottom-panel",     "toggle-bottom-panel",     "Hide Bottom Panel",     "Show Bottom Panel"],
+    ["master",          "hide-master",           "toggle-master",           "Hide Master Controls",  "Show Master Controls"],
+    ["effects",         "hide-effects",          "toggle-effects",          "Hide Effects",          "Show Effects"],
+    ["notes",           "hide-notes",            "toggle-notes",            "Hide Marker Notes",     "Show Marker Notes"],
   ];
   toggles.forEach(([key, cls, menuId, hideLabel, showLabel]) => {
     document.body.classList.toggle(cls, !viewState[key]);
@@ -262,10 +263,6 @@ function applyViewState() {
     if (el) el.textContent = viewState[key] ? hideLabel : showLabel;
   });
 
-  const bp = document.getElementById("bottom-panel");
-  bp.classList.toggle("hidden", !viewState.bottomPanel);
-  const bpBtn = document.getElementById("toggle-bottom-panel");
-  if (bpBtn) bpBtn.textContent = viewState.bottomPanel ? "Hide Bottom Panel" : "Show Bottom Panel";
   if (viewState.bottomPanel) renderBottomPanel();
 
   const cdDialog = document.getElementById("chord-diagrams-dialog");
@@ -3693,14 +3690,6 @@ document.getElementById("video-opacity-slider").addEventListener("input", (e) =>
 
 const bottomPanel = document.getElementById("bottom-panel");
 const bottomPanelHandle = document.getElementById("bottom-panel-handle");
-const toggleBottomPanelBtn = document.getElementById("toggle-bottom-panel");
-
-if (toggleBottomPanelBtn) {
-  toggleBottomPanelBtn.addEventListener("click", () => {
-    viewState.bottomPanel = !viewState.bottomPanel;
-    applyViewState();
-  });
-}
 
 // ----- View Toggles - Event Handlers -----
 function makeViewToggle(menuId, stateKey) {
@@ -3718,7 +3707,9 @@ makeViewToggle("toggle-tempo",           "tempo");
 makeViewToggle("toggle-metronome",       "metronome");
 makeViewToggle("toggle-zoom",            "zoom");
 makeViewToggle("toggle-solo",            "solo");
+makeViewToggle("toggle-bottom-panel",    "bottomPanel");
 makeViewToggle("toggle-master",          "master");
+makeViewToggle("toggle-effects",         "effects");
 makeViewToggle("toggle-notes",           "notes");
 
 // ----- View Settings Dialog - Event Handlers -----
@@ -4409,7 +4400,9 @@ markers.push({ id: ORIGIN_MARKER_ID, time: secondsPerBar() * 0, note: "", chordI
 // markers.push({ id: crypto.randomUUID(), time: secondsPerBar() * 8, note: "Chorus begins\nBig energy here\nDon't forget the drop\nRide it out to bar 12" });
 selectedMarkerId = ORIGIN_MARKER_ID;
 
-setTheme("Dark", { silent: true });
+// Set default theme
+setTheme("Ice9", { silent: true });
+applyViewState();
 
 // Populate master meter segments
 document.querySelectorAll(".master-meter-bar").forEach(bar => {

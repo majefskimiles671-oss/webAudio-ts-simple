@@ -2410,7 +2410,7 @@
             position: relative;
         }
 
-        #bottom-panel.hidden {
+        body.hide-bottom-panel #bottom-panel {
             display: none;
         }
 
