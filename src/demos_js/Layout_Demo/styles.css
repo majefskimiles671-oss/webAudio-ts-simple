@@ -1187,31 +1187,6 @@
             filter: brightness(1.25);
         }
 
-        .waveform-delete-btn {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--accent-danger);
-            color: #fff;
-            border: none;
-            font-size: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.1s;
-            z-index: 2;
-        }
-
-        .waveform.selected .waveform-delete-btn {
-            opacity: 1;
-            pointer-events: auto;
-        }
 
         .waveform-canvas {
             display: block;
@@ -1229,7 +1204,7 @@
         
         /* Themes CSS */
 
-        body[data-theme="dark"] {
+        body[data-theme="Dark"] {
             /* Surfaces */
             --bg-app: #111827;
             --bg-surface: #1f2937;
@@ -1256,7 +1231,7 @@
         }
 
 
-        body[data-theme="light"] {
+        body[data-theme="Light"] {
 
             /* Surfaces */
             --bg-app: #f3f4f6;
@@ -1285,7 +1260,7 @@
         }
 
 
-        body[data-theme="studio"] {
+        body[data-theme="Studio"] {
             /* Surfaces */
             --bg-app: #020617;
             --bg-surface: #0f172a;
@@ -2043,6 +2018,7 @@
 
 
         body.hide-master #bottom-panel-master { display: none; }
+        body.hide-effects #master-effects { display: none; }
         body.hide-notes #bottom-panel-content { display: none; }
 
         /* ----- Accessibility ----- */

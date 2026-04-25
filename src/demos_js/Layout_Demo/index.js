@@ -227,16 +227,17 @@ function clearDirty() {
 
 // State - View State - Truth Layer -----
 const viewState = {
-  bottomPanel:          true,
-  master:               true,
-  notes:                true,
-  scenes:               true,
+  bottomPanel:          false,
+  master:               false,
+  effects:              false,
+  notes:                false,
+  scenes:               false,
   markerTransport:      true,
   tempo:                true,
   metronome:            true,
   zoom:                 true,
-  solo:                 true,
-  chordDiagrams:        true,
+  solo:                 false,
+  chordDiagrams:        false,
   markerLookaheadBeats: 1,
   hue:                  0,
   saturation:           100,
@@ -252,6 +253,7 @@ function applyViewState() {
     ["zoom",            "hide-zoom",             "toggle-zoom",            "Hide Zoom Slider",      "Show Zoom Slider"],
     ["solo",            "hide-solo",             "toggle-solo",            "Hide Solo Buttons",     "Show Solo Buttons"],
     ["master",          "hide-master",           "toggle-master",          "Hide Master Controls",  "Show Master Controls"],
+    ["effects",         "hide-effects",          "toggle-effects",         "Hide Effects",          "Show Effects"],
     ["notes",           "hide-notes",            "toggle-notes",           "Hide Marker Notes",     "Show Marker Notes"],
   ];
   toggles.forEach(([key, cls, menuId, hideLabel, showLabel]) => {
@@ -570,17 +572,6 @@ function deleteSelectedClip() {
   markDirty();
 }
 
-function attachClipDeleteButton(waveform) {
-  const btn = document.createElement("button");
-  btn.className = "waveform-delete-btn";
-  btn.innerHTML = "&#x2715;";
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    selectClip(waveform.dataset.clipId);
-    deleteSelectedClip();
-  });
-  waveform.appendChild(btn);
-}
 
 // ----- Marker Selection
 function selectMarkerByIndex(index) {
@@ -1031,7 +1022,6 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
   drawDummyWaveform(canvas);
 
   waveform.appendChild(canvas);
-  attachClipDeleteButton(waveform);
 
   // Drag to move audio clip
   const AUDIO_DRAG_THRESHOLD = 5;
@@ -1616,8 +1606,8 @@ function armTrackExclusive(track) {
 function addMidiTrack() {
   trackCount += 1;
   const { name } = pickTrackName();
-  const track = createTrack(name, { type: 'midi' });
-  tracks.push(track);
+  const track = createTrack(name, { type: 'midi', prepend: true });
+  tracks.unshift(track);
   armTrackExclusive(track);
   syncTimelineMinWidth();
   syncTimelineOverlay();
@@ -1629,8 +1619,8 @@ function addMidiTrack() {
 function addAudioTrack() {
   trackCount += 1;
   const { name } = pickTrackName();
-  const track = createTrack(name, { type: 'audio' });
-  tracks.push(track);
+  const track = createTrack(name, { type: 'audio', prepend: true });
+  tracks.unshift(track);
   armTrackExclusive(track);
   syncTimelineMinWidth();
   syncTimelineOverlay();
@@ -3735,10 +3725,10 @@ makeViewToggle("toggle-notes",           "notes");
 const _viewSettingsOverlay = document.getElementById("view-settings-overlay");
 
 const VS_PRESETS = {
-  minimal:  { scenes: false, markerTransport: false, tempo: true,  metronome: false, zoom: false, solo: false, bottomPanel: false, master: false, notes: false, chordDiagrams: false },
-  simple:   { scenes: false, markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: false, bottomPanel: false, master: false, notes: false, chordDiagrams: false },
-  standard: { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  notes: true,  chordDiagrams: false },
-  compose:  { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  notes: true,  chordDiagrams: true  },
+  minimal:  { scenes: false, markerTransport: false, tempo: true,  metronome: false, zoom: false, solo: false, bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false },
+  simple:   { scenes: false, markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: false, bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false },
+  standard: { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: false, notes: true,  chordDiagrams: false },
+  compose:  { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: true  },
 };
 
 _viewSettingsOverlay.querySelectorAll(".vs-preset-btn").forEach(btn => {
