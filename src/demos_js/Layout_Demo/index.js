@@ -870,6 +870,7 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     e.stopPropagation();
     track.armed = !track.armed;
     armBtn.classList.toggle("arm-active", track.armed);
+    syncRecordBtnEnabled();
   }, { signal });
   soloBtn.after(armBtn);
 
@@ -951,9 +952,6 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
 
   // Instrument toggle + add-MIDI button (MIDI tracks only)
   if (type === 'midi') {
-    const trackRow3 = document.createElement("div");
-    trackRow3.className = "track-row-3";
-
     const instrBtn = document.createElement("button");
     instrBtn.className = "instrument-toggle";
     instrBtn.textContent = "Pluck";
@@ -973,8 +971,7 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
       addMidiClipToTrack(track);
     }, { signal });
 
-    trackRow3.append(instrBtn, addMidiBtn);
-    controlRow.querySelector(".row-inner").appendChild(trackRow3);
+    controlRow.querySelector(".track-scenes").prepend(instrBtn, addMidiBtn);
   }
 
   track.controlRow  = controlRow;
@@ -1125,7 +1122,7 @@ function onRecordStart() {
     recordingTrackRow = armedAudioTrack.timelineRow;
   } else {
     armedRecordTarget = null;
-    recordingTrackRow = recordingLaneTrack.timelineRow;
+    recordingTrackRow = null;
   }
   // Create a recording clip on any armed MIDI tracks
   const armedMidiTrack = tracks.find(t => t.type === 'midi' && t.armed);
@@ -1142,7 +1139,7 @@ function onRecordStart() {
     renderMidiClip(armedMidiTrack, clip);
     markDirty();
   }
-  if (playing) audioEngineStartRecording(); // armed while playing — start immediately
+  if (playing && recordingTrackRow) audioEngineStartRecording(); // armed while playing — start immediately
   // if not playing, onTransportStart() will call audioEngineStartRecording() when play begins
   timelineArea.scrollTop = 0;
   controlsScrollCol.scrollTop = 0;
@@ -1176,10 +1173,9 @@ async function onRecordStop() {
   const startTime      = recordStartTime;    // capture before clearRecordingRange() nulls it
   const endTime        = getPlayheadTime();
   const duration       = Math.max(0, endTime - startTime);
-  const row            = recordingTrackRow;
-  const wasArmedTarget = armedRecordTarget;
-  recordingTrackRow  = null;
-  armedRecordTarget  = null;
+  const row = recordingTrackRow;
+  recordingTrackRow = null;
+  armedRecordTarget = null;
 
   const audioBuffer = await audioEngineStopRecording();
 
@@ -1198,16 +1194,6 @@ async function onRecordStop() {
     }
   }
 
-  if (wasArmedTarget) {
-    // Recording went to an already-promoted armed track — no lane promotion needed.
-    // promoteRecordingLane() (called synchronously from applyTransportChange) already
-    // set inRecordingSession = false and bailed because the recording lane has no waveform.
-    return;
-  }
-
-  // Synchronous promoteRecordingLane() in applyTransportChange bailed (no waveform yet).
-  // Now that the clip exists, promote only if transport is already idle.
-  if (getTransportState() === "IDLE") promoteRecordingLane();
 }
 
 // ============================================================
@@ -1254,10 +1240,8 @@ function renderCompletedRecordRanges() {
 }
 
 function clearRecordingRange() {
-  if (recordStartTime !== null) {
-    _completedRecordRanges.push({ startSec: recordStartTime, endSec: getPlayheadTime() });
-    renderCompletedRecordRanges();
-  }
+  _completedRecordRanges.length = 0;
+  renderCompletedRecordRanges();
   recordRange.style.display = "none";
   recordStartTime = null;
 }
@@ -2007,6 +1991,11 @@ function scrubToMouseEvent(e) {
   }
 }
 
+function syncRecordBtnEnabled() {
+  const anyArmed = tracks.some(t => t.armed);
+  recordBtn.disabled = !recording && !anyArmed;
+}
+
 let _lastAnnouncedTransportState = null;
 function syncTransportUI() {
   const state = getTransportState();
@@ -2024,6 +2013,7 @@ function syncTransportUI() {
     state === "RECORD" || state === "PLAY_RECORD",
   );
   returnToBeginningBtn.disabled = inRecordingSession;
+  syncRecordBtnEnabled();
   renderMarkerTransport();
 
   if (state !== _lastAnnouncedTransportState) {
@@ -2642,7 +2632,7 @@ playBtn.onclick = () => {
 
 recordBtn.onclick = async () => {
   recordInteraction("transport");
-  if (!recording) {
+  if (!recording && tracks.some(t => t.type === 'audio' && t.armed)) {
     try {
       await audioEngineEnsureMicStream();
     } catch {
@@ -2817,6 +2807,7 @@ function _executeDeleteTrack() {
   track.timelineRow.remove();
   syncTimelineMinWidth();
   syncTimelineOverlay();
+  syncRecordBtnEnabled();
   markDirty();
   announce(`${trackName} deleted`);
   closeTrackEditDialog();
@@ -3331,7 +3322,7 @@ function onTransportStart() {
     getPlayheadTime()
   );
   syncTrackMutes();
-  if (recording) audioEngineStartRecording(); // record was armed before play — start now
+  if (recording && recordingTrackRow) audioEngineStartRecording(); // record was armed before play — start now
   if (_tanpuraEnabled) {
     const cur = markers.find(m => m.id === selectedMarkerId);
     if (cur) _applyTanpuraMarker(cur);
@@ -4693,4 +4684,5 @@ document.querySelectorAll('.master-section-header').forEach(header => {
 });
 
 pianoRollInit();
+syncRecordBtnEnabled();
 

@@ -4585,13 +4585,6 @@
    MIDI Clips
    ============================================================ */
 
-.track-row-3 {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-}
-
 .instrument-toggle,
 .add-midi-clip-btn {
   font-size: 10px;
