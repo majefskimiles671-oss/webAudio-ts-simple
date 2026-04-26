@@ -492,6 +492,21 @@ Rule - Add comments before code snippets in this format:
                 </div>
                 <div class="master-section">
                     <div class="master-section-header">
+                        <p class="master-heading">GM</p>
+                    </div>
+                    <div class="master-section-body">
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Font</span>
+                            <button id="sf2-load-btn" class="sf2-load-btn" title="Load a .sf2 soundfont file for this project">Load…</button>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label"></span>
+                            <span id="sf2-name-display" class="sf2-name-display" title="Currently loaded soundfont">none</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="master-section">
+                    <div class="master-section-header">
                         <p class="master-heading">Tanpura</p>
                         <div class="master-fx-controls">
                             <button class="master-fx-toggle active" id="tanpura-toggle">ON</button>
@@ -868,6 +883,7 @@ Rule - Add comments before code snippets in this format:
 <script src="./midiExport.js"></script>
 <script src="./pianoRoll.js"></script>
 <script src="./gmMidi.js"></script>
+<script src="./sf2Parser.js"></script>
 <script src="./soundfontEngine.js"></script>
 <script src="./midiEngine.js"></script>
 <script src="./index.js"></script>

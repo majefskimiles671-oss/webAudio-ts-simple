@@ -2722,6 +2722,31 @@
             box-shadow: 0 0 3px color-mix(in srgb, var(--meter-mid) 67%, transparent);
         }
 
+        .sf2-load-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            cursor: pointer;
+            letter-spacing: 0.06em;
+            flex-shrink: 0;
+        }
+        .sf2-load-btn:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+        .sf2-load-btn:disabled { opacity: 0.5; cursor: default; }
+
+        .sf2-name-display {
+            font-size: 9px;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            min-width: 0;
+        }
+
         .master-gain-row {
             display: flex;
             align-items: center;

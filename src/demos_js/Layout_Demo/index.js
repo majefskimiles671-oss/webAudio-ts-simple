@@ -4532,6 +4532,52 @@ masterOutputSelect.addEventListener("change", async () => {
   await audioEngineSetMasterOutput(deviceId);
 });
 
+// GM soundfont section
+function _updateSf2Display() {
+  const el   = document.getElementById("sf2-name-display");
+  const name = sfGetLoadedName();
+  el.textContent = name ?? "none";
+  el.title       = name ? `Loaded: ${name}` : "No soundfont loaded";
+}
+
+document.getElementById("sf2-load-btn").addEventListener("click", async () => {
+  const input = document.createElement("input");
+  input.type   = "file";
+  input.accept = ".sf2,audio/soundfont";
+  input.addEventListener("change", async () => {
+    const file = input.files[0];
+    if (!file) return;
+    const btn = document.getElementById("sf2-load-btn");
+    btn.textContent = "Loading…";
+    btn.disabled    = true;
+    try {
+      await sfLoadFromFile(file);
+      _updateSf2Display();
+      markDirty();
+      log(`[sf2] loaded: ${file.name}`);
+    } catch (err) {
+      log("[sf2] load failed:", err);
+      alert(`Soundfont load failed: ${err.message}`);
+    } finally {
+      btn.textContent = "Load…";
+      btn.disabled    = false;
+    }
+  });
+  input.click();
+});
+
+// Auto-load default.sf2 from the same origin on startup
+(async () => {
+  try {
+    const resp = await fetch("./midi/default.sf2");
+    if (!resp.ok) return;
+    const ab = await resp.arrayBuffer();
+    await sfLoadDefault(ab);
+    _updateSf2Display();
+    log("[sf2] auto-loaded default.sf2");
+  } catch { /* no default.sf2 present — use CDN */ }
+})();
+
 document.getElementById("master-reverb-wet").addEventListener("input", (e) => {
   audioEngineSetReverbWet(e.target.value / 100);
   document.getElementById("reverb-preset").value = "";

@@ -383,6 +383,7 @@ function serializeProject() {
           s.classList.contains('collapsed'),
         ])
       ),
+      soundfontFileName: (typeof sfGetLoadedName === 'function') ? sfGetLoadedName() : null,
     },
     video: videoFile
       ? {
@@ -707,6 +708,19 @@ function deserializeProject(data) {
 // Save / Open (File System Access API) -----
 // ============================================================
 
+async function loadSoundfontFromFolder(dataHandle) {
+  if (typeof sfLoadFromFile !== 'function') return;
+  try {
+    const sfHandle = await dataHandle.getFileHandle('soundfont.sf2');
+    const sfFile   = await sfHandle.getFile();
+    await sfLoadFromFile(sfFile);
+  } catch {
+    // no project-specific soundfont — revert to default.sf2 if loaded
+    if (typeof sfClearProjectFont === 'function') sfClearProjectFont();
+  }
+  if (typeof _updateSf2Display === 'function') _updateSf2Display();
+}
+
 async function loadVideoFromFolder(dataHandle, data) {
   if (!data.video?.filename) return;
   try {
@@ -761,6 +775,17 @@ async function saveProject() {
       }
     }
 
+    // Write project soundfont into data/ if a custom one is loaded
+    if (typeof sfGetProjectFile === 'function') {
+      const sfFile = sfGetProjectFile();
+      if (sfFile) {
+        const sfHandle = await dataHandle.getFileHandle('soundfont.sf2', { create: true });
+        const sfWriter = await sfHandle.createWritable();
+        await sfWriter.write(sfFile);
+        await sfWriter.close();
+      }
+    }
+
     // Write video file into data/
     if (videoFile && data.video) {
       const vidHandle = await dataHandle.getFileHandle(data.video.filename, { create: true });
@@ -812,6 +837,10 @@ async function reconnectProjectFolder() {
       }
     }
     await loadVideoFromFolder(dataHandle, projectData);
+    await loadSoundfontFromFolder(dataHandle);
+  } else {
+    if (typeof sfClearProjectFont === 'function') sfClearProjectFont();
+    if (typeof _updateSf2Display === 'function') _updateSf2Display();
   }
   clearDirty();
   return true;
@@ -863,6 +892,10 @@ async function openProject() {
         }
       }
       await loadVideoFromFolder(dataHandle, data);
+      await loadSoundfontFromFolder(dataHandle);
+    } else {
+      if (typeof sfClearProjectFont === 'function') sfClearProjectFont();
+      if (typeof _updateSf2Display === 'function') _updateSf2Display();
     }
 
     clearDirty();
