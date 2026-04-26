@@ -197,10 +197,27 @@ function audioEngineSetTrackPan(trackId, pan) {
 }
 
 async function audioEngineGetOutputDevices() {
-  if (!navigator.mediaDevices?.enumerateDevices) return [];
-  const devices = await navigator.mediaDevices.enumerateDevices();
+  if (!navigator.mediaDevices?.enumerateDevices) {
+    log('[audio-engine] enumerateDevices not available (insecure context?)');
+    return [];
+  }
+  let devices = await navigator.mediaDevices.enumerateDevices();
+  // Chrome returns empty labels without mic permission (common on HTTP). If all
+  // audiooutput labels are blank, request mic access once to unlock labels, then
+  // re-enumerate and immediately release the stream.
+  const rawOutputs = devices.filter(d => d.kind === 'audiooutput' && d.deviceId !== 'default');
+  if (rawOutputs.length > 0 && rawOutputs.every(d => !d.label)) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop());
+      devices = await navigator.mediaDevices.enumerateDevices();
+    } catch (err) {
+      log('[audio-engine] getUserMedia for device labels failed:', err);
+    }
+  }
+  log('[audio-engine] all devices:', devices.map(d => ({ kind: d.kind, label: d.label, deviceId: d.deviceId })));
   const outputs = devices.filter(d => d.kind === 'audiooutput' && d.deviceId !== 'default');
-  log('[audio-engine] output devices:', outputs.map(d => ({ label: d.label, deviceId: d.deviceId })));
+  log('[audio-engine] filtered outputs (non-default audiooutput):', outputs.map(d => ({ label: d.label, deviceId: d.deviceId })));
   return outputs;
 }
 
