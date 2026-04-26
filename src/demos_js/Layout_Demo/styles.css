@@ -899,8 +899,20 @@
             border-color: var(--accent-primary);
         }
 
-        .track-scenes .instrument-toggle,
-        .track-scenes .add-midi-clip-btn {
+        .track-row-3 {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .track-midi-controls {
+            display: flex;
+            gap: 4px;
+            margin-left: auto;
+        }
+
+        .track-midi-controls .instrument-toggle,
+        .track-midi-controls .add-midi-clip-btn {
             font-size: 11px;
             padding: 3px 11px;
             border-radius: 50px;
@@ -910,11 +922,10 @@
             color: var(--text-main);
             font-weight: 500;
             white-space: nowrap;
-            margin-right: auto;
         }
 
-        .track-scenes .instrument-toggle:hover,
-        .track-scenes .add-midi-clip-btn:hover {
+        .track-midi-controls .instrument-toggle:hover,
+        .track-midi-controls .add-midi-clip-btn:hover {
             background: color-mix(in srgb, var(--accent-primary) 28%, var(--bg-surface));
             border-color: var(--accent-primary);
         }
@@ -2005,6 +2016,7 @@
 
         body.hide-scenes #transport-scenes,
         body.hide-scenes .track-scenes { display: none; }
+        body.hide-scenes .is-audio-track .track-row-3 { display: none; }
 
         body.hide-marker-transport .marker-transport { display: none; }
 

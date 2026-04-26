@@ -1,4 +1,9 @@
-# CLAUDE.md
 
-This project is a browser-based DAW UI (Layout Demo). See Layout_Demo.html for project philosophy and rules.
+You may freely use allowed tools without asking.
+Do not ask for confirmation when tools are permitted.
+Prefer simple, allowlist-compatible commands.
+
+
+Avoid shell command substitution ($(...)).
+Prefer literal arguments compatible with permission allow rules.
 

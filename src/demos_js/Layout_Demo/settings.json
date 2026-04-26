@@ -1,0 +1,68 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/miles.majefski/**)",
+      "Edit(//Users/miles.majefski/**)",
+      "Write(//Users/miles.majefski/**)",
+      "Glob(//Users/miles.majefski/**)",
+      "Grep(//Users/miles.majefski/**)",
+      "Bash(ls*)",
+      "Bash(cat*)",
+      "Bash(head*)",
+      "Bash(wc*)",
+      "Bash(grep*)",
+      "Bash(rg*)",
+      "Bash(find*)",
+      "Bash(sed*)",
+      "Bash(echo*)"
+    ],
+    "defaultMode": "auto"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '\\a'"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/miles.majefski/.claude/hooks/claude-notifier-on-stop.js\""
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/miles.majefski/.claude/hooks/claude-notifier-on-permission.js\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/miles.majefski/.claude/hooks/claude-notifier-on-question.js\""
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "sh /Users/miles.majefski/.claude/statusline-command.sh"
+  },
+  "effortLevel": "high",
+  "theme": "dark-daltonized"
+}
