@@ -383,7 +383,7 @@ function serializeProject() {
           s.classList.contains('collapsed'),
         ])
       ),
-      soundfontFileName: (typeof sfGetLoadedName === 'function') ? sfGetLoadedName() : null,
+      soundfontFileName: (typeof sfGetProjectFile === 'function') ? (sfGetProjectFile()?.name ?? null) : null,
     },
     video: videoFile
       ? {
