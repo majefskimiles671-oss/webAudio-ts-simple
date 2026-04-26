@@ -8,6 +8,7 @@ let _prScrollY   = 0;
 let _prScrollX   = 0;
 let _prZoom      = 1;   // horizontal zoom multiplier
 let _prSelected  = new Set(); // indices of selected notes
+let _prActiveKeyPitch = null; // pitch currently pressed on keyboard sidebar
 
 const PR_ROW_H    = 14;   // pixels per semitone
 const PR_KEY_W    = 44;   // piano keyboard width
@@ -77,7 +78,8 @@ function _prDrawKeys(canvas) {
     const y = _prPitchToY(pitch);
     if (y + PR_ROW_H < 0 || y > canvas.height) continue;
     const black = _prIsBlack(pitch);
-    ctx.fillStyle = black ? "#1a1a1a" : "#e0e0e0";
+    const isActive = pitch === _prActiveKeyPitch;
+    ctx.fillStyle = isActive ? "#5a9fd4" : (black ? "#1a1a1a" : "#e0e0e0");
     ctx.fillRect(0, y, w, PR_ROW_H - 1);
 
     // C note label
@@ -377,6 +379,37 @@ function _prResizeCanvases() {
   rollCvs.height = h;
 }
 
+// Piano Roll - Keys Sidebar - Pointer Handlers -----
+function _prKeysOnPointerDown(e) {
+  const canvas = _prKeysCanvas();
+  const y = e.clientY - canvas.getBoundingClientRect().top;
+  const pitch = _prYToPitch(y);
+  if (pitch < PR_MIN_PITCH || pitch > PR_MAX_PITCH) return;
+  canvas.setPointerCapture(e.pointerId);
+  _prActiveKeyPitch = pitch;
+  _prDrawKeys(canvas);
+  const ctx = getAudioContext();
+  ctx.resume();
+  cpScheduleNoteAt(_prMidiToFreq(pitch), ctx, ctx.currentTime, 0.5, 100, _prTrack.instrument ?? "pluck");
+}
+
+function _prKeysOnPointerMove(e) {
+  if (e.buttons === 0) return;
+  const canvas = _prKeysCanvas();
+  const y = e.clientY - canvas.getBoundingClientRect().top;
+  const pitch = _prYToPitch(y);
+  if (pitch === _prActiveKeyPitch || pitch < PR_MIN_PITCH || pitch > PR_MAX_PITCH) return;
+  _prActiveKeyPitch = pitch;
+  _prDrawKeys(canvas);
+  const ctx = getAudioContext();
+  cpScheduleNoteAt(_prMidiToFreq(pitch), ctx, ctx.currentTime, 0.5, 100, _prTrack.instrument ?? "pluck");
+}
+
+function _prKeysOnPointerUp() {
+  _prActiveKeyPitch = null;
+  _prDrawKeys(_prKeysCanvas());
+}
+
 // Piano Roll - Authority - Open/Close -----
 function pianoRollOpen(clip, track) {
   _prClip    = clip;
@@ -402,6 +435,16 @@ function pianoRollOpen(clip, track) {
   newCanvas.addEventListener("pointermove", _prOnPointerMove);
   newCanvas.addEventListener("pointerup",   _prOnPointerUp);
   newCanvas.addEventListener("wheel", _prOnWheel, { passive: false });
+
+  const oldKeys = document.getElementById("piano-roll-keys");
+  const newKeys = document.createElement("canvas");
+  newKeys.id = "piano-roll-keys";
+  oldKeys.replaceWith(newKeys);
+
+  newKeys.addEventListener("pointerdown",  _prKeysOnPointerDown);
+  newKeys.addEventListener("pointermove",  _prKeysOnPointerMove);
+  newKeys.addEventListener("pointerup",    _prKeysOnPointerUp);
+  newKeys.addEventListener("pointerleave", _prKeysOnPointerUp);
 
   requestAnimationFrame(() => {
     _prResizeCanvases();
