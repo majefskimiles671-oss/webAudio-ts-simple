@@ -2,13 +2,37 @@
 // Schedules MIDI chord-clip events against the WebAudio clock.
 // Pattern mirrors audioEnginePlay / audioEngineStop in audio-engine.js.
 
-const LOOKAHEAD_SECS        = 0.5;   // schedule this far ahead of ctx.currentTime
-const SCHEDULE_INTERVAL_MS  = 100;   // how often to refill the schedule window
+const LOOKAHEAD_SECS  = 0.5; // schedule this far ahead of ctx.currentTime
 
 let _scheduledMidiNodes = [];
 let _pendingNoteQueue   = []; // { audioTime, freq, durationSec, velocity, instrument, dest }
-let _schedulerTimer     = null;
 const GM_LIVE_CHANNEL   = 15; // reserved for live keyboard input; never assigned to playback tracks
+
+// Helpers - MIDI Engine -----
+// Worker-based timer: runs in a separate thread so background-tab throttling
+// (which collapses main-thread setTimeout to ~1 s) never causes note dropouts.
+const _timerWorker = new Worker(URL.createObjectURL(new Blob([`
+  let _interval = null;
+  self.onmessage = (e) => {
+    if (e.data === 'start') { clearInterval(_interval); _interval = setInterval(() => self.postMessage('tick'), 25); }
+    if (e.data === 'stop')  { clearInterval(_interval); _interval = null; }
+  };
+`], { type: 'application/javascript' })));
+
+_timerWorker.onmessage = () => _schedulerTick();
+
+function _schedulerTick() {
+  const ctx     = getAudioContext();
+  const horizon = ctx.currentTime + LOOKAHEAD_SECS;
+
+  while (_pendingNoteQueue.length > 0 && _pendingNoteQueue[0].audioTime <= horizon) {
+    const { audioTime, freq, durationSec, velocity, instrument, dest } = _pendingNoteQueue.shift();
+    const nodes = cpScheduleNoteAt(freq, ctx, audioTime, durationSec, velocity, instrument, dest);
+    _scheduledMidiNodes.push(...nodes);
+  }
+
+  if (_pendingNoteQueue.length === 0) _timerWorker.postMessage('stop');
+}
 
 // Shared DOM References - MIDI Engine -----
 // Fills _pendingNoteQueue with all upcoming notes and kicks off the scheduler loop.
@@ -107,30 +131,11 @@ async function midiEnginePlay(tracks, playheadSeconds) {
   }
 
   _pendingNoteQueue.sort((a, b) => a.audioTime - b.audioTime);
-  _schedulerTick();
-}
-
-// Helpers - MIDI Engine -----
-// Lookahead scheduler: fires every SCHEDULE_INTERVAL_MS, creates AudioNodes only for
-// notes within the next LOOKAHEAD_SECS window. Keeps the audio graph small at all times.
-function _schedulerTick() {
-  const ctx     = getAudioContext();
-  const horizon = ctx.currentTime + LOOKAHEAD_SECS;
-
-  while (_pendingNoteQueue.length > 0 && _pendingNoteQueue[0].audioTime <= horizon) {
-    const { audioTime, freq, durationSec, velocity, instrument, dest } = _pendingNoteQueue.shift();
-    const nodes = cpScheduleNoteAt(freq, ctx, audioTime, durationSec, velocity, instrument, dest);
-    _scheduledMidiNodes.push(...nodes);
-  }
-
-  if (_pendingNoteQueue.length > 0) {
-    _schedulerTimer = setTimeout(_schedulerTick, SCHEDULE_INTERVAL_MS);
-  }
+  if (_pendingNoteQueue.length > 0) _timerWorker.postMessage('start');
 }
 
 function midiEngineStop() {
-  clearTimeout(_schedulerTimer);
-  _schedulerTimer    = null;
+  _timerWorker.postMessage('stop');
   _pendingNoteQueue  = [];
   _scheduledMidiNodes.forEach(n => { try { n.stop(0); } catch (_) {} });
   _scheduledMidiNodes = [];
