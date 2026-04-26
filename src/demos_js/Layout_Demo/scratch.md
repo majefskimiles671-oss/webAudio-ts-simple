@@ -147,6 +147,8 @@ One latent caveat worth knowing: SAMPLE_RATE is hardcoded to 48000 at index.js:1
 Short answer: importing WAVs of any sample rate or bit depth just works.
 
 ---
+the real solution would be a soundfont-based synthesizer in the browser — libraries like MIDI.js or soundfont-player load SF2 font files and handle all of this in Web Audio directly. Worth considering if you want this to be self-contained.
+---
 ---
 
 ---
@@ -154,15 +156,15 @@ npm run serve
 http://localhost:8080/src/demos_js/Layout_Demo/Layout_Demo.html
 
 ```bash
-git switch -c miles_cool
+git switch -c miles_import_midi
 ```
 
 ```bash
 git switch main
-git merge miles_cool
+git merge miles_import_midi
 ```
 
 ```bash
 git push
-git branch -d miles_cool
+git branch -d miles_import_midi
 ```

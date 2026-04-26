@@ -590,10 +590,19 @@ function deserializeProject(data) {
     if (opEl) opEl.value = track.opacity;
     track.timelineRow.style.setProperty('--row-opacity', track.opacity / 100);
 
-    // Instrument (Pluck / Synth)
+    // Instrument (Pluck / Synth / GM)
     track.instrument = saved.instrument ?? "pluck";
     const instrBtn = track.controlRow.querySelector(".instrument-toggle");
-    if (instrBtn) instrBtn.textContent = track.instrument === "synth" ? "Synth" : "Pluck";
+    if (instrBtn) {
+      instrBtn.textContent = { pluck: "Pluck", synth: "Synth", gm: "GM" }[track.instrument] ?? "Pluck";
+      if (track.instrument === "gm") {
+        gmMidiEnsureAccess().then(() => {
+          const name = gmMidiOutputName();
+          instrBtn.textContent = name ? "GM ✓" : "GM ✗";
+          instrBtn.title = name ? `GM → ${name}` : "GM: no MIDI output found";
+        });
+      }
+    }
 
     // Output device
     track.outputDeviceId = saved.outputDeviceId ?? null;

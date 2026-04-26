@@ -993,11 +993,19 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     const instrBtn = document.createElement("button");
     instrBtn.className = "instrument-toggle";
     instrBtn.textContent = "Pluck";
-    instrBtn.title = "Switch instrument (Pluck / Synth)";
-    instrBtn.addEventListener("click", (e) => {
+    instrBtn.title = "Switch instrument (Pluck / Synth / GM)";
+    const _instrCycle = ["pluck", "synth", "gm"];
+    instrBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      track.instrument = track.instrument === "pluck" ? "synth" : "pluck";
-      instrBtn.textContent = track.instrument === "synth" ? "Synth" : "Pluck";
+      const idx = _instrCycle.indexOf(track.instrument ?? "pluck");
+      track.instrument = _instrCycle[(idx + 1) % _instrCycle.length];
+      instrBtn.textContent = { pluck: "Pluck", synth: "Synth", gm: "GM" }[track.instrument] ?? "Pluck";
+      if (track.instrument === "gm") {
+        await gmMidiEnsureAccess();
+        const name = gmMidiOutputName();
+        instrBtn.textContent = name ? "GM ✓" : "GM ✗";
+        instrBtn.title = name ? `GM → ${name}` : "GM: no MIDI output found";
+      }
     }, { signal });
 
     const addMidiBtn = document.createElement("button");
@@ -3061,12 +3069,18 @@ document.addEventListener("keydown", (e) => {
     if (pitch !== undefined && armedMidiTrack && !_activeKeys.has(e.key)) {
       e.preventDefault();
       _activeKeys.add(e.key);
-      const ctx = getAudioContext();
-      const freq = _midiToFreq(pitch);
-      const now = ctx.currentTime;
-      const nodes = cpScheduleNoteAt(freq, ctx, now, 10, 100, armedMidiTrack.instrument ?? "pluck");
       const startSample = recording ? Math.round(getPlayheadTime() * SAMPLE_RATE) : null;
-      _liveKeyNotes.set(e.key, { nodes, pitch, startSample });
+      if (armedMidiTrack.instrument === "gm") {
+        gmMidiNoteOn(gmMidiGetOutput(), GM_LIVE_CHANNEL, pitch, 100);
+        _liveKeyNotes.set(e.key, { nodes: [], pitch, startSample, gmLive: true });
+      } else {
+        const ctx = getAudioContext();
+        const freq = _midiToFreq(pitch);
+        const now = ctx.currentTime;
+        const mixerInput = audioEngineGetTrackMixerInput(armedMidiTrack.id);
+        const nodes = cpScheduleNoteAt(freq, ctx, now, 10, 100, armedMidiTrack.instrument ?? "pluck", mixerInput);
+        _liveKeyNotes.set(e.key, { nodes, pitch, startSample });
+      }
       return;
     }
   }
@@ -3141,7 +3155,11 @@ document.addEventListener("keyup", (e) => {
   const live = _liveKeyNotes.get(e.key);
   if (!live) return;
   _liveKeyNotes.delete(e.key);
-  live.nodes.forEach(n => { try { n.stop(); } catch (_) {} });
+  if (live.gmLive) {
+    gmMidiNoteOff(gmMidiGetOutput(), GM_LIVE_CHANNEL, live.pitch);
+  } else {
+    live.nodes.forEach(n => { try { n.stop(); } catch (_) {} });
+  }
   if (live.startSample !== null) {
     const endSample = Math.round(getPlayheadTime() * SAMPLE_RATE);
     _pendingMidiNotes.push({
@@ -3677,7 +3695,7 @@ document.getElementById("menu-import-midi").addEventListener("click", () => {
       const notes = noteTracks[i];
       if (!notes.length) continue;
       const label = (file.name.replace(/\.midi?$/i, "") + (noteTracks.length > 1 ? ` (${i + 1})` : "")).slice(0, 30);
-      const track = createTrack(label, { prepend: false });
+      const track = createTrack(label, { type: 'midi', prepend: false });
       tracks.push(track);
       const maxEnd = Math.max(...notes.map(n => n.startSamples + n.durationSamples));
       const clip = {
