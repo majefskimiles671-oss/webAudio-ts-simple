@@ -95,8 +95,11 @@ function parseMidiFile(arrayBuffer) {
         events.push({ tick, type: "noteOff", ch, pitch, velocity: vel });
       } else if (type === 0xA0 || type === 0xB0 || type === 0xE0) {
         pos += 2; // two data bytes, skip
-      } else if (type === 0xC0 || type === 0xD0) {
-        pos += 1; // one data byte, skip
+      } else if (type === 0xC0) {
+        const program = view.getUint8(pos++);
+        events.push({ tick, type: "programChange", ch, program });
+      } else if (type === 0xD0) {
+        pos += 1; // channel pressure, skip
       } else {
         pos++; // unknown, skip one byte
       }
@@ -187,7 +190,12 @@ function midiToNotes(parsed, sampleRate) {
     }
 
     notes.sort((a, b) => a.startSamples - b.startSamples);
-    if (notes.length > 0) result.push(notes);
+    if (notes.length > 0) {
+      const isDrum = track.some(ev => (ev.type === "noteOn" || ev.type === "noteOff") && ev.ch === 9);
+      const programEv = track.find(ev => ev.type === "programChange");
+      const program = isDrum ? SF_PERCUSSION : (programEv?.program ?? 0);
+      result.push({ notes, program, isDrum });
+    }
   }
 
   return result;

@@ -863,10 +863,10 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
 
   const outputSelect = controlFrag.querySelector(".output-select");
   audioEngineGetOutputDevices().then(devices => {
-    devices.forEach(d => {
+    devices.forEach((d, i) => {
       const opt = document.createElement("option");
       opt.value = d.deviceId;
-      opt.textContent = d.label;
+      opt.textContent = d.label || `Output ${i + 1}`;
       outputSelect.appendChild(opt);
     });
     outputSelect.value = track.outputDeviceId ?? "";
@@ -995,17 +995,12 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     instrBtn.textContent = "Pluck";
     instrBtn.title = "Switch instrument (Pluck / Synth / GM)";
     const _instrCycle = ["pluck", "synth", "gm"];
-    instrBtn.addEventListener("click", async (e) => {
+    instrBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       const idx = _instrCycle.indexOf(track.instrument ?? "pluck");
       track.instrument = _instrCycle[(idx + 1) % _instrCycle.length];
       instrBtn.textContent = { pluck: "Pluck", synth: "Synth", gm: "GM" }[track.instrument] ?? "Pluck";
-      if (track.instrument === "gm") {
-        await gmMidiEnsureAccess();
-        const name = gmMidiOutputName();
-        instrBtn.textContent = name ? "GM ✓" : "GM ✗";
-        instrBtn.title = name ? `GM → ${name}` : "GM: no MIDI output found";
-      }
+      instrBtn.title = "Switch instrument (Pluck / Synth / GM)";
     }, { signal });
 
     const addMidiBtn = document.createElement("button");
@@ -3692,11 +3687,15 @@ document.getElementById("menu-import-midi").addEventListener("click", () => {
     if (!noteTracks.length) { alert("No notes found in MIDI file."); return; }
 
     for (let i = 0; i < noteTracks.length; i++) {
-      const notes = noteTracks[i];
+      const { notes, program } = noteTracks[i];
       if (!notes.length) continue;
       const label = (file.name.replace(/\.midi?$/i, "") + (noteTracks.length > 1 ? ` (${i + 1})` : "")).slice(0, 30);
       const track = createTrack(label, { type: 'midi', prepend: false });
       tracks.push(track);
+      track.instrument = 'gm';
+      track.gmProgram  = program ?? 0;
+      const _ib = track.controlRow?.querySelector(".instrument-toggle");
+      if (_ib) _ib.textContent = "GM";
       const maxEnd = Math.max(...notes.map(n => n.startSamples + n.durationSamples));
       const clip = {
         id:              crypto.randomUUID(),
@@ -4519,10 +4518,10 @@ document.getElementById("master-gain-slider").addEventListener("input", (e) => {
 // Master output selector
 const masterOutputSelect = document.getElementById("master-output-select");
 audioEngineGetOutputDevices().then(devices => {
-  devices.forEach(d => {
+  devices.forEach((d, i) => {
     const opt = document.createElement("option");
     opt.value = d.deviceId;
-    opt.textContent = d.label;
+    opt.textContent = d.label || `Output ${i + 1}`;
     masterOutputSelect.appendChild(opt);
   });
   masterOutputSelect.value = audioEngineGetMasterOutputDeviceId() ?? "";

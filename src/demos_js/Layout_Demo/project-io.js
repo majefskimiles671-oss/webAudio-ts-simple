@@ -310,6 +310,7 @@ function serializeProject() {
       pan:        track.pan,
       opacity:    track.opacity,
       instrument:     track.instrument,
+      gmProgram:      track.gmProgram ?? 0,
       outputDeviceId: track.outputDeviceId ?? null,
       scenes:         [...track.scenes],
       clips:  track.clips.map(clip => {
@@ -592,17 +593,9 @@ function deserializeProject(data) {
 
     // Instrument (Pluck / Synth / GM)
     track.instrument = saved.instrument ?? "pluck";
+    track.gmProgram  = saved.gmProgram  ?? 0;
     const instrBtn = track.controlRow.querySelector(".instrument-toggle");
-    if (instrBtn) {
-      instrBtn.textContent = { pluck: "Pluck", synth: "Synth", gm: "GM" }[track.instrument] ?? "Pluck";
-      if (track.instrument === "gm") {
-        gmMidiEnsureAccess().then(() => {
-          const name = gmMidiOutputName();
-          instrBtn.textContent = name ? "GM ✓" : "GM ✗";
-          instrBtn.title = name ? `GM → ${name}` : "GM: no MIDI output found";
-        });
-      }
-    }
+    if (instrBtn) instrBtn.textContent = { pluck: "Pluck", synth: "Synth", gm: "GM" }[track.instrument] ?? "Pluck";
 
     // Output device
     track.outputDeviceId = saved.outputDeviceId ?? null;

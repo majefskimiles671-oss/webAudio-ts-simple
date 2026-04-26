@@ -197,6 +197,7 @@ function audioEngineSetTrackPan(trackId, pan) {
 }
 
 async function audioEngineGetOutputDevices() {
+  if (!navigator.mediaDevices?.enumerateDevices) return [];
   const devices = await navigator.mediaDevices.enumerateDevices();
   const outputs = devices.filter(d => d.kind === 'audiooutput' && d.deviceId !== 'default');
   log('[audio-engine] output devices:', outputs.map(d => ({ label: d.label, deviceId: d.deviceId })));
@@ -279,6 +280,17 @@ async function audioEngineSetMasterOutput(deviceId) {
 
 function audioEngineGetMasterOutputDeviceId() {
   return _speakersAudioEl.sinkId || null;
+}
+
+// Called after an async gap (e.g. soundfont loading) to ensure the audio output
+// pipeline is still active.  Browsers may pause <audio> elements during long
+// background tasks; this re-arms them without requiring a full audioEnginePlay.
+function audioEngineEnsureOutput() {
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  if (_speakersAudioEl.paused) _speakersAudioEl.play().catch(() => {});
+  for (const bus of _outputBuses.values()) {
+    if (bus.audioEl.paused) bus.audioEl.play().catch(() => {});
+  }
 }
 
 // ---- Microphone recording
