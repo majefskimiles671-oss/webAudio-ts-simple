@@ -4567,23 +4567,66 @@ document.getElementById("sf2-load-btn").addEventListener("click", async () => {
   input.click();
 });
 
-document.getElementById("menu-load-soundfont").addEventListener("click", () => {
-  const input = document.createElement("input");
-  input.type   = "file";
-  input.accept = ".sf2,audio/soundfont";
-  input.addEventListener("change", async () => {
-    const file = input.files[0];
-    if (!file) return;
-    try {
-      await sfLoadGlobal(file);
-      _updateSf2Display();
-      log(`[sf2] global font loaded: ${file.name}`);
-    } catch (err) {
-      log("[sf2] global font load failed:", err);
-      alert(`Soundfont load failed: ${err.message}`);
-    }
-  });
-  input.click();
+async function _saveGlobalSoundfontHandle(handle) {
+  try {
+    const db = await _openWorkspaceDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("handles", "readwrite");
+      tx.objectStore("handles").put(handle, "global-soundfont");
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch { /* IDB unavailable */ }
+}
+
+async function _loadGlobalSoundfontHandle() {
+  try {
+    const db = await _openWorkspaceDb();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction("handles", "readonly");
+      const req = tx.objectStore("handles").get("global-soundfont");
+      req.onsuccess = () => resolve(req.result ?? null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch { return null; }
+}
+
+async function _initGlobalSoundfont() {
+  const handle = await _loadGlobalSoundfontHandle();
+  if (!handle) return;
+  try {
+    const perm = await handle.requestPermission({ mode: 'read' });
+    if (perm !== 'granted') return;
+    const file = await handle.getFile();
+    await sfLoadGlobal(file);
+    _updateSf2Display();
+    log(`[sf2] restored global font: ${file.name}`);
+  } catch (err) {
+    log("[sf2] failed to restore global font:", err);
+  }
+}
+
+document.getElementById("menu-load-soundfont").addEventListener("click", async () => {
+  let fileHandle;
+  try {
+    [fileHandle] = await window.showOpenFilePicker({
+      types: [{ description: 'SoundFont 2', accept: { 'audio/soundfont': ['.sf2'] } }],
+      multiple: false,
+    });
+  } catch (err) {
+    if (err.name !== 'AbortError') log("[sf2] picker error:", err);
+    return;
+  }
+  try {
+    const file = await fileHandle.getFile();
+    await sfLoadGlobal(file);
+    _updateSf2Display();
+    await _saveGlobalSoundfontHandle(fileHandle);
+    log(`[sf2] global font loaded: ${file.name}`);
+  } catch (err) {
+    log("[sf2] global font load failed:", err);
+    alert(`Soundfont load failed: ${err.message}`);
+  }
 });
 
 // Auto-load default.sf2 from the same origin on startup
@@ -4597,6 +4640,8 @@ document.getElementById("menu-load-soundfont").addEventListener("click", () => {
     log("[sf2] auto-loaded default.sf2");
   } catch { /* no default.sf2 present — use CDN */ }
 })();
+
+_initGlobalSoundfont();
 
 document.getElementById("master-reverb-wet").addEventListener("input", (e) => {
   audioEngineSetReverbWet(e.target.value / 100);
