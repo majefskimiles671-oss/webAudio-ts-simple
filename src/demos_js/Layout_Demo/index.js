@@ -309,6 +309,7 @@ function jumpPlayheadToTime(seconds) {
       tracks.map(t => ({
         id: t.id,
         pan: t.pan / 100,
+        deviceId: t.outputDeviceId,
         clips: t.clips.map(clip => ({ ...clip, gain: t.gain / 100 })),
       })),
       seconds
@@ -759,6 +760,7 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     armed:       false,
     gain:        80,
     pan:         0,
+    outputDeviceId: null,
     opacity:     100,
     scenes:      [],
     clips:       [],
@@ -846,6 +848,24 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
       syncTrackMutes();
     }, { signal });
   });
+
+  const outputSelect = controlFrag.querySelector(".output-select");
+  audioEngineGetOutputDevices().then(devices => {
+    devices.forEach(d => {
+      const opt = document.createElement("option");
+      opt.value = d.deviceId;
+      opt.textContent = d.label;
+      outputSelect.appendChild(opt);
+    });
+    outputSelect.value = track.outputDeviceId ?? "";
+  });
+  outputSelect.addEventListener("change", async () => {
+    const deviceId = outputSelect.value || null;
+    track.outputDeviceId = deviceId;
+    if (deviceId) await audioEngineEnsureOutputBus(deviceId);
+    audioEngineSetTrackOutput(track.id, deviceId);
+    markDirty();
+  }, { signal });
 
   const soloBtn = controlFrag.querySelector(".solo-btn");
   soloBtn.addEventListener("click", () => {
@@ -3348,6 +3368,7 @@ function onTransportStart() {
   audioEnginePlay(
     tracks.map(t => ({
       id: t.id,
+      deviceId: t.outputDeviceId,
       clips: t.clips.map(clip => ({ ...clip, gain: t.gain / 100, pan: t.pan / 100 })),
     })),
     getPlayheadTime()
@@ -4409,7 +4430,7 @@ markers.push({ id: ORIGIN_MARKER_ID, time: secondsPerBar() * 0, note: "", chordI
 selectedMarkerId = ORIGIN_MARKER_ID;
 
 // Set default theme
-setTheme("Ice9", { silent: true });
+setTheme("Dark", { silent: true });
 Object.assign(viewState, VS_PRESETS["simple"]);
 applyViewState();
 syncViewSettingsCheckboxes();

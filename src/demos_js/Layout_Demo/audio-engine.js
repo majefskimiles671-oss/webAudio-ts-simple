@@ -5,6 +5,13 @@ const _audioCtx = new AudioContext();
 const _buffers = new Map(); // clipId (string) → AudioBuffer
 let _activeSources = [];
 const _trackMixers = new Map(); // trackId → { mixerGain, analyserL, analyserR }
+// Default speakers bus — used when no explicit device is selected (deviceId = null)
+const _speakersDestination = _audioCtx.createMediaStreamDestination();
+const _speakersAudioEl = new Audio();
+_speakersAudioEl.srcObject = _speakersDestination.stream;
+
+// Per-device buses created on demand: deviceId → { gainNode, destination, audioEl }
+const _outputBuses = new Map();
 
 // Master chain — persists for the lifetime of the context.
 // All track mixers connect here; master gain controls output level.
@@ -28,7 +35,7 @@ _reverbConvolver.connect(_wetGain);
 _dryGain.connect(_compressor);
 _wetGain.connect(_compressor);
 _compressor.connect(_masterSplitter);
-_compressor.connect(_audioCtx.destination);
+_compressor.connect(_speakersDestination);
 _masterSplitter.connect(_masterAnalyserL, 0);
 _masterSplitter.connect(_masterAnalyserR, 1);
 
@@ -104,9 +111,10 @@ function audioEngineCreateBuffer(numChannels, numSamples) {
 function audioEnginePlay(trackGroups, playheadSeconds) {
   audioEngineStop();
   if (_audioCtx.state === "suspended") _audioCtx.resume();
+  _speakersAudioEl.play().catch(() => {});
   const now = _audioCtx.currentTime;
 
-  for (const { id: trackId, pan: trackPan = 0, clips } of trackGroups) {
+  for (const { id: trackId, pan: trackPan = 0, deviceId = null, clips } of trackGroups) {
     const mixerGain   = _audioCtx.createGain();
     const trackPanner = _audioCtx.createStereoPanner();
     const splitter    = _audioCtx.createChannelSplitter(2);
@@ -118,7 +126,8 @@ function audioEnginePlay(trackGroups, playheadSeconds) {
     trackPanner.connect(splitter);
     splitter.connect(analyserL, 0); // L channel → analyserL (metering only)
     splitter.connect(analyserR, 1); // R channel → analyserR (metering only)
-    trackPanner.connect(_masterGainNode);
+    const _bus = deviceId ? _outputBuses.get(deviceId) : null;
+    trackPanner.connect(_bus ? _bus.gainNode : _masterGainNode);
 
     _trackMixers.set(trackId, { mixerGain, trackPanner, splitter, analyserL, analyserR });
 
@@ -171,6 +180,36 @@ function audioEngineSetTrackGain(trackId, gain) {
 function audioEngineSetTrackPan(trackId, pan) {
   const mixer = _trackMixers.get(trackId);
   if (mixer) mixer.trackPanner.pan.value = pan;
+}
+
+async function audioEngineGetOutputDevices() {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const outputs = devices.filter(d => d.kind === 'audiooutput' && d.deviceId !== 'default');
+  console.log('[audio-engine] output devices:', outputs.map(d => ({ label: d.label, deviceId: d.deviceId })));
+  return outputs;
+}
+
+async function audioEngineEnsureOutputBus(deviceId) {
+  if (!deviceId || _outputBuses.has(deviceId)) return;
+  if (_audioCtx.state === 'suspended') await _audioCtx.resume();
+  const gainNode = _audioCtx.createGain();
+  const destination = _audioCtx.createMediaStreamDestination();
+  gainNode.connect(destination);
+  const audioEl = new Audio();
+  audioEl.srcObject = destination.stream;
+  try { await audioEl.setSinkId(deviceId); } catch {}
+  audioEl.play().catch(() => {});
+  _outputBuses.set(deviceId, { gainNode, destination, audioEl });
+}
+
+function audioEngineSetTrackOutput(trackId, deviceId) {
+  const mixer = _trackMixers.get(trackId);
+  if (!mixer) return;
+  const { trackPanner, splitter } = mixer;
+  trackPanner.disconnect();
+  trackPanner.connect(splitter);
+  const bus = deviceId ? _outputBuses.get(deviceId) : null;
+  trackPanner.connect(bus ? bus.gainNode : _masterGainNode);
 }
 
 function _getRMS(analyser) {
