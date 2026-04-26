@@ -249,6 +249,7 @@ function deserializeProject(data) {
   if (data.viewState) {
     Object.assign(viewState, data.viewState);
     applyViewState();
+    syncViewSettingsCheckboxes();
   }
   if (data.themeRatings) {
     Object.keys(themeRatings).forEach(k => delete themeRatings[k]);

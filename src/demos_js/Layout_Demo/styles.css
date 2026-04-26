@@ -3955,7 +3955,7 @@
         .vs-panel-stars {
             margin-left: auto;
             padding-left: 6px;
-            color: var(--text-main);
+            color: white;
             font-size: 11px;
             letter-spacing: 1px;
         }

@@ -232,10 +232,10 @@ const viewState = {
   effects:              false,
   notes:                false,
   scenes:               false,
-  markerTransport:      true,
-  tempo:                true,
-  metronome:            true,
-  zoom:                 true,
+  markerTransport:      false,
+  tempo:                false,
+  metronome:            false,
+  zoom:                 false,
   solo:                 false,
   chordDiagrams:        false,
   markerLookaheadBeats: 1,
@@ -3716,11 +3716,17 @@ makeViewToggle("toggle-notes",           "notes");
 const _viewSettingsOverlay = document.getElementById("view-settings-overlay");
 
 const VS_PRESETS = {
-  minimal:  { scenes: false, markerTransport: false, tempo: true,  metronome: false, zoom: false, solo: false, bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false },
-  simple:   { scenes: false, markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: false, bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false },
+  minimal:  { scenes: false, markerTransport: false, tempo: true,  metronome: false, zoom: false, solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false },
+  simple:   { scenes: false, markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false },
   standard: { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: false, notes: true,  chordDiagrams: false },
   compose:  { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: true  },
 };
+
+function syncViewSettingsCheckboxes() {
+  _viewSettingsOverlay.querySelectorAll("[data-view-key]").forEach(cb => {
+    cb.checked = viewState[cb.dataset.viewKey];
+  });
+}
 
 _viewSettingsOverlay.querySelectorAll(".vs-preset-btn").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -3728,9 +3734,7 @@ _viewSettingsOverlay.querySelectorAll(".vs-preset-btn").forEach(btn => {
     if (!preset) return;
     Object.assign(viewState, preset);
     applyViewState();
-    _viewSettingsOverlay.querySelectorAll("[data-view-key]").forEach(cb => {
-      cb.checked = viewState[cb.dataset.viewKey];
-    });
+    syncViewSettingsCheckboxes();
   });
 });
 let _viewStateSnapshot = null;
@@ -4402,7 +4406,9 @@ selectedMarkerId = ORIGIN_MARKER_ID;
 
 // Set default theme
 setTheme("Ice9", { silent: true });
+Object.assign(viewState, VS_PRESETS["simple"]);
 applyViewState();
+syncViewSettingsCheckboxes();
 
 // Populate master meter segments
 document.querySelectorAll(".master-meter-bar").forEach(bar => {
