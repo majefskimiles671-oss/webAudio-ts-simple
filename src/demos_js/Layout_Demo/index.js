@@ -4536,8 +4536,9 @@ masterOutputSelect.addEventListener("change", async () => {
 function _updateSf2Display() {
   const el   = document.getElementById("sf2-name-display");
   const name = sfGetLoadedName();
-  el.textContent = name ?? "none";
-  el.title       = name ? `Loaded: ${name}` : "No soundfont loaded";
+  const tag  = sfGetGlobalName() && !sfGetProjectFile() ? ' (global)' : '';
+  el.textContent = name ? name + tag : "none";
+  el.title       = name ? `Loaded: ${name}${tag}` : "No soundfont loaded";
 }
 
 document.getElementById("sf2-load-btn").addEventListener("click", async () => {
@@ -4561,6 +4562,25 @@ document.getElementById("sf2-load-btn").addEventListener("click", async () => {
     } finally {
       btn.textContent = "Load…";
       btn.disabled    = false;
+    }
+  });
+  input.click();
+});
+
+document.getElementById("menu-load-soundfont").addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type   = "file";
+  input.accept = ".sf2,audio/soundfont";
+  input.addEventListener("change", async () => {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+      await sfLoadGlobal(file);
+      _updateSf2Display();
+      log(`[sf2] global font loaded: ${file.name}`);
+    } catch (err) {
+      log("[sf2] global font load failed:", err);
+      alert(`Soundfont load failed: ${err.message}`);
     }
   });
   input.click();

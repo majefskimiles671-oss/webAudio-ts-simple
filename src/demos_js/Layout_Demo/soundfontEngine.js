@@ -6,14 +6,18 @@ const SF_PERCUSSION = -1; // sentinel for GM channel 9 (drums / bank 128)
 // Cache: program → Map<rootMidiPitch, {buffer, loops, loopStart, loopEnd}>
 const _sfCache = new Map();
 
-// --- Per-project SF2 state ---
+// --- SF2 state (priority: project > global > default) ---
 let _sf2DefaultData = null; // Map<program,noteMap> from auto-loaded default.sf2
-let _sf2ProjectFile = null; // File object chosen by user (written into project on save)
-let _sf2ProjectName = null; // display name for the project-specific font
+let _sf2GlobalData  = null; // session-wide font chosen by user (not saved with projects)
+let _sf2GlobalName  = null;
+let _sf2ProjectData = null; // parsed data for the current project's font
+let _sf2ProjectFile = null; // File object (written into project on save)
+let _sf2ProjectName = null;
 
 function sfGetLoadedName() {
-  return _sf2ProjectName ?? (_sf2DefaultData ? 'default.sf2' : null);
+  return _sf2ProjectName ?? _sf2GlobalName ?? (_sf2DefaultData ? 'default.sf2' : null);
 }
+function sfGetGlobalName()  { return _sf2GlobalName; }
 function sfGetProjectFile() { return _sf2ProjectFile; }
 
 async function _sfPopulateCache(data) {
@@ -24,8 +28,17 @@ async function _sfPopulateCache(data) {
 async function sfLoadDefault(arrayBuffer) {
   const data = await sf2Parse(arrayBuffer, getAudioContext());
   _sf2DefaultData = data;
-  await _sfPopulateCache(data);
+  if (!_sf2GlobalData && !_sf2ProjectData) await _sfPopulateCache(data);
   log(`[soundfont] default.sf2 loaded: ${data.size} programs`);
+}
+
+async function sfLoadGlobal(file) {
+  const ab   = await file.arrayBuffer();
+  const data = await sf2Parse(ab, getAudioContext());
+  _sf2GlobalData = data;
+  _sf2GlobalName = file.name;
+  if (!_sf2ProjectData) await _sfPopulateCache(data);
+  log(`[soundfont] global SF2 loaded: ${file.name}, ${data.size} programs`);
 }
 
 async function sfLoadFromFile(file) {
@@ -33,6 +46,7 @@ async function sfLoadFromFile(file) {
   const data = await sf2Parse(ab, getAudioContext());
   _sf2ProjectFile = file;
   _sf2ProjectName = file.name;
+  _sf2ProjectData = data;
   await _sfPopulateCache(data);
   log(`[soundfont] project SF2 loaded: ${file.name}, ${data.size} programs`);
 }
@@ -40,8 +54,10 @@ async function sfLoadFromFile(file) {
 function sfClearProjectFont() {
   _sf2ProjectFile = null;
   _sf2ProjectName = null;
-  if (_sf2DefaultData) {
-    _sfPopulateCache(_sf2DefaultData);
+  _sf2ProjectData = null;
+  const fallback = _sf2GlobalData ?? _sf2DefaultData;
+  if (fallback) {
+    _sfPopulateCache(fallback);
   } else {
     _sfCache.clear();
   }
