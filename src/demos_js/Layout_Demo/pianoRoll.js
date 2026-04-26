@@ -9,6 +9,12 @@ let _prScrollX   = 0;
 let _prZoom      = 1;   // horizontal zoom multiplier
 let _prSelected  = new Set(); // indices of selected notes
 let _prActiveKeyPitch = null; // pitch currently pressed on keyboard sidebar
+let _prAnimFrame = null;
+
+function _prPlayheadX() {
+  if (!_prClip || typeof getPlayheadTime !== "function") return null;
+  return _prSamplesToX(getPlayheadTime() * _prGetSR() - _prClip.startSample);
+}
 
 const PR_ROW_H    = 14;   // pixels per semitone
 const PR_KEY_W    = 44;   // piano keyboard width
@@ -52,6 +58,7 @@ function _prSnapSamples(s) {
 // Piano Roll - Coordinate Helpers -----
 function _prCanvas() { return document.getElementById("piano-roll-canvas"); }
 function _prKeysCanvas() { return document.getElementById("piano-roll-keys"); }
+function _prRulerCanvas() { return document.getElementById("piano-roll-ruler"); }
 
 function _prPixelsPerSample() {
   const canvas = _prCanvas();
@@ -152,10 +159,67 @@ function _prDraw() {
     ctx.fillStyle = selected ? "#ffc060" : "#6cd0f0";
     ctx.fillRect(x, y + 1, 2, PR_ROW_H - 2);
   }
+
+  const phX = _prPlayheadX();
+  if (phX !== null && phX >= 0 && phX <= W) {
+    ctx.strokeStyle = "#ff4444";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(phX, 0); ctx.lineTo(phX, H); ctx.stroke();
+  }
+}
+
+function _prDrawRuler() {
+  const canvas = _prRulerCanvas();
+  if (!canvas || !_prClip) return;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "#1a1a1a";
+  ctx.fillRect(0, 0, W, H);
+
+  const bpm = _prGetBPM(), sr = _prGetSR();
+  const samplesPerBeat = (60 / bpm) * sr;
+
+  ctx.font = "9px sans-serif";
+  let beat = 0;
+  while (true) {
+    const x = _prSamplesToX(beat * samplesPerBeat);
+    if (x > W) break;
+    if (x >= -1) {
+      const isBar = beat % 4 === 0;
+      ctx.strokeStyle = isBar ? "#666" : "#3a3a3a";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, isBar ? 0 : H * 0.6); ctx.lineTo(x, H); ctx.stroke();
+      if (isBar) {
+        ctx.fillStyle = "#999";
+        ctx.fillText(beat / 4 + 1, x + 3, H - 4);
+      }
+    }
+    beat++;
+  }
+
+  const phX = _prPlayheadX();
+  if (phX !== null && phX >= 0 && phX <= W) {
+    ctx.fillStyle = "#ff4444";
+    ctx.beginPath();
+    ctx.moveTo(phX - 5, 0);
+    ctx.lineTo(phX + 5, 0);
+    ctx.lineTo(phX, H);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function _prRulerOnPointerDown(e) {
+  const canvas = _prRulerCanvas();
+  const x = e.clientX - canvas.getBoundingClientRect().left;
+  const projectSeconds = (_prClip.startSample + _prXToSamples(x)) / _prGetSR();
+  if (typeof jumpPlayheadToTime === "function") jumpPlayheadToTime(Math.max(0, projectSeconds));
 }
 
 function _prFullDraw() {
   _prDrawKeys(_prKeysCanvas());
+  _prDrawRuler();
   _prDraw();
 }
 
@@ -182,6 +246,9 @@ function _prAddNote(pitch, startSamples, durationSamples) {
   durationSamples = Math.max(Math.round(_prGetSR() / 32), Math.round(durationSamples));
   _prClip.notes.push({ pitch, startSamples, durationSamples, velocity: 100 });
   _prClip.notes.sort((a, b) => a.startSamples - b.startSamples);
+  const ctx = getAudioContext();
+  ctx.resume();
+  cpScheduleNoteAt(_prMidiToFreq(pitch), ctx, ctx.currentTime, durationSamples / _prGetSR(), 100, _prTrack.instrument ?? "pluck");
 }
 
 function _prDeleteSelected() {
@@ -227,6 +294,9 @@ function _prOnPointerDown(e) {
     if (!e.shiftKey) _prSelected.clear();
     _prSelected.add(hit.index);
     _prDragMode = hit.isResize ? "resize" : "move";
+    const _hn = _prClip.notes[hit.index];
+    const _hctx = getAudioContext(); _hctx.resume();
+    cpScheduleNoteAt(_prMidiToFreq(_hn.pitch), _hctx, _hctx.currentTime, _hn.durationSamples / _prGetSR(), 100, _prTrack.instrument ?? "pluck");
   } else {
     // Create new note
     canvas.setPointerCapture(e.pointerId);
@@ -301,6 +371,8 @@ function _prOnWheel(e) {
     // Zoom
     const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
     _prZoom = Math.max(0.1, Math.min(20, _prZoom * factor));
+  } else if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+    _prScrollX = Math.max(0, _prScrollX + e.deltaX);
   } else if (e.shiftKey) {
     _prScrollX = Math.max(0, _prScrollX + e.deltaY);
   } else {
@@ -368,15 +440,18 @@ function _prAttachPanelDrag() {
 }
 
 function _prResizeCanvases() {
-  const body   = document.querySelector(".piano-roll-body");
-  const keyCvs = _prKeysCanvas();
+  const body    = document.querySelector(".piano-roll-body");
+  const keyCvs  = _prKeysCanvas();
   const rollCvs = _prCanvas();
+  const rulerCvs = _prRulerCanvas();
   if (!body || !keyCvs || !rollCvs) return;
-  const h = body.clientHeight;
-  keyCvs.width  = PR_KEY_W;
-  keyCvs.height = h;
-  rollCvs.width  = body.clientWidth - PR_KEY_W - 1;
-  rollCvs.height = h;
+  const rollW = rollCvs.clientWidth  || (body.clientWidth - PR_KEY_W - 1);
+  const rollH = rollCvs.clientHeight || (body.clientHeight - (rulerCvs?.clientHeight ?? 20));
+  keyCvs.width   = PR_KEY_W;
+  keyCvs.height  = body.clientHeight;
+  rollCvs.width  = rollW;
+  rollCvs.height = rollH;
+  if (rulerCvs) rulerCvs.width = rollW;
 }
 
 // Piano Roll - Keys Sidebar - Pointer Handlers -----
@@ -446,13 +521,36 @@ function pianoRollOpen(clip, track) {
   newKeys.addEventListener("pointerup",    _prKeysOnPointerUp);
   newKeys.addEventListener("pointerleave", _prKeysOnPointerUp);
 
+  const oldRuler = document.getElementById("piano-roll-ruler");
+  const newRuler = document.createElement("canvas");
+  newRuler.id = "piano-roll-ruler";
+  oldRuler.replaceWith(newRuler);
+  newRuler.addEventListener("pointerdown", _prRulerOnPointerDown);
+
   requestAnimationFrame(() => {
     _prResizeCanvases();
     _prFullDraw();
+    _prStartLoop();
   });
 }
 
+function _prStartLoop() {
+  if (_prAnimFrame) return;
+  function loop() {
+    if (!_prClip) { _prAnimFrame = null; return; }
+    _prDrawRuler();
+    _prDraw();
+    _prAnimFrame = requestAnimationFrame(loop);
+  }
+  _prAnimFrame = requestAnimationFrame(loop);
+}
+
+function _prStopLoop() {
+  if (_prAnimFrame) { cancelAnimationFrame(_prAnimFrame); _prAnimFrame = null; }
+}
+
 function pianoRollClose() {
+  _prStopLoop();
   _prClip  = null;
   _prTrack = null;
   const panel = document.getElementById("piano-roll-panel");
@@ -465,6 +563,14 @@ function pianoRollInit() {
   document.getElementById("piano-roll-close").addEventListener("click", pianoRollClose);
   document.addEventListener("keydown", _prOnKeyDown);
   _prAttachPanelDrag();
+
+  const gotoStartBtn = document.getElementById("piano-roll-goto-start");
+  if (gotoStartBtn) {
+    gotoStartBtn.addEventListener("click", () => {
+      if (_prClip && typeof jumpPlayheadToTime === "function")
+        jumpPlayheadToTime(_prClip.startSample / _prGetSR());
+    });
+  }
 
   const snapBtn = document.getElementById("piano-roll-snap");
   if (snapBtn) {

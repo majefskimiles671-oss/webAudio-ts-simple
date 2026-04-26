@@ -695,13 +695,17 @@ Rule - Add comments before code snippets in this format:
     <div class="piano-roll-header">
         <span id="piano-roll-title">Piano Roll</span>
         <div class="piano-roll-toolbar">
+            <button id="piano-roll-goto-start" class="piano-roll-tool-btn" title="Move playhead to clip start">⏮ Clip Start</button>
             <button id="piano-roll-snap" class="piano-roll-tool-btn active" title="Snap to grid">⊞ Snap</button>
         </div>
         <button class="piano-roll-close-btn" id="piano-roll-close">✕</button>
     </div>
     <div class="piano-roll-body">
         <canvas id="piano-roll-keys"></canvas>
-        <canvas id="piano-roll-canvas"></canvas>
+        <div class="piano-roll-right">
+            <canvas id="piano-roll-ruler"></canvas>
+            <canvas id="piano-roll-canvas"></canvas>
+        </div>
     </div>
     <div class="piano-roll-resize-handle"></div>
 </div>

@@ -4640,6 +4640,21 @@
             border-right: 1px solid var(--border-subtle);
         }
 
+        .piano-roll-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        #piano-roll-ruler {
+            height: 20px;
+            flex-shrink: 0;
+            display: block;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
         #piano-roll-canvas {
             flex: 1;
             display: block;
