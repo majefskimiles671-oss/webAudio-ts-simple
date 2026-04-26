@@ -298,14 +298,14 @@ let _videoDriftFrame = 0;
 // ============================================================
 
 // If a helper ever branches or checks app state → promote it to Authority.
-function jumpPlayheadToTime(seconds) {
+async function jumpPlayheadToTime(seconds) {
   const px = secondsToPixels(seconds);
   setPlayheadPositionPx(px);
   if (playing) {
     playbackStartX = px;
     startTime = performance.now();
     if (videoEl) videoEl.currentTime = seconds;
-    audioEnginePlay(
+    await audioEnginePlay(
       tracks.map(t => ({
         id: t.id,
         pan: t.pan / 100,
@@ -568,6 +568,18 @@ function deleteSelectedClip() {
   });
   deselectClip();
   markDirty();
+}
+
+function attachClipDeleteButton(waveform) {
+  const btn = document.createElement("button");
+  btn.className = "waveform-delete-btn";
+  btn.innerHTML = "&#x2715;";
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    selectClip(waveform.dataset.clipId);
+    deleteSelectedClip();
+  });
+  waveform.appendChild(btn);
 }
 
 
@@ -861,9 +873,11 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
   });
   outputSelect.addEventListener("change", async () => {
     const deviceId = outputSelect.value || null;
+    log(`output select changed: track="${track.name}" deviceId=${deviceId ?? "(default)"}`);
     track.outputDeviceId = deviceId;
     if (deviceId) await audioEngineEnsureOutputBus(deviceId);
     audioEngineSetTrackOutput(track.id, deviceId);
+    log(`output routing applied: track="${track.name}" deviceId=${deviceId ?? "(default)"}`);
     markDirty();
   }, { signal });
 
@@ -1083,6 +1097,7 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
     wfIsDragging = false;
   });
 
+  attachClipDeleteButton(waveform);
   rowInner.appendChild(waveform);
 }
 
@@ -2192,7 +2207,7 @@ function logProject() {
     console.group(`"${t.name}"`);
 
     if (t.clips.length) {
-      console.log("%cAudio clips", "font-weight:bold");
+      log("%cAudio clips", "font-weight:bold");
       console.table(t.clips.map(c => ({
         id:       c.id.slice(0, 8),
         start:    toBarBeat(c.startSample / SAMPLE_RATE),
@@ -2201,7 +2216,7 @@ function logProject() {
     }
 
     if (t.midiClips.length) {
-      console.log("%cMIDI clips", "font-weight:bold");
+      log("%cMIDI clips", "font-weight:bold");
       console.table(t.midiClips.map(c => {
         const evRows = c.events.map(ev => {
           const chord = (typeof chords !== "undefined") && chords.find(ch => ch.id === ev.chordId);
@@ -3360,12 +3375,12 @@ function syncTrackMutes() {
   }
 }
 
-function onTransportStart() {
+async function onTransportStart() {
   playbackStartX = getPlayheadX(); // ← THIS is the fix
   startTime = performance.now();
   if (videoEl) { videoEl.currentTime = getPlayheadTime(); videoEl.play().catch(() => {}); }
   requestAnimationFrame(updatePlayhead);
-  audioEnginePlay(
+  await audioEnginePlay(
     tracks.map(t => ({
       id: t.id,
       deviceId: t.outputDeviceId,
@@ -3603,6 +3618,7 @@ document.getElementById("menu-new-project").addEventListener("click", () => {
 
 document.getElementById("menu-save-project").addEventListener("click", () => saveProject());
 document.getElementById("menu-open-project").addEventListener("click", () => openProject());
+document.getElementById("menu-set-workspace").addEventListener("click", () => setWorkspace());
 
 document.getElementById("menu-import-wav").addEventListener("click", () => {
   const input = document.createElement("input");
@@ -4482,6 +4498,23 @@ document.getElementById("master-gain-slider").addEventListener("input", (e) => {
   document.getElementById("master-vol-preset").value = "";
 });
 
+// Master output selector
+const masterOutputSelect = document.getElementById("master-output-select");
+audioEngineGetOutputDevices().then(devices => {
+  devices.forEach(d => {
+    const opt = document.createElement("option");
+    opt.value = d.deviceId;
+    opt.textContent = d.label;
+    masterOutputSelect.appendChild(opt);
+  });
+  masterOutputSelect.value = audioEngineGetMasterOutputDeviceId() ?? "";
+});
+masterOutputSelect.addEventListener("change", async () => {
+  const deviceId = masterOutputSelect.value || null;
+  log(`master output select changed: deviceId=${deviceId ?? "(default)"}`);
+  await audioEngineSetMasterOutput(deviceId);
+});
+
 document.getElementById("master-reverb-wet").addEventListener("input", (e) => {
   audioEngineSetReverbWet(e.target.value / 100);
   document.getElementById("reverb-preset").value = "";
@@ -4603,8 +4636,8 @@ function _chordToMidiNotes(chord) {
     }
   }
   const output = midi.sort((a, b) => a - b);
-  console.log("_chordToMidiNotes output:");
-  console.log(output);
+  log("_chordToMidiNotes output:");
+  log(output);
   return output;
 }
 
@@ -4617,7 +4650,7 @@ function _applyTanpuraMarker(marker) {
     const chord = chords.find(c => c.id === marker.chordId);
     if (!chord) return;
     const notes = _chordToMidiNotes(chord);
-    console.log("notes:" + notes);
+    log("notes:" + notes);
     if (!notes.length) return;
     tanpuraSetStrings(notes);
     if (!tanpuraIsActive()) tanpuraStart();
@@ -4841,6 +4874,7 @@ _calibrateManualSetBtn.onclick = () => {
 
 updateCalibrateMenuItem();
 
+initWorkspace();
 
 const _skipAutoOpen = sessionStorage.getItem("skipAutoOpen");
 sessionStorage.removeItem("skipAutoOpen");

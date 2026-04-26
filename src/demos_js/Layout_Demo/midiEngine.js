@@ -36,7 +36,8 @@ function midiEnginePlay(tracks, playheadSeconds) {
         if (!chord) continue;
 
         const audioTime = now + (evAbsTime - playheadSeconds);
-        const nodes = cpScheduleChordAt(chord, ctx, audioTime, track.instrument ?? "pluck");
+        const dest = audioEngineGetTrackMixerInput(track.id);
+        const nodes = cpScheduleChordAt(chord, ctx, audioTime, track.instrument ?? "pluck", dest);
         _scheduledMidiNodes.push(...nodes);
       }
 
@@ -45,7 +46,8 @@ function midiEnginePlay(tracks, playheadSeconds) {
         if (evAbsTime < playheadSeconds || evAbsTime >= clipEnd) continue;
         const audioTime = now + (evAbsTime - playheadSeconds);
         const durationSec = n.durationSamples / SAMPLE_RATE;
-        const nodes = cpScheduleNoteAt(_midiToFreq(n.pitch), ctx, audioTime, durationSec, n.velocity ?? 100, track.instrument ?? "pluck");
+        const dest = audioEngineGetTrackMixerInput(track.id);
+        const nodes = cpScheduleNoteAt(_midiToFreq(n.pitch), ctx, audioTime, durationSec, n.velocity ?? 100, track.instrument ?? "pluck", dest);
         _scheduledMidiNodes.push(...nodes);
       }
     }

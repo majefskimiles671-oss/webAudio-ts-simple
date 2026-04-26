@@ -98,30 +98,44 @@ function _ksGenerate(freq, sampleRate, durationSec) {
   return output;
 }
 
-function _ksPluck(ctx, freq, startTime, durationSec = 3.5, gainMult = 1) {
+function _ksPluck(ctx, freq, startTime, durationSec = 3.5, gainMult = 1, destination = null) {
   const samples = _ksGenerate(freq, ctx.sampleRate, durationSec);
   const buf = ctx.createBuffer(1, samples.length, ctx.sampleRate);
   buf.copyToChannel(samples, 0);
 
-  const A = _pluckAttack, D = _pluckDecay, S = _pluckSustain * gainMult, R = _pluckRelease;
+  const A = _pluckAttack, D = _pluckDecay, R = _pluckRelease;
   const env = ctx.createGain();
-  env.gain.setValueAtTime(0, startTime);
-  env.gain.linearRampToValueAtTime(gainMult, startTime + A);
-  env.gain.linearRampToValueAtTime(S, startTime + A + D);
-  const releaseStart = Math.max(startTime + A + D, startTime + durationSec - R);
-  env.gain.setValueAtTime(S, releaseStart);
-  env.gain.linearRampToValueAtTime(0, releaseStart + R);
+  if (destination) {
+    // Route through track mixer — bake _pluckVolume into the envelope
+    const vol = gainMult * _pluckVolume;
+    const S = _pluckSustain * vol;
+    env.gain.setValueAtTime(0, startTime);
+    env.gain.linearRampToValueAtTime(vol, startTime + A);
+    env.gain.linearRampToValueAtTime(S, startTime + A + D);
+    const releaseStart = Math.max(startTime + A + D, startTime + durationSec - R);
+    env.gain.setValueAtTime(S, releaseStart);
+    env.gain.linearRampToValueAtTime(0, releaseStart + R);
+    env.connect(destination);
+  } else {
+    const S = _pluckSustain * gainMult;
+    env.gain.setValueAtTime(0, startTime);
+    env.gain.linearRampToValueAtTime(gainMult, startTime + A);
+    env.gain.linearRampToValueAtTime(S, startTime + A + D);
+    const releaseStart = Math.max(startTime + A + D, startTime + durationSec - R);
+    env.gain.setValueAtTime(S, releaseStart);
+    env.gain.linearRampToValueAtTime(0, releaseStart + R);
+    env.connect(_getPluckGainNode(ctx));
+  }
 
   const src = ctx.createBufferSource();
   src.buffer = buf;
   src.connect(env);
-  env.connect(_getPluckGainNode(ctx));
   src.start(startTime);
   src.addEventListener("ended", () => { src.disconnect(); env.disconnect(); });
   return src;
 }
 
-function _synthPlayNote(ctx, freq, startTime, durationSec, gainMult = 1) {
+function _synthPlayNote(ctx, freq, startTime, durationSec, gainMult = 1, destination = null) {
   const env    = ctx.createGain();
   const filter = ctx.createBiquadFilter();
   filter.type            = "lowpass";
@@ -143,7 +157,7 @@ function _synthPlayNote(ctx, freq, startTime, durationSec, gainMult = 1) {
   osc2.connect(g2).connect(filter);
   osc3.connect(g3).connect(filter);
   filter.connect(env);
-  env.connect(getMasterGainNode());
+  env.connect(destination ?? getMasterGainNode());
 
   const A = 0.35 * _synthNoteMult, D = 0.15 * _synthNoteMult, S = 0.65 * gainMult, R = 1.2 * _synthNoteMult;
   env.gain.setValueAtTime(0,   startTime);
@@ -266,27 +280,27 @@ function playChordSpaced(chord) {
 
 // Chord Player - Scheduling - Playback -----
 // Schedules a single MIDI note at an exact WebAudio time. Returns stoppable nodes.
-function cpScheduleNoteAt(freq, ctx, audioTime, durationSec, velocity = 100, mode = "pluck") {
+function cpScheduleNoteAt(freq, ctx, audioTime, durationSec, velocity = 100, mode = "pluck", destination = null) {
   const gainMult = velocity / 127;
   if (mode === "pluck") {
-    const src = _ksPluck(ctx, freq, audioTime, Math.max(durationSec, 0.1) * _pluckDurationMult, gainMult);
+    const src = _ksPluck(ctx, freq, audioTime, Math.max(durationSec, 0.1) * _pluckDurationMult, gainMult, destination);
     return src ? [src] : [];
   }
-  const voice = _synthPlayNote(ctx, freq, audioTime, durationSec * _synthNoteMult, gainMult);
+  const voice = _synthPlayNote(ctx, freq, audioTime, durationSec * _synthNoteMult, gainMult, destination);
   return voice?.oscs ?? [];
 }
 
 // Schedules a strum at an exact WebAudio time. Returns stoppable nodes for cancellation.
-function cpScheduleChordAt(chord, ctx, audioTime, mode = "pluck") {
+function cpScheduleChordAt(chord, ctx, audioTime, mode = "pluck", destination = null) {
   const freqs = _chordToFreqs(chord);
   const nodes = [];
   freqs.forEach((freq, i) => {
     const t = audioTime + i * 0.022;
     if (mode === "pluck") {
-      const src = _ksPluck(ctx, freq, t, 3.5 * _pluckDurationMult);
+      const src = _ksPluck(ctx, freq, t, 3.5 * _pluckDurationMult, 1, destination);
       if (src) nodes.push(src);
     } else {
-      const voice = _synthPlayNote(ctx, freq, t, 2.0 * _synthNoteMult);
+      const voice = _synthPlayNote(ctx, freq, t, 2.0 * _synthNoteMult, 1, destination);
       if (voice?.oscs) nodes.push(...voice.oscs);
     }
   });

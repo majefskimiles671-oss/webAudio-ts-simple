@@ -1,16 +1,286 @@
 // project-io.js
 // Project Save / Load - File System Access API -----
 
+function log(...args) {
+  const ts = new Date().toISOString().slice(11, 23);
+  const hue = Math.floor(Math.random() * 360);
+  const color = `hsl(${hue},70%,45%)`;
+  if (typeof args[0] === 'string') {
+    console.log(`%c[${ts}]%c ${args[0]}`, `color:${color}`, '', ...args.slice(1));
+  } else {
+    console.log(`%c[${ts}]%c`, `color:${color}`, '', ...args);
+  }
+}
+
 // ============================================================
 // State (Truth Layer) -----
 // ============================================================
 
 let projectId = null;
 let projectFolderHandle = null;
+let workspaceFolderHandle = null;
 
 function updateProjectNameDisplay() {
   const el = document.getElementById("project-name-display");
   if (el) el.textContent = projectFolderHandle?.name ?? "";
+}
+
+function updateWorkspaceDisplay() {
+  const nameEl = document.getElementById("workspace-name-display");
+  if (nameEl) nameEl.textContent = workspaceFolderHandle?.name ?? "";
+  const menuEl = document.getElementById("menu-set-workspace");
+  if (menuEl) {
+    menuEl.textContent = workspaceFolderHandle
+      ? `Workspace: ${workspaceFolderHandle.name}…`
+      : "Set Workspace…";
+  }
+}
+
+// ============================================================
+// IndexedDB helpers (workspace handle persistence) -----
+// ============================================================
+
+function _openWorkspaceDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("baretrack-workspace", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("handles");
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function _saveWorkspaceHandle(handle) {
+  try {
+    const db = await _openWorkspaceDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("handles", "readwrite");
+      tx.objectStore("handles").put(handle, "workspace");
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch { /* IndexedDB unavailable — workspace won't persist across sessions */ }
+}
+
+async function _loadWorkspaceHandle() {
+  try {
+    const db = await _openWorkspaceDb();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction("handles", "readonly");
+      const req = tx.objectStore("handles").get("workspace");
+      req.onsuccess = () => resolve(req.result ?? null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch { return null; }
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// ============================================================
+// Workspace functions -----
+// ============================================================
+
+async function initWorkspace() {
+  const handle = await _loadWorkspaceHandle();
+  if (!handle) return;
+  try {
+    const permission = await handle.requestPermission({ mode: 'readwrite' });
+    if (permission === 'granted') {
+      workspaceFolderHandle = handle;
+      updateWorkspaceDisplay();
+    }
+  } catch { /* permission unavailable — user must re-set workspace manually */ }
+}
+
+async function setWorkspace() {
+  try {
+    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    workspaceFolderHandle = dirHandle;
+    await _saveWorkspaceHandle(dirHandle);
+    updateWorkspaceDisplay();
+    await showProjectPicker();
+  } catch (err) {
+    if (err.name !== 'AbortError') console.error('setWorkspace failed:', err);
+  }
+}
+
+async function scanWorkspaceProjects() {
+  const results = [];
+  for await (const entry of workspaceFolderHandle.values()) {
+    if (entry.kind !== 'directory') continue;
+    try {
+      const jsonHandle = await entry.getFileHandle('project.json');
+      const data = JSON.parse(await (await jsonHandle.getFile()).text());
+      results.push({
+        dirHandle: entry,
+        name: entry.name,
+        bpm: data.bpm,
+        timeSignature: data.timeSignature,
+        trackCount: data.tracks?.length ?? 0,
+        theme: data.theme,
+      });
+    } catch { /* skip — no project.json or malformed JSON */ }
+  }
+  results.sort((a, b) => a.name.localeCompare(b.name));
+  return results;
+}
+
+async function showProjectPicker() {
+  const dialog   = document.getElementById("project-picker-dialog");
+  const list     = document.getElementById("project-picker-list");
+  const emptyMsg = document.getElementById("project-picker-empty");
+
+  list.innerHTML = "";
+  emptyMsg.hidden = true;
+  dialog.hidden = false;
+
+  let projects;
+  try { projects = await scanWorkspaceProjects(); }
+  catch { projects = []; }
+
+  if (projects.length === 0) {
+    emptyMsg.hidden = false;
+  } else {
+    for (const proj of projects) {
+      const sig  = proj.timeSignature
+        ? `${proj.timeSignature.beats}/${proj.timeSignature.noteValue}`
+        : "";
+      const meta = [
+        proj.bpm ? `${proj.bpm} BPM` : "",
+        sig,
+        proj.trackCount ? `${proj.trackCount} track${proj.trackCount !== 1 ? 's' : ''}` : "",
+        proj.theme || "",
+      ].filter(Boolean).join(" · ");
+
+      const row = document.createElement("div");
+      row.className = "pp-row";
+      row.innerHTML = `
+        <span class="pp-name">${escapeHtml(proj.name)}</span>
+        <span class="pp-meta">${escapeHtml(meta)}</span>
+        <button class="pp-open-btn">Open</button>
+      `;
+      row.querySelector(".pp-open-btn").addEventListener("click", async () => {
+        dialog.hidden = true;
+        _removePickerListeners();
+        await _loadProjectFromHandle(proj.dirHandle);
+      });
+      list.appendChild(row);
+    }
+  }
+
+  document.getElementById("project-picker-new-btn").onclick = async () => {
+    if (typeof _dirty !== "undefined" && _dirty &&
+        !confirm("Create a new project? All unsaved work will be lost.")) return;
+    dialog.hidden = true;
+    _removePickerListeners();
+    const name = await _promptProjectName();
+    if (!name) return;
+    projectFolderHandle = await workspaceFolderHandle.getDirectoryHandle(name, { create: true });
+    updateProjectNameDisplay();
+    await saveProject();
+  };
+
+  document.getElementById("project-picker-change-btn").onclick = () => {
+    dialog.hidden = true;
+    _removePickerListeners();
+    setWorkspace();
+  };
+
+  document.getElementById("project-picker-cancel-btn").onclick = () => {
+    dialog.hidden = true;
+    _removePickerListeners();
+  };
+
+  function _onBackdropClick(e) {
+    if (e.target === dialog) { dialog.hidden = true; _removePickerListeners(); }
+  }
+  function _onEscape(e) {
+    if (e.key === "Escape" && !dialog.hidden) { dialog.hidden = true; _removePickerListeners(); }
+  }
+  function _removePickerListeners() {
+    dialog.removeEventListener("click", _onBackdropClick);
+    document.removeEventListener("keydown", _onEscape);
+  }
+  dialog.addEventListener("click", _onBackdropClick);
+  document.addEventListener("keydown", _onEscape);
+}
+
+async function _loadProjectFromHandle(folderHandle) {
+  try {
+    const jsonHandle = await folderHandle.getFileHandle("project.json");
+    const data = JSON.parse(await (await jsonHandle.getFile()).text());
+
+    projectId           = data.id ?? folderHandle.name;
+    projectFolderHandle = folderHandle;
+    log("openProject folder:", folderHandle.name);
+    updateProjectNameDisplay();
+    localStorage.setItem("previousProjectData", JSON.stringify(data));
+    deserializeProject(data);
+
+    let dataHandle = null;
+    try { dataHandle = await folderHandle.getDirectoryHandle("data"); } catch { /* no data folder */ }
+
+    if (dataHandle) {
+      for (const savedTrack of (data.tracks ?? [])) {
+        for (const savedClip of (savedTrack.clips ?? [])) {
+          if (!savedClip.file) continue;
+          try {
+            const wavHandle   = await dataHandle.getFileHandle(savedClip.file);
+            const wavFile     = await wavHandle.getFile();
+            const arrayBuffer = await wavFile.arrayBuffer();
+            if (arrayBuffer.byteLength <= 44) continue;
+            const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
+            audioEngineStoreBuffer(savedClip.id, audioBuffer);
+            updateClipWaveform(savedClip.id, audioBuffer);
+          } catch { /* file missing or undecodable — clip is silent */ }
+        }
+      }
+      await loadVideoFromFolder(dataHandle, data);
+    }
+
+    clearDirty();
+  } catch (err) {
+    console.error("_loadProjectFromHandle failed:", err);
+    alert("Failed to load project. See console for details.");
+  }
+}
+
+function _promptProjectName() {
+  return new Promise(resolve => {
+    const dialog    = document.getElementById("project-name-prompt-dialog");
+    const input     = document.getElementById("project-name-prompt-input");
+    const okBtn     = document.getElementById("project-name-prompt-ok");
+    const cancelBtn = document.getElementById("project-name-prompt-cancel");
+
+    input.value = "";
+    okBtn.disabled = true;
+    dialog.hidden = false;
+    input.focus();
+
+    function _finish(value) {
+      dialog.hidden = true;
+      input.removeEventListener("input", _onInput);
+      okBtn.removeEventListener("click", _onOk);
+      cancelBtn.removeEventListener("click", _onCancel);
+      input.removeEventListener("keydown", _onKeydown);
+      resolve(value);
+    }
+    function _onInput()    { okBtn.disabled = input.value.trim() === ""; }
+    function _onOk()       { const v = input.value.trim(); if (v) _finish(v); }
+    function _onCancel()   { _finish(null); }
+    function _onKeydown(e) {
+      if (e.key === "Enter"  && !okBtn.disabled) { e.preventDefault(); _onOk(); }
+      if (e.key === "Escape")                    { e.preventDefault(); _onCancel(); }
+    }
+
+    input.addEventListener("input",   _onInput);
+    okBtn.addEventListener("click",   _onOk);
+    cancelBtn.addEventListener("click", _onCancel);
+    input.addEventListener("keydown", _onKeydown);
+  });
 }
 
 // ============================================================
@@ -39,8 +309,9 @@ function serializeProject() {
       gain:       track.gain,
       pan:        track.pan,
       opacity:    track.opacity,
-      instrument: track.instrument,
-      scenes:     [...track.scenes],
+      instrument:     track.instrument,
+      outputDeviceId: track.outputDeviceId ?? null,
+      scenes:         [...track.scenes],
       clips:  track.clips.map(clip => {
         const canvas = document.querySelector(`.waveform[data-clip-id="${clip.id}"] .waveform-canvas`);
         const amplitudesRaw = canvas?.dataset?.amplitudes;
@@ -83,6 +354,7 @@ function serializeProject() {
     mixer: {
       masterGain:          parseInt(document.getElementById("master-gain-slider").value),
       masterVolPreset:     document.getElementById("master-vol-preset").value,
+      masterOutputDeviceId: audioEngineGetMasterOutputDeviceId(),
       reverbOn:            document.getElementById("reverb-toggle").classList.contains("active"),
       reverbPreset:        document.getElementById("reverb-preset").value,
       reverbWet:           parseInt(document.getElementById("master-reverb-wet").value),
@@ -184,6 +456,14 @@ function deserializeProject(data) {
     masterGain = mgain;
     audioEngineSetMasterGain(mgain / 100);
     document.getElementById("master-vol-preset").value = mx.masterVolPreset ?? "";
+
+    const masterOutId = mx.masterOutputDeviceId ?? null;
+    if (masterOutId) {
+      audioEngineSetMasterOutput(masterOutId).then(() => {
+        const sel = document.getElementById("master-output-select");
+        if (sel) sel.value = masterOutId;
+      });
+    }
 
     const reverbOn = mx.reverbOn ?? true;
     document.getElementById("reverb-toggle").classList.toggle("active", reverbOn);
@@ -315,6 +595,9 @@ function deserializeProject(data) {
     const instrBtn = track.controlRow.querySelector(".instrument-toggle");
     if (instrBtn) instrBtn.textContent = track.instrument === "synth" ? "Synth" : "Pluck";
 
+    // Output device
+    track.outputDeviceId = saved.outputDeviceId ?? null;
+
     // Scene assignments
     track.scenes = saved.scenes ?? [];
     track.scenes.forEach(letter => {
@@ -380,6 +663,14 @@ function deserializeProject(data) {
     tracks.unshift(track);
   }
 
+  // Wire up saved output device routing (async bus creation, fire-and-forget)
+  const tracksWithDevice = tracks.filter(t => t.outputDeviceId);
+  if (tracksWithDevice.length) {
+    Promise.all(tracksWithDevice.map(t => audioEngineEnsureOutputBus(t.outputDeviceId)))
+      .then(() => tracksWithDevice.forEach(t => audioEngineSetTrackOutput(t.id, t.outputDeviceId)))
+      .catch(err => log("output device restore failed:", err));
+  }
+
   // ----- Restore markers -----
 
   for (const saved of (data.markers ?? [])) {
@@ -430,16 +721,24 @@ async function saveProject() {
     if (!projectId) projectId = crypto.randomUUID();
 
     if (!projectFolderHandle) {
-      const parent = await window.showDirectoryPicker({ mode: "readwrite" });
-      projectFolderHandle = await parent.getDirectoryHandle(projectId, { create: true });
-      updateProjectNameDisplay();
+      if (workspaceFolderHandle) {
+        const name = await _promptProjectName();
+        if (!name) return;
+        projectFolderHandle = await workspaceFolderHandle.getDirectoryHandle(name, { create: true });
+        updateProjectNameDisplay();
+      } else {
+        const parent = await window.showDirectoryPicker({ mode: "readwrite" });
+        projectFolderHandle = await parent.getDirectoryHandle(projectId, { create: true });
+        updateProjectNameDisplay();
+      }
     }
 
     const dataHandle = await projectFolderHandle.getDirectoryHandle("data", { create: true });
 
     // Write project.json (project root only)
     const data = serializeProject();
-    console.log("saveProject:", data);
+    log("saveProject folder:", projectFolderHandle.name);
+    log("saveProject:", data);
     localStorage.setItem("previousProjectData", JSON.stringify(data));
     const jsonHandle = await projectFolderHandle.getFileHandle("project.json", { create: true });
     const jsonWriter = await jsonHandle.createWritable();
@@ -488,6 +787,7 @@ async function reconnectProjectFolder() {
     return false;
   }
   projectFolderHandle = folderHandle;
+  log("reconnectProjectFolder folder:", folderHandle.name);
   updateProjectNameDisplay();
 
   let dataHandle = null;
@@ -516,6 +816,7 @@ async function reconnectProjectFolder() {
 }
 
 async function openProject() {
+  if (workspaceFolderHandle) { await showProjectPicker(); return; }
   try {
     const folderHandle = await window.showDirectoryPicker({ mode: "read" });
 
@@ -532,6 +833,7 @@ async function openProject() {
 
     projectId            = data.id ?? folderHandle.name;
     projectFolderHandle  = null;
+    log("openProject folder:", folderHandle.name);
     updateProjectNameDisplay();
 
     localStorage.setItem("previousProjectData", JSON.stringify(data));

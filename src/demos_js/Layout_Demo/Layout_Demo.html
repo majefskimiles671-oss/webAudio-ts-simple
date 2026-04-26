@@ -89,6 +89,7 @@ Rule - Add comments before code snippets in this format:
                 <div id="menu-new-project" role="menuitem" tabindex="-1">New Project</div>
                 <div id="menu-open-project" role="menuitem" tabindex="-1">Open Project</div>
                 <div id="menu-save-project" role="menuitem" tabindex="-1">Save Project</div>
+                <div id="menu-set-workspace" role="menuitem" tabindex="-1">Set Workspace…</div>
                 <div id="menu-import-wav" role="menuitem" tabindex="-1">Import WAV…</div>
                 <div id="menu-import-midi" role="menuitem" tabindex="-1">Import MIDI…</div>
                 <div id="menu-load-video" role="menuitem" tabindex="-1">Load Video…</div>
@@ -124,6 +125,7 @@ Rule - Add comments before code snippets in this format:
             </div>
         </div>
 
+        <span id="workspace-name-display" class="workspace-name-display"></span>
         <span id="project-name-display" class="project-name-display"></span>
         <span id="unsaved-indicator" role="status" hidden>Unsaved changes</span>
     </nav>
@@ -322,7 +324,7 @@ Rule - Add comments before code snippets in this format:
 
                 <div class="track-row-4">
                     <select class="output-select" title="Audio output device">
-                        <option value="">Default Output</option>
+                        <option value="">Master</option>
                     </select>
                 </div>
 
@@ -365,6 +367,12 @@ Rule - Add comments before code snippets in this format:
                         <div class="master-gain-row">
                             <span class="master-gain-label">Vol</span>
                             <gain-slider id="master-gain-slider" min="0" max="100" value="25"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Out</span>
+                            <select id="master-output-select" class="output-select" title="Master output device">
+                                <option value="">Default</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -806,6 +814,38 @@ Rule - Add comments before code snippets in this format:
       <button id="track-edit-duplicate-btn">Duplicate Track</button>
       <button id="track-edit-delete-btn">Delete Track</button>
       <button id="track-edit-close-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="project-picker-dialog" class="view-settings-overlay" hidden
+     role="dialog" aria-modal="true" aria-labelledby="project-picker-title">
+  <div class="view-settings-dialog" id="project-picker-card">
+    <h2 class="view-settings-title" id="project-picker-title">Open Project</h2>
+    <div class="vs-dialog-body" id="project-picker-body">
+      <div id="project-picker-list"></div>
+      <p id="project-picker-empty" hidden>No projects found in this workspace.</p>
+    </div>
+    <div class="view-settings-actions">
+      <button id="project-picker-new-btn">New Project…</button>
+      <button id="project-picker-change-btn">Change Workspace…</button>
+      <button id="project-picker-cancel-btn" class="view-settings-accept-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="project-name-prompt-dialog" class="view-settings-overlay" hidden
+     role="dialog" aria-modal="true" aria-labelledby="project-name-prompt-title">
+  <div class="view-settings-dialog">
+    <h2 class="view-settings-title" id="project-name-prompt-title">New Project</h2>
+    <div class="vs-dialog-body">
+      <label for="project-name-prompt-input" style="font-size:13px;color:var(--text-muted)">Project folder name</label>
+      <input id="project-name-prompt-input" type="text" maxlength="60"
+             autocomplete="off" spellcheck="false">
+    </div>
+    <div class="view-settings-actions">
+      <button id="project-name-prompt-cancel">Cancel</button>
+      <button id="project-name-prompt-ok" class="view-settings-accept-btn" disabled>Create</button>
     </div>
   </div>
 </div>
