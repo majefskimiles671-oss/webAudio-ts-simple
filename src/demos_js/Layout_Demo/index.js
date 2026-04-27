@@ -5067,7 +5067,13 @@ syncRecordBtnEnabled();
   }
 
   document.addEventListener('click', closeAll);
-  window.addEventListener('scroll', closeAll, { capture: true, passive: true });
+  // Close on scroll only when the scrolling element is an ancestor of the open
+  // trigger — not on unrelated containers like the timeline area.
+  window.addEventListener('scroll', (e) => {
+    if (!openMenu) return;
+    if (e.target !== document && !e.target.contains(openMenu.wrapper)) return;
+    closeAll();
+  }, { capture: true, passive: true });
 
   function initCustomSelect(sel) {
     const wrapper = document.createElement('div');

@@ -4687,10 +4687,24 @@
             overflow: hidden;
         }
 
-        #piano-roll-keys {
-            width: 44px;
+        .piano-roll-keys-wrapper {
+            display: flex;
+            flex-direction: column;
             flex-shrink: 0;
             border-right: 1px solid var(--border-subtle);
+        }
+
+        .piano-roll-keys-spacer {
+            height: 20px;
+            flex-shrink: 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        #piano-roll-keys {
+            width: 44px;
+            flex: 1;
+            min-height: 0;
+            display: block;
         }
 
         .piano-roll-right {

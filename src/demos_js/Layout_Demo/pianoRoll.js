@@ -26,6 +26,16 @@ const PR_RESIZE_ZONE = 8; // px from right edge that triggers resize
 // Piano Roll - Helpers -----
 function _prMidiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
 
+function _prPreviewNote(pitch, durationSec) {
+  const ctx = getAudioContext();
+  ctx.resume();
+  if (_prTrack?.instrument === 'gm') {
+    sfScheduleNote(null, _prTrack.gmProgram ?? 0, pitch, 100, ctx.currentTime, durationSec);
+  } else {
+    cpScheduleNoteAt(_prMidiToFreq(pitch), ctx, ctx.currentTime, durationSec, 100, _prTrack?.instrument ?? 'pluck');
+  }
+}
+
 const _PR_NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 function _prNoteName(pitch) {
   return _PR_NOTE_NAMES[pitch % 12] + Math.floor(pitch / 12 - 1);
@@ -246,9 +256,7 @@ function _prAddNote(pitch, startSamples, durationSamples) {
   durationSamples = Math.max(Math.round(_prGetSR() / 32), Math.round(durationSamples));
   _prClip.notes.push({ pitch, startSamples, durationSamples, velocity: 100 });
   _prClip.notes.sort((a, b) => a.startSamples - b.startSamples);
-  const ctx = getAudioContext();
-  ctx.resume();
-  cpScheduleNoteAt(_prMidiToFreq(pitch), ctx, ctx.currentTime, durationSamples / _prGetSR(), 100, _prTrack.instrument ?? "pluck");
+  _prPreviewNote(pitch, durationSamples / _prGetSR());
 }
 
 function _prDeleteSelected() {
@@ -295,8 +303,7 @@ function _prOnPointerDown(e) {
     _prSelected.add(hit.index);
     _prDragMode = hit.isResize ? "resize" : "move";
     const _hn = _prClip.notes[hit.index];
-    const _hctx = getAudioContext(); _hctx.resume();
-    cpScheduleNoteAt(_prMidiToFreq(_hn.pitch), _hctx, _hctx.currentTime, _hn.durationSamples / _prGetSR(), 100, _prTrack.instrument ?? "pluck");
+    _prPreviewNote(_hn.pitch, _hn.durationSamples / _prGetSR());
   } else {
     // Create new note
     canvas.setPointerCapture(e.pointerId);
@@ -448,7 +455,7 @@ function _prResizeCanvases() {
   const rollW = rollCvs.clientWidth  || (body.clientWidth - PR_KEY_W - 1);
   const rollH = rollCvs.clientHeight || (body.clientHeight - (rulerCvs?.clientHeight ?? 20));
   keyCvs.width   = PR_KEY_W;
-  keyCvs.height  = body.clientHeight;
+  keyCvs.height  = rollH;
   rollCvs.width  = rollW;
   rollCvs.height = rollH;
   if (rulerCvs) rulerCvs.width = rollW;
@@ -463,9 +470,7 @@ function _prKeysOnPointerDown(e) {
   canvas.setPointerCapture(e.pointerId);
   _prActiveKeyPitch = pitch;
   _prDrawKeys(canvas);
-  const ctx = getAudioContext();
-  ctx.resume();
-  cpScheduleNoteAt(_prMidiToFreq(pitch), ctx, ctx.currentTime, 0.5, 100, _prTrack.instrument ?? "pluck");
+  _prPreviewNote(pitch, 0.5);
 }
 
 function _prKeysOnPointerMove(e) {
@@ -476,8 +481,7 @@ function _prKeysOnPointerMove(e) {
   if (pitch === _prActiveKeyPitch || pitch < PR_MIN_PITCH || pitch > PR_MAX_PITCH) return;
   _prActiveKeyPitch = pitch;
   _prDrawKeys(canvas);
-  const ctx = getAudioContext();
-  cpScheduleNoteAt(_prMidiToFreq(pitch), ctx, ctx.currentTime, 0.5, 100, _prTrack.instrument ?? "pluck");
+  _prPreviewNote(pitch, 0.5);
 }
 
 function _prKeysOnPointerUp() {
@@ -520,6 +524,7 @@ function pianoRollOpen(clip, track) {
   newKeys.addEventListener("pointermove",  _prKeysOnPointerMove);
   newKeys.addEventListener("pointerup",    _prKeysOnPointerUp);
   newKeys.addEventListener("pointerleave", _prKeysOnPointerUp);
+  newKeys.addEventListener("wheel", _prOnWheel, { passive: false });
 
   const oldRuler = document.getElementById("piano-roll-ruler");
   const newRuler = document.createElement("canvas");
