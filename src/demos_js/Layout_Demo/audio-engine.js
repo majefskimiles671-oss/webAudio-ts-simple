@@ -643,3 +643,8 @@ function audioEngineGetCompressorReduction() {
 
 function getAudioContext() { return _audioCtx; }
 function getMasterGainNode() { return _masterGainNode; }
+
+function audioEngineEnsureLiveOutput() {
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  _speakersAudioEl.play().catch(() => {});
+}

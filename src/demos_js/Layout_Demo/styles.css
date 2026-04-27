@@ -958,6 +958,28 @@
             border-color: var(--accent-primary);
         }
 
+        .gm-program-select {
+            font-size: 10px;
+            padding: 3px 18px 3px 6px;
+            border-radius: 6px;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 5px center;
+            background-size: 7px;
+            max-width: 160px;
+        }
+
+        .gm-program-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            color: var(--text-main);
+        }
+
         /* Track Volume Meter */
 
         .track-meter {
@@ -2062,6 +2084,27 @@
         body.hide-notes #bottom-panel-content { display: none; }
 
         /* ----- Accessibility ----- */
+
+        #toast {
+            position: fixed;
+            bottom: 88px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: color-mix(in srgb, var(--bg-surface) 85%, black);
+            color: var(--text-main);
+            border: 1px solid var(--border-subtle);
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        #toast.visible { opacity: 1; }
 
         .sr-only {
             position: absolute;

@@ -185,18 +185,72 @@ const KEY_NOTE_MAP = {
 const _MIDI_KEYS_ROW       = ['a','s','d','f','g','h','j','k','l'];
 const _MIDI_KEYS_CHROMATIC = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
 const _MIDI_KEYS_INTERVALS = {
-  major: [0, 2, 4, 5, 7, 9, 11, 12, 14],
-  minor: [0, 2, 3, 5, 7,  8, 10, 12, 14],
+  major:      [0, 2, 4, 5, 7, 9, 11, 12, 14],
+  dorian:     [0, 2, 3, 5, 7, 9, 10, 12, 14],
+  phrygian:   [0, 1, 3, 5, 7, 8, 10, 12, 14],
+  lydian:     [0, 2, 4, 6, 7, 9, 11, 12, 14],
+  mixolydian: [0, 2, 4, 5, 7, 9, 10, 12, 14],
+  minor:      [0, 2, 3, 5, 7, 8, 10, 12, 14],
+  locrian:    [0, 1, 3, 5, 6, 8, 10, 12, 14],
 };
 
 // Helpers - Midi Keys - Pure Computation Layer -----
+let _toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('visible');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('visible'), 1500);
+}
+
+let _prevOctave = 4;
 function updateMidiKeyMap() {
   const root   = document.getElementById('midi-keys-root').value;
   const octave = parseInt(document.getElementById('midi-keys-octave').value, 10);
   const scale  = document.getElementById('midi-keys-scale').value;
+  if (octave !== _prevOctave) {
+    showToast(`Octave ${_prevOctave} → ${octave}`);
+    _prevOctave = octave;
+  }
   const base   = (octave + 1) * 12 + _MIDI_KEYS_CHROMATIC[root];
   _MIDI_KEYS_ROW.forEach((key, i) => { KEY_NOTE_MAP[key] = base + _MIDI_KEYS_INTERVALS[scale][i]; });
 }
+const GM_INSTRUMENTS = [
+  "Acoustic Grand Piano","Bright Acoustic Piano","Electric Grand Piano","Honky-tonk Piano",
+  "Electric Piano 1","Electric Piano 2","Harpsichord","Clavinet",
+  "Celesta","Glockenspiel","Music Box","Vibraphone",
+  "Marimba","Xylophone","Tubular Bells","Dulcimer",
+  "Drawbar Organ","Percussive Organ","Rock Organ","Church Organ",
+  "Reed Organ","Accordion","Harmonica","Tango Accordion",
+  "Acoustic Guitar (nylon)","Acoustic Guitar (steel)","Electric Guitar (jazz)","Electric Guitar (clean)",
+  "Electric Guitar (muted)","Overdriven Guitar","Distortion Guitar","Guitar Harmonics",
+  "Acoustic Bass","Electric Bass (finger)","Electric Bass (pick)","Fretless Bass",
+  "Slap Bass 1","Slap Bass 2","Synth Bass 1","Synth Bass 2",
+  "Violin","Viola","Cello","Contrabass",
+  "Tremolo Strings","Pizzicato Strings","Orchestral Harp","Timpani",
+  "String Ensemble 1","String Ensemble 2","Synth Strings 1","Synth Strings 2",
+  "Choir Aahs","Voice Oohs","Synth Choir","Orchestra Hit",
+  "Trumpet","Trombone","Tuba","Muted Trumpet",
+  "French Horn","Brass Section","Synth Brass 1","Synth Brass 2",
+  "Soprano Sax","Alto Sax","Tenor Sax","Baritone Sax",
+  "Oboe","English Horn","Bassoon","Clarinet",
+  "Piccolo","Flute","Recorder","Pan Flute",
+  "Blown Bottle","Shakuhachi","Whistle","Ocarina",
+  "Lead 1 (square)","Lead 2 (sawtooth)","Lead 3 (calliope)","Lead 4 (chiff)",
+  "Lead 5 (charang)","Lead 6 (voice)","Lead 7 (fifths)","Lead 8 (bass+lead)",
+  "Pad 1 (new age)","Pad 2 (warm)","Pad 3 (polysynth)","Pad 4 (choir)",
+  "Pad 5 (bowed)","Pad 6 (metallic)","Pad 7 (halo)","Pad 8 (sweep)",
+  "FX 1 (rain)","FX 2 (soundtrack)","FX 3 (crystal)","FX 4 (atmosphere)",
+  "FX 5 (brightness)","FX 6 (goblins)","FX 7 (echoes)","FX 8 (sci-fi)",
+  "Sitar","Banjo","Shamisen","Koto",
+  "Kalimba","Bag pipe","Fiddle","Shanai",
+  "Tinkle Bell","Agogo","Steel Drums","Woodblock",
+  "Taiko Drum","Melodic Tom","Synth Drum","Reverse Cymbal",
+  "Guitar Fret Noise","Breath Noise","Seashore","Bird Tweet",
+  "Telephone Ring","Helicopter","Applause","Gunshot",
+];
+
 const _liveKeyNotes = new Map(); // key → { nodes, pitch, startSample }
 const _activeKeys   = new Set();
 let _pendingMidiNotes = []; // accumulated during MIDI recording, flushed at onRecordStop
@@ -1009,13 +1063,35 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     instrBtn.className = "instrument-toggle";
     instrBtn.textContent = "Pluck";
     instrBtn.title = "Switch instrument (Pluck / Synth / GM)";
+
+    const gmSelect = document.createElement("select");
+    gmSelect.className = "gm-program-select";
+    GM_INSTRUMENTS.forEach((name, i) => {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = `${i} ${name}`;
+      gmSelect.appendChild(opt);
+    });
+    gmSelect.value = track.gmProgram ?? 0;
+    gmSelect.style.display = "none";
+    gmSelect.addEventListener("change", (e) => {
+      track.gmProgram = parseInt(e.target.value, 10);
+      const out = gmMidiGetOutput();
+      if (out) gmMidiProgramChange(out, GM_LIVE_CHANNEL, track.gmProgram);
+      markDirty();
+    }, { signal });
+
     const _instrCycle = ["pluck", "synth", "gm"];
     instrBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       const idx = _instrCycle.indexOf(track.instrument ?? "pluck");
       track.instrument = _instrCycle[(idx + 1) % _instrCycle.length];
       instrBtn.textContent = { pluck: "Pluck", synth: "Synth", gm: "GM" }[track.instrument] ?? "Pluck";
-      instrBtn.title = "Switch instrument (Pluck / Synth / GM)";
+      gmSelect.style.display = track.instrument === "gm" ? "" : "none";
+      if (track.instrument === "gm") {
+        const out = gmMidiGetOutput();
+        if (out) gmMidiProgramChange(out, GM_LIVE_CHANNEL, track.gmProgram ?? 0);
+      }
     }, { signal });
 
     const addMidiBtn = document.createElement("button");
@@ -1030,6 +1106,7 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     const midiControls = document.createElement("div");
     midiControls.className = "track-midi-controls";
     midiControls.appendChild(instrBtn);
+    midiControls.appendChild(gmSelect);
     midiControls.appendChild(addMidiBtn);
     controlRow.querySelector(".track-row-3").append(midiControls);
   }
@@ -3079,12 +3156,21 @@ document.addEventListener("keydown", (e) => {
     if (pitch !== undefined && armedMidiTrack && !_activeKeys.has(e.key)) {
       e.preventDefault();
       _activeKeys.add(e.key);
+      audioEngineEnsureLiveOutput();
+      const ctx = getAudioContext();
       const startSample = recording ? Math.round(getPlayheadTime() * SAMPLE_RATE) : null;
       if (armedMidiTrack.instrument === "gm") {
-        gmMidiNoteOn(gmMidiGetOutput(), GM_LIVE_CHANNEL, pitch, 100);
-        _liveKeyNotes.set(e.key, { nodes: [], pitch, startSample, gmLive: true });
+        const mixerInput = audioEngineGetTrackMixerInput(armedMidiTrack.id);
+        const sfHandle = sfNoteOn(mixerInput, armedMidiTrack.gmProgram ?? 0, pitch, 100);
+        if (!sfHandle) {
+          const out = gmMidiGetOutput();
+          if (out) {
+            gmMidiProgramChange(out, GM_LIVE_CHANNEL, armedMidiTrack.gmProgram ?? 0);
+            gmMidiNoteOn(out, GM_LIVE_CHANNEL, pitch, 100);
+          }
+        }
+        _liveKeyNotes.set(e.key, { nodes: [], sfHandle, pitch, startSample, gmLive: !sfHandle });
       } else {
-        const ctx = getAudioContext();
         const freq = _midiToFreq(pitch);
         const now = ctx.currentTime;
         const mixerInput = audioEngineGetTrackMixerInput(armedMidiTrack.id);
@@ -3157,6 +3243,13 @@ document.addEventListener("keydown", (e) => {
     viewState.chordDiagrams = !viewState.chordDiagrams;
     applyViewState();
   }
+
+  if ((e.key === "4" || e.key === "6") && !editable) {
+    const sel = document.getElementById("midi-keys-octave");
+    const cur = parseInt(sel.value, 10);
+    const next = e.key === "6" ? Math.min(5, cur + 1) : Math.max(1, cur - 1);
+    if (next !== cur) { sel.value = next; updateMidiKeyMap(); }
+  }
 });
 
 document.addEventListener("keyup", (e) => {
@@ -3165,7 +3258,9 @@ document.addEventListener("keyup", (e) => {
   const live = _liveKeyNotes.get(e.key);
   if (!live) return;
   _liveKeyNotes.delete(e.key);
-  if (live.gmLive) {
+  if (live.sfHandle) {
+    sfNoteOff(live.sfHandle);
+  } else if (live.gmLive) {
     gmMidiNoteOff(gmMidiGetOutput(), GM_LIVE_CHANNEL, live.pitch);
   } else {
     live.nodes.forEach(n => { try { n.stop(); } catch (_) {} });

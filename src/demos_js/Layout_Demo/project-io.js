@@ -597,6 +597,11 @@ function deserializeProject(data) {
     track.gmProgram  = saved.gmProgram  ?? 0;
     const instrBtn = track.controlRow.querySelector(".instrument-toggle");
     if (instrBtn) instrBtn.textContent = { pluck: "Pluck", synth: "Synth", gm: "GM" }[track.instrument] ?? "Pluck";
+    const gmSel = track.controlRow.querySelector(".gm-program-select");
+    if (gmSel) {
+      gmSel.value = track.gmProgram ?? 0;
+      gmSel.style.display = track.instrument === "gm" ? "" : "none";
+    }
 
     // Output device
     track.outputDeviceId = saved.outputDeviceId ?? null;

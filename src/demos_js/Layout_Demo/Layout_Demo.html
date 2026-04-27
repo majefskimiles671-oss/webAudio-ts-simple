@@ -530,13 +530,19 @@ Rule - Add comments before code snippets in this format:
                                 <option value="2">2</option>
                                 <option value="3">3</option>
                                 <option value="4" selected>4</option>
+                                <option value="5">5</option>
                             </select>
                         </div>
                         <div class="master-gain-row">
                             <span class="master-gain-label">Scale</span>
                             <select id="midi-keys-scale" class="master-preset-select">
-                                <option value="major" selected>1 2 3 4 5 6 7</option>
-                                <option value="minor">1 2 ♭3 4 5 ♭6 ♭7</option>
+                                <option value="major" selected>1  2  3  4  5  6  7  Major</option>
+                                <option value="dorian">♭3   ♭7   Dorian</option>
+                                <option value="phrygian">♭2   ♭3   ♭6   ♭7   Phrygian</option>
+                                <option value="lydian">♯4   Lydian</option>
+                                <option value="mixolydian">♭7   Mixolydian</option>
+                                <option value="minor">♭3   ♭6   ♭7   Minor</option>
+                                <option value="locrian">♭2   ♭3   ♭5   ♭6   ♭7   Locrian</option>
                             </select>
                         </div>
                     </div>
@@ -613,6 +619,7 @@ Rule - Add comments before code snippets in this format:
     </div>
 
 <div id="aria-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+<div id="toast"></div>
 
 <div id="shortcut-help-overlay" class="shortcut-help-overlay" hidden
      role="dialog" aria-modal="true" aria-labelledby="shortcut-help-title">
