@@ -185,13 +185,19 @@ const KEY_NOTE_MAP = {
 const _MIDI_KEYS_ROW       = ['a','s','d','f','g','h','j','k','l'];
 const _MIDI_KEYS_CHROMATIC = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
 const _MIDI_KEYS_INTERVALS = {
-  major:      [0, 2, 4, 5, 7, 9, 11, 12, 14],
-  dorian:     [0, 2, 3, 5, 7, 9, 10, 12, 14],
-  phrygian:   [0, 1, 3, 5, 7, 8, 10, 12, 14],
-  lydian:     [0, 2, 4, 6, 7, 9, 11, 12, 14],
-  mixolydian: [0, 2, 4, 5, 7, 9, 10, 12, 14],
-  minor:      [0, 2, 3, 5, 7, 8, 10, 12, 14],
-  locrian:    [0, 1, 3, 5, 6, 8, 10, 12, 14],
+  major:         [0, 2, 4,  5, 7, 9, 11, 12, 14],
+  dorian:        [0, 2, 3,  5, 7, 9, 10, 12, 14],
+  phrygian:      [0, 1, 3,  5, 7, 8, 10, 12, 14],
+  lydian:        [0, 2, 4,  6, 7, 9, 11, 12, 14],
+  mixolydian:    [0, 2, 4,  5, 7, 9, 10, 12, 14],
+  minor:         [0, 2, 3,  5, 7, 8, 10, 12, 14],
+  locrian:       [0, 1, 3,  5, 6, 8, 10, 12, 14],
+  byzantine:     [0, 1, 4,  5, 7, 8, 11, 12, 14],
+  hungarianMinor:[0, 2, 3,  6, 7, 8, 11, 12, 14],
+  hijaz:         [0, 1, 4,  5, 7, 8, 10, 12, 14],
+  wholeTone:        [0, 2, 4,  6,    8,    10,   null, 12, 14],
+  majorPentatonic:  [0, 2, 4,  null, 7,    9,    null, 12, 14],
+  minorPentatonic:  [0, null, 3, 5,  7,    null, 10,   12, 14],
 };
 
 // Helpers - Midi Keys - Pure Computation Layer -----
@@ -214,7 +220,10 @@ function updateMidiKeyMap() {
     _prevOctave = octave;
   }
   const base   = (octave + 1) * 12 + _MIDI_KEYS_CHROMATIC[root];
-  _MIDI_KEYS_ROW.forEach((key, i) => { KEY_NOTE_MAP[key] = base + _MIDI_KEYS_INTERVALS[scale][i]; });
+  _MIDI_KEYS_ROW.forEach((key, i) => {
+    const interval = _MIDI_KEYS_INTERVALS[scale][i];
+    KEY_NOTE_MAP[key] = interval == null ? undefined : base + interval;
+  });
 }
 const GM_INSTRUMENTS = [
   "Acoustic Grand Piano","Bright Acoustic Piano","Electric Grand Piano","Honky-tonk Piano",
@@ -3886,7 +3895,7 @@ const _viewSettingsOverlay = document.getElementById("view-settings-overlay");
 const VS_PRESETS = {
   minimal:  { scenes: false, markerTransport: false, tempo: true,  metronome: false, zoom: false, solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false },
   simple:   { scenes: false, markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false },
-  standard: { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: false, notes: true,  chordDiagrams: false },
+  standard: { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: false },
   compose:  { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: true  },
 };
 
@@ -4574,7 +4583,7 @@ selectedMarkerId = ORIGIN_MARKER_ID;
 
 // Set default theme
 setTheme("Dark", { silent: true });
-Object.assign(viewState, VS_PRESETS["simple"]);
+Object.assign(viewState, VS_PRESETS["standard"]);
 applyViewState();
 syncViewSettingsCheckboxes();
 
