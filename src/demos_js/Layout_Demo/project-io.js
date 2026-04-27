@@ -36,6 +36,15 @@ function updateWorkspaceDisplay() {
   }
 }
 
+function _updateProjectMenuItems(enabled) {
+  for (const id of ["menu-open-project", "menu-save-project"]) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.setAttribute("aria-disabled", enabled ? "false" : "true");
+    el.classList.toggle("menu-item-disabled", !enabled);
+  }
+}
+
 // ============================================================
 // IndexedDB helpers (workspace handle persistence) -----
 // ============================================================
@@ -85,14 +94,17 @@ function escapeHtml(str) {
 
 async function initWorkspace() {
   const handle = await _loadWorkspaceHandle();
-  if (!handle) return;
+  if (!handle) { _updateProjectMenuItems(false); return; }
   try {
     const permission = await handle.requestPermission({ mode: 'readwrite' });
     if (permission === 'granted') {
       workspaceFolderHandle = handle;
       updateWorkspaceDisplay();
+      _updateProjectMenuItems(true);
+    } else {
+      _updateProjectMenuItems(false);
     }
-  } catch { /* permission unavailable — user must re-set workspace manually */ }
+  } catch { _updateProjectMenuItems(false); /* permission unavailable — user must re-set workspace manually */ }
 }
 
 async function setWorkspace() {
@@ -101,6 +113,7 @@ async function setWorkspace() {
     workspaceFolderHandle = dirHandle;
     await _saveWorkspaceHandle(dirHandle);
     updateWorkspaceDisplay();
+    _updateProjectMenuItems(true);
     await showProjectPicker();
   } catch (err) {
     if (err.name !== 'AbortError') console.error('setWorkspace failed:', err);

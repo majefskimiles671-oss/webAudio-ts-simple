@@ -2264,6 +2264,13 @@
             border-radius: 4px;
         }
 
+        .menu-pop div.menu-item-disabled,
+        .menu-pop [aria-disabled="true"] {
+            opacity: 0.4;
+            pointer-events: none;
+            cursor: default;
+        }
+
         .menu-pop [data-theme] {
             display: flex;
             align-items: center;

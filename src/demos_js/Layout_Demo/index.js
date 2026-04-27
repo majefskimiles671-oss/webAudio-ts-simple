@@ -1075,6 +1075,10 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
 
     const gmSelect = document.createElement("select");
     gmSelect.className = "gm-program-select";
+    const drumOpt = document.createElement("option");
+    drumOpt.value = SF_PERCUSSION;
+    drumOpt.textContent = "Drums (Percussion)";
+    gmSelect.appendChild(drumOpt);
     GM_INSTRUMENTS.forEach((name, i) => {
       const opt = document.createElement("option");
       opt.value = i;
@@ -1086,7 +1090,7 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     gmSelect.addEventListener("change", (e) => {
       track.gmProgram = parseInt(e.target.value, 10);
       const out = gmMidiGetOutput();
-      if (out) gmMidiProgramChange(out, GM_LIVE_CHANNEL, track.gmProgram);
+      if (out && track.gmProgram !== SF_PERCUSSION) gmMidiProgramChange(out, GM_LIVE_CHANNEL, track.gmProgram);
       markDirty();
     }, { signal });
 
@@ -1099,7 +1103,8 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
       gmSelect.style.display = track.instrument === "gm" ? "" : "none";
       if (track.instrument === "gm") {
         const out = gmMidiGetOutput();
-        if (out) gmMidiProgramChange(out, GM_LIVE_CHANNEL, track.gmProgram ?? 0);
+        const prog = track.gmProgram ?? 0;
+        if (out && prog !== SF_PERCUSSION) gmMidiProgramChange(out, GM_LIVE_CHANNEL, prog);
       }
     }, { signal });
 
@@ -3754,8 +3759,14 @@ document.getElementById("menu-new-project").addEventListener("click", () => {
   location.reload();
 });
 
-document.getElementById("menu-save-project").addEventListener("click", () => saveProject());
-document.getElementById("menu-open-project").addEventListener("click", () => openProject());
+document.getElementById("menu-save-project").addEventListener("click", (e) => {
+  if (e.currentTarget.getAttribute("aria-disabled") === "true") return;
+  saveProject();
+});
+document.getElementById("menu-open-project").addEventListener("click", (e) => {
+  if (e.currentTarget.getAttribute("aria-disabled") === "true") return;
+  openProject();
+});
 document.getElementById("menu-set-workspace").addEventListener("click", () => setWorkspace());
 
 document.getElementById("menu-import-wav").addEventListener("click", () => {
