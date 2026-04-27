@@ -646,9 +646,9 @@ function pianoRollOpen(clip, track) {
   const title = document.getElementById("piano-roll-title");
   title.textContent = "Piano Roll — " + (track.name || "MIDI");
   panel.removeAttribute("hidden");
-  panel.style.left = "50%";
+  const panelW = panel.offsetWidth || 960;
+  panel.style.left = Math.round((window.innerWidth - panelW) / 2) + "px";
   panel.style.top  = "80px";
-  panel.style.transform = "translateX(-50%)";
 
   // Bind canvas events (replace any prior listeners by re-creating the element)
   const oldCanvas = document.getElementById("piano-roll-canvas");

@@ -4616,8 +4616,7 @@
         #piano-roll-panel {
             position: fixed;
             top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 0;
             width: 960px;
             min-width: 400px;
             height: 576px;
