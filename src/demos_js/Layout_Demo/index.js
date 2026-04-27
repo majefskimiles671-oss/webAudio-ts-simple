@@ -1115,9 +1115,9 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     const midiControls = document.createElement("div");
     midiControls.className = "track-midi-controls";
     midiControls.appendChild(instrBtn);
-    midiControls.appendChild(gmSelect);
     midiControls.appendChild(addMidiBtn);
-    controlRow.querySelector(".track-row-3").append(midiControls);
+    midiControls.appendChild(gmSelect);
+    controlRow.querySelector(".track-row-instr").append(midiControls);
   }
 
   track.controlRow  = controlRow;
