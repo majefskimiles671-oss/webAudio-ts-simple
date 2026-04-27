@@ -123,6 +123,10 @@ async function audioEnginePlay(trackGroups, playheadSeconds) {
   const now = _audioCtx.currentTime;
 
   for (const { id: trackId, pan: trackPan = 0, deviceId = null, clips } of trackGroups) {
+    // Disconnect any live mixer that was created while transport was stopped.
+    const existing = _trackMixers.get(trackId);
+    if (existing) _disconnectTrackMixer(existing);
+
     const mixerGain   = _audioCtx.createGain();
     const trackPanner = _audioCtx.createStereoPanner();
     const splitter    = _audioCtx.createChannelSplitter(2);
@@ -165,21 +169,42 @@ async function audioEnginePlay(trackGroups, playheadSeconds) {
   }
 }
 
+function _disconnectTrackMixer({ mixerGain, trackPanner, splitter, analyserL, analyserR }) {
+  try { mixerGain.disconnect(); } catch {}
+  try { trackPanner.disconnect(); } catch {}
+  try { splitter.disconnect(); } catch {}
+  try { analyserL.disconnect(); } catch {}
+  try { analyserR.disconnect(); } catch {}
+}
+
 function audioEngineStop() {
   _dumpMediaState();
   for (const src of _activeSources) {
     try { src.stop(); } catch {}
   }
   _activeSources = [];
-  // Memory Leak Prevention: disconnect all nodes per mixer so the AudioContext can release them.
-  for (const { mixerGain, trackPanner, splitter, analyserL, analyserR } of _trackMixers.values()) {
-    try { mixerGain.disconnect(); } catch {}
-    try { trackPanner.disconnect(); } catch {}
-    try { splitter.disconnect(); } catch {}
-    try { analyserL.disconnect(); } catch {}
-    try { analyserR.disconnect(); } catch {}
-  }
+  for (const mixer of _trackMixers.values()) _disconnectTrackMixer(mixer);
   _trackMixers.clear();
+}
+
+function audioEngineEnsureTrackMixer(trackId, gainValue = 1, panValue = 0, deviceId = null) {
+  if (_trackMixers.has(trackId)) return;
+  const mixerGain   = _audioCtx.createGain();
+  const trackPanner = _audioCtx.createStereoPanner();
+  const splitter    = _audioCtx.createChannelSplitter(2);
+  const analyserL   = _audioCtx.createAnalyser();
+  const analyserR   = _audioCtx.createAnalyser();
+
+  mixerGain.gain.value  = gainValue;
+  trackPanner.pan.value = panValue;
+  mixerGain.connect(trackPanner);
+  trackPanner.connect(splitter);
+  splitter.connect(analyserL, 0);
+  splitter.connect(analyserR, 1);
+  const bus = deviceId ? _outputBuses.get(deviceId) : null;
+  trackPanner.connect(bus ? bus.gainNode : _masterGainNode);
+
+  _trackMixers.set(trackId, { mixerGain, trackPanner, splitter, analyserL, analyserR });
 }
 
 function audioEngineGetTrackMixerInput(trackId) {

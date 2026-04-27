@@ -4,6 +4,8 @@
 
 let _synthMode         = "pluck"; // "pluck" | "synth"
 let _synthNoteMult     = 1;       // global length multiplier for all synth note playback
+let _synthVolume       = 1.0;
+let _synthGainNode     = null;
 let _activeVoices      = [];      // { oscs, env } — released on re-trigger
 let _pluckDurationMult = 0.9;
 let _pluckVolume       = 1.2;
@@ -12,6 +14,15 @@ let _pluckAttack       = 0.008;
 let _pluckDecay        = 0.15;
 let _pluckSustain      = 0.8;
 let _pluckRelease      = 0.24;
+
+function _getSynthGainNode(ctx) {
+  if (!_synthGainNode || _synthGainNode.context !== ctx) {
+    _synthGainNode = ctx.createGain();
+    _synthGainNode.gain.value = _synthVolume;
+    _synthGainNode.connect(getMasterGainNode());
+  }
+  return _synthGainNode;
+}
 
 function _getPluckGainNode(ctx) {
   if (!_pluckGainNode || _pluckGainNode.context !== ctx) {
@@ -157,7 +168,7 @@ function _synthPlayNote(ctx, freq, startTime, durationSec, gainMult = 1, destina
   osc2.connect(g2).connect(filter);
   osc3.connect(g3).connect(filter);
   filter.connect(env);
-  env.connect(destination ?? getMasterGainNode());
+  env.connect(destination ?? _getSynthGainNode(ctx));
 
   const A = 0.35 * _synthNoteMult, D = 0.15 * _synthNoteMult, S = 0.65 * gainMult, R = 1.2 * _synthNoteMult;
   env.gain.setValueAtTime(0,   startTime);
@@ -188,6 +199,10 @@ function _synthReleaseAll(ctx) {
 function cpGetSynthMode()  { return _synthMode; }
 function cpGetSynthMult()  { return _synthNoteMult; }
 function cpSetSynthMult(m) { _synthNoteMult = m; }
+function cpSetSynthVolume(v) {
+  _synthVolume = v;
+  if (_synthGainNode) _synthGainNode.gain.value = v;
+}
 function cpSetPluckMult(m)    { _pluckDurationMult = m; }
 function cpSetPluckVolume(v) {
   _pluckVolume = v;

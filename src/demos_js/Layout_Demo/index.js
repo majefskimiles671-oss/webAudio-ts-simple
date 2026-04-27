@@ -3166,6 +3166,12 @@ document.addEventListener("keydown", (e) => {
       e.preventDefault();
       _activeKeys.add(e.key);
       audioEngineEnsureLiveOutput();
+      audioEngineEnsureTrackMixer(
+        armedMidiTrack.id,
+        (armedMidiTrack.gain ?? 100) / 100,
+        (armedMidiTrack.pan  ?? 0)   / 100,
+        armedMidiTrack.outputDeviceId ?? null
+      );
       const ctx = getAudioContext();
       const startSample = recording ? Math.round(getPlayheadTime() * SAMPLE_RATE) : null;
       if (armedMidiTrack.instrument === "gm") {
@@ -4920,6 +4926,10 @@ document.getElementById("tanpura-rate-sync").addEventListener("change", (e) => {
 document.getElementById("synth-note-length").addEventListener("input", (e) => {
   cpSetSynthMult(e.target.value / 100);
   if (playing) midiEnginePlay(tracks, getPlayheadTime());
+});
+
+document.getElementById("synth-volume").addEventListener("input", (e) => {
+  cpSetSynthVolume(e.target.value / 100);
 });
 
 document.getElementById("synth-len-preset").addEventListener("change", (e) => {
