@@ -508,6 +508,41 @@ Rule - Add comments before code snippets in this format:
                 </div>
                 <div class="master-section">
                     <div class="master-section-header">
+                        <p class="master-heading">Midi Keys</p>
+                    </div>
+                    <div class="master-section-body">
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Root</span>
+                            <select id="midi-keys-root" class="master-preset-select">
+                                <option value="C" selected>C</option>
+                                <option value="D">D</option>
+                                <option value="E">E</option>
+                                <option value="F">F</option>
+                                <option value="G">G</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                            </select>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Oct</span>
+                            <select id="midi-keys-octave" class="master-preset-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4" selected>4</option>
+                            </select>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Scale</span>
+                            <select id="midi-keys-scale" class="master-preset-select">
+                                <option value="major" selected>1 2 3 4 5 6 7</option>
+                                <option value="minor">1 2 ♭3 4 5 ♭6 ♭7</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="master-section">
+                    <div class="master-section-header">
                         <p class="master-heading">Tanpura</p>
                         <div class="master-fx-controls">
                             <button class="master-fx-toggle active" id="tanpura-toggle">ON</button>
@@ -727,6 +762,7 @@ Rule - Add comments before code snippets in this format:
         <div class="piano-roll-toolbar">
             <button id="piano-roll-goto-start" class="piano-roll-tool-btn" title="Move playhead to clip start">⏮ Clip Start</button>
             <button id="piano-roll-snap" class="piano-roll-tool-btn active" title="Snap to grid">⊞ Snap</button>
+            <input id="piano-roll-zoom-slider" type="range" min="0" max="100" value="43" title="Zoom">
         </div>
         <button class="piano-roll-close-btn" id="piano-roll-close">✕</button>
     </div>
@@ -734,10 +770,12 @@ Rule - Add comments before code snippets in this format:
         <div class="piano-roll-keys-wrapper">
             <div class="piano-roll-keys-spacer"></div>
             <canvas id="piano-roll-keys"></canvas>
+            <div class="piano-roll-vel-label">Vel</div>
         </div>
         <div class="piano-roll-right">
             <canvas id="piano-roll-ruler"></canvas>
             <canvas id="piano-roll-canvas"></canvas>
+            <canvas id="piano-roll-velocity"></canvas>
         </div>
     </div>
     <div class="piano-roll-resize-handle"></div>

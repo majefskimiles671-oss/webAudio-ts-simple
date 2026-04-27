@@ -177,11 +177,26 @@ let recordingTrackRow = null;
 let recordingLaneTrack = null;  // the current (unpromoted) recording lane track object
 let armedRecordTarget = null;   // armed audio track already in tracks[] (used instead of recording lane)
 
-// Keyboard → MIDI note map (two-row piano layout, C4=60)
+// Keyboard → MIDI note map (ASDFGHJKL = scale row; WETYUOP = black keys)
 const KEY_NOTE_MAP = {
   'a': 60, 'w': 61, 's': 62, 'e': 63, 'd': 64, 'f': 65, 't': 66,
   'g': 67, 'y': 68, 'h': 69, 'u': 70, 'j': 71, 'k': 72, 'o': 73, 'l': 74, 'p': 75,
 };
+const _MIDI_KEYS_ROW       = ['a','s','d','f','g','h','j','k','l'];
+const _MIDI_KEYS_CHROMATIC = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+const _MIDI_KEYS_INTERVALS = {
+  major: [0, 2, 4, 5, 7, 9, 11, 12, 14],
+  minor: [0, 2, 3, 5, 7,  8, 10, 12, 14],
+};
+
+// Helpers - Midi Keys - Pure Computation Layer -----
+function updateMidiKeyMap() {
+  const root   = document.getElementById('midi-keys-root').value;
+  const octave = parseInt(document.getElementById('midi-keys-octave').value, 10);
+  const scale  = document.getElementById('midi-keys-scale').value;
+  const base   = (octave + 1) * 12 + _MIDI_KEYS_CHROMATIC[root];
+  _MIDI_KEYS_ROW.forEach((key, i) => { KEY_NOTE_MAP[key] = base + _MIDI_KEYS_INTERVALS[scale][i]; });
+}
 const _liveKeyNotes = new Map(); // key → { nodes, pitch, startSample }
 const _activeKeys   = new Set();
 let _pendingMidiNotes = []; // accumulated during MIDI recording, flushed at onRecordStop
@@ -4888,6 +4903,12 @@ document.getElementById("tanpura-synth-len-preset").addEventListener("change", (
     tanpuraSetStringGain(n - 1, e.target.value / 100);
   });
 });
+
+// Event Handlers - Midi Keys - Intent Layer -----
+['midi-keys-root', 'midi-keys-octave', 'midi-keys-scale'].forEach(id => {
+  document.getElementById(id).addEventListener('change', updateMidiKeyMap);
+});
+updateMidiKeyMap();
 
 // DOM Sync - Video Backdrop - Synchronization Layer -----
 // Keep video sized to the visible area of #timeline-area so it doesn't scroll.
