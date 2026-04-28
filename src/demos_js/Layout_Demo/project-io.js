@@ -405,6 +405,12 @@ function serializeProject() {
       ),
       soundfontFileName: (typeof sfGetProjectFile === 'function') ? (sfGetProjectFile()?.name ?? null) : null,
     },
+    metronome: {
+      enabled:     document.getElementById("metronome-toggle").classList.contains("active"),
+      volume:      parseInt(document.getElementById("metronome-volume").value),
+      countIn:     parseInt(document.getElementById("metronome-count-in").value),
+      countInOnly: document.getElementById("metronome-count-in-only").checked,
+    },
     video: videoFile
       ? {
           filename: "video" + (videoFile.name.match(/\.[^.]+$/) ?? [""])[0],
@@ -551,6 +557,26 @@ function deserializeProject(data) {
       const name = g.querySelector('.master-group-label').textContent.trim().toLowerCase();
       g.classList.toggle('collapsed', gc[name] ?? true);
     });
+  }
+
+  const met = data.metronome;
+  if (met) {
+    const enabled = met.enabled ?? false;
+    metronomeSetEnabled(enabled);
+    document.getElementById("metronome-toggle").classList.toggle("active", enabled);
+    document.getElementById("metronome-toggle").textContent = enabled ? "ON" : "OFF";
+
+    const vol = met.volume ?? 70;
+    metronomeSetVolume(vol / 100);
+    document.getElementById("metronome-volume").value = vol;
+
+    const countIn = met.countIn ?? 4;
+    metronomeSetCountIn(countIn);
+    document.getElementById("metronome-count-in").value = countIn;
+
+    const countInOnly = met.countInOnly ?? false;
+    metronomeSetCountInOnly(countInOnly);
+    document.getElementById("metronome-count-in-only").checked = countInOnly;
   }
 
   if (data.theme) setTheme(data.theme, { silent: true });

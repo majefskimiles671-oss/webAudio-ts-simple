@@ -196,10 +196,18 @@ function _prDraw() {
     if (x > W) break;
     if (x < -10) { beat++; continue; }
     const isBar = beat % 4 === 0;
-    ctx.strokeStyle = isBar ? "#555" : "#333";
-    ctx.lineWidth = isBar ? 1 : 0.5;
+    ctx.strokeStyle = isBar ? "#888" : "#4a4a4a";
+    ctx.lineWidth = isBar ? 1.5 : 1;
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
     beat++;
+  }
+
+  // Clip end line
+  const clipEndX = _prSamplesToX(_prClip.durationSamples);
+  if (clipEndX >= 0 && clipEndX <= W) {
+    ctx.strokeStyle = "#ff6600";
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(clipEndX, 0); ctx.lineTo(clipEndX, H); ctx.stroke();
   }
 
   // Notes
@@ -253,15 +261,23 @@ function _prDrawRuler() {
     if (x > W) break;
     if (x >= -1) {
       const isBar = beat % 4 === 0;
-      ctx.strokeStyle = isBar ? "#666" : "#3a3a3a";
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = isBar ? "#999" : "#555";
+      ctx.lineWidth = isBar ? 1.5 : 1;
       ctx.beginPath(); ctx.moveTo(x, isBar ? 0 : H * 0.6); ctx.lineTo(x, H); ctx.stroke();
       if (isBar) {
-        ctx.fillStyle = "#999";
+        ctx.fillStyle = "#ccc";
         ctx.fillText(beat / 4 + 1, x + 3, H - 4);
       }
     }
     beat++;
+  }
+
+  // Clip end line in ruler
+  const clipEndX = _prSamplesToX(_prClip.durationSamples);
+  if (clipEndX >= 0 && clipEndX <= W) {
+    ctx.strokeStyle = "#ff6600";
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(clipEndX, 0); ctx.lineTo(clipEndX, H); ctx.stroke();
   }
 
   const phX = _prPlayheadX();

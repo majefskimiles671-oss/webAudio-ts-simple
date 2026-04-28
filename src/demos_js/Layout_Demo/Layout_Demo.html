@@ -381,6 +381,41 @@ Rule - Add comments before code snippets in this format:
                     </div>
                 </div>
                 <div id="master-effects">
+                <div class="master-group collapsed" id="metronome-panel">
+                <p class="master-group-label">Metronome</p>
+                <div class="master-group-body">
+                <div class="master-section">
+                    <div class="master-section-header">
+                        <p class="master-heading">Click</p>
+                        <div class="master-fx-controls">
+                            <button class="master-fx-toggle" id="metronome-toggle">OFF</button>
+                        </div>
+                    </div>
+                    <div class="master-section-body">
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Vol</span>
+                            <gain-slider id="metronome-volume" min="0" max="100" value="70"></gain-slider>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label">Count-in</span>
+                            <select id="metronome-count-in" class="master-preset-select">
+                                <option value="0">Off</option>
+                                <option value="1">1 beat</option>
+                                <option value="2">2 beats</option>
+                                <option value="4" selected>4 beats</option>
+                                <option value="8">8 beats</option>
+                            </select>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label"></span>
+                            <label class="metronome-count-in-only-label">
+                                <input type="checkbox" id="metronome-count-in-only"> Count-in Only
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                </div><!-- .master-group-body Metronome -->
+                </div><!-- .master-group Metronome -->
                 <div class="master-group collapsed">
                 <p class="master-group-label">Effects</p>
                 <div class="master-group-body">
@@ -960,6 +995,7 @@ Rule - Add comments before code snippets in this format:
 <script src="./soundfontEngine.js"></script>
 <script src="./sfzEngine.js"></script>
 <script src="./midiEngine.js"></script>
+<script src="./metronome.js"></script>
 <script src="./index.js"></script>
 <script src="./x286-newswire.js"></script>
 

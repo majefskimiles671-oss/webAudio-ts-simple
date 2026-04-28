@@ -360,6 +360,7 @@ function applyViewState() {
 let selectedTrack = null;
 let playing = false;
 let recording = false;
+let _countInCancel = null;
 let inRecordingSession = false;
 let masterGain = 100;
 let startTime = 0;
@@ -648,18 +649,6 @@ function deleteSelectedClip() {
   markDirty();
 }
 
-function attachClipDeleteButton(waveform) {
-  const btn = document.createElement("button");
-  btn.className = "waveform-delete-btn";
-  btn.innerHTML = "&#x2715;";
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    selectClip(waveform.dataset.clipId);
-    deleteSelectedClip();
-  });
-  waveform.appendChild(btn);
-}
-
 
 // ----- Marker Selection
 function selectMarkerByIndex(index) {
@@ -714,6 +703,7 @@ function applyTransportChange({ play, record }) {
   if (!wasPlaying && playing) {
     onTransportStart();
     startMeterAnimation();
+    if (metronomeIsEnabled() && !metronomeIsCountInOnly()) metronomeStart();
   }
 
   if (wasPlaying && !playing) {
@@ -722,6 +712,8 @@ function applyTransportChange({ play, record }) {
     midiEngineStop();
     if (videoEl) { videoEl.pause(); videoEl.currentTime = currentTimeSeconds; }
     tanpuraStop();
+    metronomeStop();
+    if (_countInCancel) { _countInCancel(); _countInCancel = null; }
   }
 
   if (!wasRecording && recording) { onRecordStart(); startRecordingRange(); }
@@ -1242,7 +1234,6 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
     wfIsDragging = false;
   });
 
-  attachClipDeleteButton(waveform);
   rowInner.appendChild(waveform);
 }
 
@@ -2842,7 +2833,15 @@ returnToBeginningBtn.onclick = () => {
 
 playBtn.onclick = () => {
   recordInteraction("transport");
-  applyTransportChange({ play: !playing, record: playing ? false : recording });
+  if (!playing && metronomeIsEnabled() && metronomeGetCountIn() > 0) {
+    if (_countInCancel) { _countInCancel(); _countInCancel = null; }
+    _countInCancel = metronomeRunCountIn(() => {
+      _countInCancel = null;
+      applyTransportChange({ play: true, record: recording });
+    });
+  } else {
+    applyTransportChange({ play: !playing, record: playing ? false : recording });
+  }
 };
 
 recordBtn.onclick = async () => {
@@ -2855,7 +2854,15 @@ recordBtn.onclick = async () => {
       return;
     }
   }
-  applyTransportChange({ play: playing, record: !recording });
+  if (!playing && !recording && metronomeIsEnabled() && metronomeGetCountIn() > 0) {
+    if (_countInCancel) { _countInCancel(); _countInCancel = null; }
+    _countInCancel = metronomeRunCountIn(() => {
+      _countInCancel = null;
+      applyTransportChange({ play: true, record: true });
+    });
+  } else {
+    applyTransportChange({ play: playing, record: !recording });
+  }
 };
 
 
@@ -5263,6 +5270,29 @@ document.querySelectorAll('.master-group-label').forEach(label => {
 
 pianoRollInit();
 syncRecordBtnEnabled();
+
+// Initialization - Metronome - Initialization -----
+metronomeInit();
+
+document.getElementById("metronome-toggle").addEventListener("click", () => {
+  const enabled = !metronomeIsEnabled();
+  metronomeSetEnabled(enabled);
+  document.getElementById("metronome-toggle").classList.toggle("active", enabled);
+  document.getElementById("metronome-toggle").textContent = enabled ? "ON" : "OFF";
+  if (enabled && playing) metronomeStart();
+});
+
+document.getElementById("metronome-volume").addEventListener("input", (e) => {
+  metronomeSetVolume(e.target.value / 100);
+});
+
+document.getElementById("metronome-count-in").addEventListener("change", (e) => {
+  metronomeSetCountIn(parseInt(e.target.value));
+});
+
+document.getElementById("metronome-count-in-only").addEventListener("change", (e) => {
+  metronomeSetCountInOnly(e.target.checked);
+});
 
 // Custom themed preset dropdowns — replaces native <select> visually while
 // keeping the original element (and its ID/listeners) intact.

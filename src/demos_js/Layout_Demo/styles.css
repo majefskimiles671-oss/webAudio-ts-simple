@@ -2913,6 +2913,15 @@
             flex-shrink: 0;
         }
 
+        .metronome-count-in-only-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
         #master-gain-slider {
             flex: 1;
             width: auto;
