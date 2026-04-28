@@ -414,7 +414,7 @@ function audioEngineGetPreviewPosition() {
   return _previewLoopStartSec + (elapsed % loopLen);
 }
 
-function audioEnginePreviewLoop(buffer, loopStartSeconds, loopEndSeconds) {
+function audioEnginePreviewLoop(buffer, loopStartSeconds, loopEndSeconds, destination = null) {
   audioEngineStopPreview();
   if (_audioCtx.state === "suspended") _audioCtx.resume();
 
@@ -434,7 +434,7 @@ function audioEnginePreviewLoop(buffer, loopStartSeconds, loopEndSeconds) {
   src.loop      = true;
   src.loopStart = loopStartSeconds;
   src.loopEnd   = loopEndSeconds;
-  src.connect(_audioCtx.destination);
+  src.connect(destination ?? _audioCtx.destination);
   src.start(0, loopStartSeconds);
   _previewSource           = src;
   _previewStartContextTime = _audioCtx.currentTime;

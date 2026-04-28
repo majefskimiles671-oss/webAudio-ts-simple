@@ -4310,10 +4310,20 @@ function _startLoopPreview() {
   if (!_loopEditorClip) return;
   const buf = audioEngineGetBuffer(_loopEditorClip.id);
   _loopPreviewing = true;
+  if (_loopEditorTrack) {
+    audioEngineEnsureTrackMixer(
+      _loopEditorTrack.id,
+      (_loopEditorTrack.gain ?? 100) / 100,
+      (_loopEditorTrack.pan  ?? 0)   / 100,
+      _loopEditorTrack.outputDeviceId ?? null
+    );
+  }
+  const dest = _loopEditorTrack ? audioEngineGetTrackMixerInput(_loopEditorTrack.id) : null;
   audioEnginePreviewLoop(
     buf,
     _loopEditorClip.loopStartSamples / SAMPLE_RATE,
-    _loopEditorClip.loopEndSamples   / SAMPLE_RATE
+    _loopEditorClip.loopEndSamples   / SAMPLE_RATE,
+    dest
   );
   if (!_loopEditorAnimFrame) _loopEditorAnimFrame = requestAnimationFrame(_loopEditorTick);
 }
