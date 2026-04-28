@@ -2,10 +2,13 @@
 // Metronome - Click Engine - Audio Engine -----
 
 // State - Metronome - Truth Layer -----
-let _metEnabled      = false;
-let _metVolume       = 0.7;
-let _metCountIn      = 4;
-let _metCountInOnly  = false;
+let _metEnabled                = false;
+let _metVolume                 = 0.7;
+let _metCountIn                = 4;
+let _metCountInBeforeRecording = true;
+let _metCountInBeforePlaying   = true;
+let _metWhileRecording         = true;
+let _metWhilePlaying           = true;
 let _metInterval   = null;
 let _nextBeatTime  = 0;
 let _beatIndex     = 0;
@@ -101,8 +104,14 @@ function metronomeRunCountIn(onDone) {
 
 function metronomeIsEnabled() { return _metEnabled; }
 function metronomeGetCountIn() { return _metCountIn; }
-function metronomeSetCountInOnly(bool) { _metCountInOnly = bool; }
-function metronomeIsCountInOnly() { return _metCountInOnly; }
+function metronomeSetCountInBeforeRecording(bool) { _metCountInBeforeRecording = bool; }
+function metronomeCountInBeforeRecording()        { return _metCountInBeforeRecording; }
+function metronomeSetCountInBeforePlaying(bool)   { _metCountInBeforePlaying   = bool; }
+function metronomeCountInBeforePlaying()          { return _metCountInBeforePlaying;   }
+function metronomeSetWhileRecording(bool) { _metWhileRecording = bool; }
+function metronomeSetWhilePlaying(bool)   { _metWhilePlaying   = bool; }
+function metronomeWhileRecording() { return _metWhileRecording; }
+function metronomeWhilePlaying()   { return _metWhilePlaying;   }
 
 // Helpers - Metronome - Pure Computation Layer -----
 function _scheduleBeat(when) {

@@ -416,6 +416,7 @@ let _prSnapEnabled = true;
 let _prDragMultiOrig = new Map();     // note obj → {startSamples, pitch}
 let _prDragSelectedNotes = new Set(); // note objs being moved (for post-sort index rebuild)
 let _prSelBox = null;                 // {x0,y0,x1,y1} during area select, null otherwise
+let _prCopyOnDrag = false;            // shift-click on selected note — copy if dragged, deselect if not
 
 function _prOnPointerDown(e) {
   if (e.button !== 0) return;
@@ -435,9 +436,12 @@ function _prOnPointerDown(e) {
     _prDragOrigPitch = n.pitch;
     _prDragIndex = hit.index;
 
-    if (e.shiftKey) {
-      if (_prSelected.has(hit.index)) _prSelected.delete(hit.index);
-      else _prSelected.add(hit.index);
+    _prCopyOnDrag = false;
+    if (e.shiftKey && _prSelected.has(hit.index) && !hit.isResize) {
+      // Defer: copy selection on drag, deselect on click-without-drag
+      _prCopyOnDrag = true;
+    } else if (e.shiftKey) {
+      _prSelected.add(hit.index);
     } else if (!_prSelected.has(hit.index)) {
       _prSelected.clear();
       _prSelected.add(hit.index);
@@ -489,6 +493,25 @@ function _prOnPointerMove(e) {
     _prClip.notes[_prDragIndex].durationSamples = Math.max(minDur, Math.round(newDur));
   } else if (_prDragMode === "move") {
     const deltaY = y - _prDragOriginY;
+
+    // Copy-on-drag: wait for threshold, then materialize copies and drag those
+    if (_prCopyOnDrag) {
+      if (Math.abs(deltaX) < 4 && Math.abs(deltaY) < 4) { _prDraw(); return; }
+      const selectedIndices = [..._prSelected];
+      const copies = selectedIndices.map(i => ({ ..._prClip.notes[i] }));
+      _prClip.notes.push(...copies);
+      _prSelected.clear();
+      _prDragMultiOrig.clear();
+      _prDragSelectedNotes.clear();
+      const base = _prClip.notes.length - copies.length;
+      copies.forEach((c, i) => {
+        _prSelected.add(base + i);
+        _prDragMultiOrig.set(c, { startSamples: c.startSamples, pitch: c.pitch });
+        _prDragSelectedNotes.add(c);
+      });
+      _prCopyOnDrag = false;
+    }
+
     const deltaPitch = -Math.round(deltaY / PR_ROW_H);
 
     // Compute snapped sample delta using the anchor note
@@ -547,16 +570,22 @@ function _prOnPointerUp(e) {
       if (typeof markDirty === "function") markDirty();
     }
   } else if (_prDragMode === "move" || _prDragMode === "resize") {
-    _prClip.notes.sort((a, b) => a.startSamples - b.startSamples);
-    // Rebuild _prSelected by note-object identity after sort reorders indices
-    if (_prDragSelectedNotes.size > 0) {
-      _prSelected.clear();
-      _prClip.notes.forEach((n, i) => { if (_prDragSelectedNotes.has(n)) _prSelected.add(i); });
+    if (_prCopyOnDrag) {
+      // Shift-click with no drag: deselect the clicked note
+      _prSelected.delete(_prDragIndex);
+      _prCopyOnDrag = false;
+    } else {
+      _prClip.notes.sort((a, b) => a.startSamples - b.startSamples);
+      // Rebuild _prSelected by note-object identity after sort reorders indices
+      if (_prDragSelectedNotes.size > 0) {
+        _prSelected.clear();
+        _prClip.notes.forEach((n, i) => { if (_prDragSelectedNotes.has(n)) _prSelected.add(i); });
+      }
+      _prDragMultiOrig.clear();
+      _prDragSelectedNotes.clear();
+      _prRefreshClipDOM();
+      if (typeof markDirty === "function") markDirty();
     }
-    _prDragMultiOrig.clear();
-    _prDragSelectedNotes.clear();
-    _prRefreshClipDOM();
-    if (typeof markDirty === "function") markDirty();
   }
 
   _prDragMode = null;

@@ -699,6 +699,13 @@ function selectMarkerByIndex(index) {
 }
 
 //  -----------Apply Transport Change
+function _metronomeCheckStart() {
+  if (!metronomeIsEnabled()) { metronomeStop(); return; }
+  if (recording && metronomeWhileRecording()) { metronomeStart(); return; }
+  if (playing && !recording && metronomeWhilePlaying()) { metronomeStart(); return; }
+  metronomeStop();
+}
+
 function applyTransportChange({ play, record }) {
   const prevState = getTransportState();
   const wasPlaying = playing;
@@ -717,7 +724,7 @@ function applyTransportChange({ play, record }) {
   if (!wasPlaying && playing) {
     onTransportStart();
     startMeterAnimation();
-    if (metronomeIsEnabled() && !metronomeIsCountInOnly()) metronomeStart();
+    _metronomeCheckStart();
   }
 
   if (wasPlaying && !playing) {
@@ -730,8 +737,8 @@ function applyTransportChange({ play, record }) {
     if (_countInCancel) { _countInCancel(); _countInCancel = null; }
   }
 
-  if (!wasRecording && recording) { onRecordStart(); startRecordingRange(); }
-  if (wasRecording && !recording) { if (wasPlaying) onRecordStop(); clearRecordingRange(); }
+  if (!wasRecording && recording) { onRecordStart(); startRecordingRange(); _metronomeCheckStart(); }
+  if (wasRecording && !recording) { if (wasPlaying) onRecordStop(); clearRecordingRange(); _metronomeCheckStart(); }
 
   if (prevState !== "IDLE" && nextState === "IDLE") {
     promoteRecordingLane();
@@ -2847,7 +2854,7 @@ returnToBeginningBtn.onclick = () => {
 
 playBtn.onclick = () => {
   recordInteraction("transport");
-  if (!playing && metronomeIsEnabled() && metronomeGetCountIn() > 0) {
+  if (!playing && metronomeIsEnabled() && metronomeGetCountIn() > 0 && metronomeCountInBeforePlaying()) {
     if (_countInCancel) { _countInCancel(); _countInCancel = null; }
     _countInCancel = metronomeRunCountIn(() => {
       _countInCancel = null;
@@ -2868,7 +2875,7 @@ recordBtn.onclick = async () => {
       return;
     }
   }
-  if (!playing && !recording && metronomeIsEnabled() && metronomeGetCountIn() > 0) {
+  if (!playing && !recording && metronomeIsEnabled() && metronomeGetCountIn() > 0 && metronomeCountInBeforeRecording()) {
     if (_countInCancel) { _countInCancel(); _countInCancel = null; }
     _countInCancel = metronomeRunCountIn(() => {
       _countInCancel = null;
@@ -5295,7 +5302,7 @@ document.getElementById("metronome-toggle").addEventListener("click", () => {
   metronomeSetEnabled(enabled);
   document.getElementById("metronome-toggle").classList.toggle("active", enabled);
   document.getElementById("metronome-toggle").textContent = enabled ? "ON" : "OFF";
-  if (enabled && playing) metronomeStart();
+  if (playing) _metronomeCheckStart();
 });
 
 document.getElementById("metronome-volume").addEventListener("input", (e) => {
@@ -5306,8 +5313,22 @@ document.getElementById("metronome-count-in").addEventListener("change", (e) => 
   metronomeSetCountIn(parseInt(e.target.value));
 });
 
-document.getElementById("metronome-count-in-only").addEventListener("change", (e) => {
-  metronomeSetCountInOnly(e.target.checked);
+document.getElementById("metronome-ci-rec").addEventListener("change", (e) => {
+  metronomeSetCountInBeforeRecording(e.target.checked);
+});
+
+document.getElementById("metronome-ci-play").addEventListener("change", (e) => {
+  metronomeSetCountInBeforePlaying(e.target.checked);
+});
+
+document.getElementById("metronome-click-rec").addEventListener("change", (e) => {
+  metronomeSetWhileRecording(e.target.checked);
+  if (playing) _metronomeCheckStart();
+});
+
+document.getElementById("metronome-click-play").addEventListener("change", (e) => {
+  metronomeSetWhilePlaying(e.target.checked);
+  if (playing) _metronomeCheckStart();
 });
 
 // Custom themed preset dropdowns — replaces native <select> visually while

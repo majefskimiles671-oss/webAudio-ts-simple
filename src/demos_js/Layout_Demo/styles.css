@@ -2922,6 +2922,26 @@
             cursor: pointer;
         }
 
+        .metronome-2x2 {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            align-items: center;
+            gap: 2px 8px;
+        }
+        .metronome-2x2 label {
+            display: flex;
+            justify-content: center;
+        }
+        .met-col-hdr {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        .met-row-lbl {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
         #master-gain-slider {
             flex: 1;
             width: auto;

@@ -408,9 +408,17 @@ Rule - Add comments before code snippets in this format:
                         </div>
                         <div class="master-gain-row">
                             <span class="master-gain-label"></span>
-                            <label class="metronome-count-in-only-label">
-                                <input type="checkbox" id="metronome-count-in-only"> Count-in Only
-                            </label>
+                            <div class="metronome-2x2">
+                                <span></span>
+                                <span class="met-col-hdr">Rec</span>
+                                <span class="met-col-hdr">Play</span>
+                                <span class="met-row-lbl">Count-in</span>
+                                <label><input type="checkbox" id="metronome-ci-rec"    checked></label>
+                                <label><input type="checkbox" id="metronome-ci-play"   checked></label>
+                                <span class="met-row-lbl">Click</span>
+                                <label><input type="checkbox" id="metronome-click-rec" checked></label>
+                                <label><input type="checkbox" id="metronome-click-play"checked></label>
+                            </div>
                         </div>
                     </div>
                 </div>
