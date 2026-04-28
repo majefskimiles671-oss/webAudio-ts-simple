@@ -46,10 +46,21 @@ function _prMidiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
 function _prPreviewNote(pitch, durationSec, velocity = 100) {
   const ctx = getAudioContext();
   ctx.resume();
+  audioEngineEnsureLiveOutput();
+  if (_prTrack) {
+    audioEngineEnsureTrackMixer(
+      _prTrack.id,
+      (_prTrack.gain ?? 100) / 100,
+      (_prTrack.pan  ?? 0)   / 100,
+      _prTrack.outputDeviceId ?? null
+    );
+  }
+  const dest = _prTrack ? audioEngineGetTrackMixerInput(_prTrack.id) : null;
+  startMeterAnimation();
   if (_prTrack?.instrument === 'gm') {
-    sfScheduleNote(null, _prTrack.gmProgram ?? 0, pitch, velocity, ctx.currentTime, durationSec);
+    sfScheduleNote(dest, _prTrack.gmProgram ?? 0, pitch, velocity, ctx.currentTime, durationSec);
   } else {
-    cpScheduleNoteAt(_prMidiToFreq(pitch), ctx, ctx.currentTime, durationSec, velocity, _prTrack?.instrument ?? 'pluck');
+    cpScheduleNoteAt(_prMidiToFreq(pitch), ctx, ctx.currentTime, durationSec, velocity, _prTrack?.instrument ?? 'pluck', dest);
   }
 }
 

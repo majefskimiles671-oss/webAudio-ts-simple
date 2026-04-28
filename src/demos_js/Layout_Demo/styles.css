@@ -2618,6 +2618,20 @@
             padding-top: 0;
         }
 
+        .master-sub-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 4px -12px 0;
+            padding: 2px 12px;
+            background: var(--bg-panel);
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
         /* Custom themed preset dropdowns */
         .csel {
             position: relative;

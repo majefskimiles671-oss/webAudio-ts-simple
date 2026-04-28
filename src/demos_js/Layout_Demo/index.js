@@ -3171,6 +3171,7 @@ document.addEventListener("keydown", (e) => {
       e.preventDefault();
       _activeKeys.add(e.key);
       audioEngineEnsureLiveOutput();
+      startMeterAnimation();
       audioEngineEnsureTrackMixer(
         armedMidiTrack.id,
         (armedMidiTrack.gain ?? 100) / 100,
@@ -3367,22 +3368,15 @@ function _meterTick() {
   for (const track of tracks) {
     if (!track.meterEl) continue;
 
-    if (_meterPlaying) {
-      const { L, R } = audioEngineGetTrackLevel(track.id);
-      track.meterTargetL = _rmsToLevel(L);
-      track.meterTargetR = _rmsToLevel(R);
+    const { L, R } = audioEngineGetTrackLevel(track.id);
+    track.meterTargetL = _rmsToLevel(L);
+    track.meterTargetR = _rmsToLevel(R);
 
-      // Fast attack, slower release
-      const aL = track.meterTargetL > track.meterL ? 0.45 : 0.07;
-      const aR = track.meterTargetR > track.meterR ? 0.45 : 0.07;
-      track.meterL += (track.meterTargetL - track.meterL) * aL;
-      track.meterR += (track.meterTargetR - track.meterR) * aR;
-    } else {
-      track.meterL      *= 0.88;
-      track.meterR      *= 0.88;
-      track.meterTargetL = 0;
-      track.meterTargetR = 0;
-    }
+    // Fast attack, slower release
+    const aL = track.meterTargetL > track.meterL ? 0.45 : 0.07;
+    const aR = track.meterTargetR > track.meterR ? 0.45 : 0.07;
+    track.meterL += (track.meterTargetL - track.meterL) * aL;
+    track.meterR += (track.meterTargetR - track.meterR) * aR;
 
     // Peak hold — L
     if (track.meterL > track.meterPeakL) {

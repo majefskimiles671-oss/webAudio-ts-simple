@@ -380,7 +380,7 @@ Rule - Add comments before code snippets in this format:
                     </div>
                 </div>
                 <div id="master-effects">
-                <div class="master-section">
+                <div class="master-section collapsed">
                     <div class="master-section-header">
                         <p class="master-heading">Reverb</p>
                         <div class="master-fx-controls">
@@ -404,7 +404,7 @@ Rule - Add comments before code snippets in this format:
                         </div>
                     </div>
                 </div>
-                <div class="master-section">
+                <div class="master-section collapsed">
                     <div class="master-section-header">
                         <p class="master-heading">Compressor</p>
                         <div class="master-fx-controls">
@@ -432,18 +432,19 @@ Rule - Add comments before code snippets in this format:
                         </div>
                     </div>
                 </div>
-                <div class="master-section">
+                <div class="master-section collapsed">
                     <div class="master-section-header">
-                        <p class="master-heading">Synth</p>
-                        <div class="master-fx-controls">
+                        <p class="master-heading">Custom Instruments</p>
+                    </div>
+                    <div class="master-section-body">
+                        <div class="master-sub-label">
+                            <span>Synth</span>
                             <select class="master-preset-select" id="synth-len-preset">
                                 <option value="100">Long</option>
                                 <option value="50" selected>Med</option>
                                 <option value="25">Short</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="master-section-body">
                         <div class="master-gain-row">
                             <span class="master-gain-label">Len</span>
                             <gain-slider id="synth-note-length" min="10" max="100" value="50"></gain-slider>
@@ -452,12 +453,8 @@ Rule - Add comments before code snippets in this format:
                             <span class="master-gain-label">Vol</span>
                             <gain-slider id="synth-volume" min="0" max="200" value="100"></gain-slider>
                         </div>
-                    </div>
-                </div>
-                <div class="master-section">
-                    <div class="master-section-header">
-                        <p class="master-heading">Pluck</p>
-                        <div class="master-fx-controls">
+                        <div class="master-sub-label">
+                            <span>Pluck</span>
                             <select class="master-preset-select" id="pluck-preset">
                                 <option value="">Preset</option>
                                 <option value="soft">Soft</option>
@@ -469,8 +466,6 @@ Rule - Add comments before code snippets in this format:
                                 <option value="long">Long</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="master-section-body">
                         <div class="master-gain-row">
                             <span class="master-gain-label">Len</span>
                             <gain-slider id="pluck-length" min="10" max="200" value="90"></gain-slider>
@@ -495,11 +490,9 @@ Rule - Add comments before code snippets in this format:
                             <span class="master-gain-label">Rel</span>
                             <gain-slider id="pluck-release" min="0" max="100" value="12"></gain-slider>
                         </div>
-                    </div>
-                </div>
-                <div class="master-section">
+                <div class="master-section collapsed">
                     <div class="master-section-header">
-                        <p class="master-heading">GM</p>
+                        <p class="master-heading">General Midi</p>
                     </div>
                     <div class="master-section-body">
                         <div class="master-gain-row">
@@ -512,7 +505,7 @@ Rule - Add comments before code snippets in this format:
                         </div>
                     </div>
                 </div>
-                <div class="master-section">
+                <div class="master-section collapsed">
                     <div class="master-section-header">
                         <p class="master-heading">Midi Keys</p>
                     </div>
@@ -559,18 +552,16 @@ Rule - Add comments before code snippets in this format:
                         </div>
                     </div>
                 </div>
-                <div class="master-section">
-                    <div class="master-section-header">
-                        <p class="master-heading">Tanpura</p>
-                        <div class="master-fx-controls">
-                            <button class="master-fx-toggle active" id="tanpura-toggle">ON</button>
-                            <select class="master-preset-select" id="tanpura-mode">
-                                <option value="pluck" selected>Pluck</option>
-                                <option value="synth">Synth</option>
-                            </select>
+                        <div class="master-sub-label">
+                            <span>Tanpura</span>
+                            <div class="master-fx-controls">
+                                <button class="master-fx-toggle active" id="tanpura-toggle">ON</button>
+                                <select class="master-preset-select" id="tanpura-mode">
+                                    <option value="pluck" selected>Pluck</option>
+                                    <option value="synth">Synth</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <div class="master-section-body">
                         <div class="master-gain-row">
                             <span class="master-gain-label">Vol</span>
                             <gain-slider id="tanpura-volume" min="0" max="100" value="50"></gain-slider>
