@@ -8,6 +8,14 @@ const _sfzLibrary = new Map(); // name → Array<region>
 
 function sfzGetNames() { return [..._sfzLibrary.keys()]; }
 function sfzHasInstrument(name) { return _sfzLibrary.has(name); }
+function sfzGetKeyRange(name) {
+  const regions = _sfzLibrary.get(name);
+  if (!regions?.length) return null;
+  return {
+    lo: Math.min(...regions.map(r => r.lokey)),
+    hi: Math.max(...regions.map(r => r.hikey)),
+  };
+}
 
 // ---- SFZ text parser ----
 
@@ -23,8 +31,11 @@ function _sfzNoteToMidi(s) {
 
 function _sfzParseOpcodes(text) {
   const ops = {};
+  // sample= values may contain spaces — extract before the generic scan
+  const sampleMatch = text.match(/\bsample=(.+?)(?=\s+[a-zA-Z_]\w*=|\s*$)/m);
+  if (sampleMatch) ops.sample = sampleMatch[1].trim();
   for (const m of text.matchAll(/([a-zA-Z_]\w*)=(\S+)/g)) {
-    ops[m[1].toLowerCase()] = m[2];
+    if (m[1].toLowerCase() !== 'sample') ops[m[1].toLowerCase()] = m[2];
   }
   return ops;
 }
@@ -99,7 +110,7 @@ function _sfzParseText(text) {
 // ---- File loading ----
 
 async function _sfzGetFileHandle(dirHandle, relativePath) {
-  const parts = relativePath.split('/');
+  const parts = relativePath.split('/').filter(p => p && p !== '.');
   let handle = dirHandle;
   for (const part of parts.slice(0, -1)) {
     try { handle = await handle.getDirectoryHandle(part); }
@@ -126,16 +137,24 @@ async function sfzLoadFromDirectory(dirHandle) {
   const regions = _sfzParseText(sfzText);
   if (!regions.length) throw new Error('SFZ file parsed but contains no regions');
 
+  const uniqueSamples = [...new Set(regions.map(r => r.sample).filter(Boolean))];
+  console.log(`[SFZ] ${regions.length} regions, ${uniqueSamples.length} unique samples:`, uniqueSamples);
+
   const bufferCache = new Map();
   for (const region of regions) {
     if (!region.sample || bufferCache.has(region.sample)) continue;
     const fh = await _sfzGetFileHandle(dirHandle, region.sample);
-    if (!fh) { bufferCache.set(region.sample, null); continue; }
+    if (!fh) {
+      console.warn(`[SFZ] file not found: "${region.sample}"`);
+      bufferCache.set(region.sample, null);
+      continue;
+    }
     try {
       const ab  = await (await fh.getFile()).arrayBuffer();
       const buf = await audioCtx.decodeAudioData(ab);
       bufferCache.set(region.sample, buf);
-    } catch {
+    } catch (err) {
+      console.warn(`[SFZ] decode failed: "${region.sample}"`, err);
       bufferCache.set(region.sample, null);
     }
   }
@@ -144,6 +163,7 @@ async function sfzLoadFromDirectory(dirHandle) {
     .map(r => ({ ...r, buffer: bufferCache.get(r.sample) ?? null }))
     .filter(r => r.buffer !== null);
 
+  console.log(`[SFZ] ${readyRegions.length}/${regions.length} regions ready`);
   if (!readyRegions.length) throw new Error('SFZ loaded but no audio samples could be decoded');
 
   const name = dirHandle.name;

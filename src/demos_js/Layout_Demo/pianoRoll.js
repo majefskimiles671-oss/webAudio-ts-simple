@@ -16,6 +16,7 @@ function _prSyncZoomSlider() {
 }
 let _prSelected  = new Set(); // indices of selected notes
 let _prActiveKeyPitch = null; // pitch currently pressed on keyboard sidebar
+let _prLiveKeyPitches = new Set(); // pitches held via laptop keyboard MIDI input
 let _prAnimFrame = null;
 
 // Piano Roll - State - Velocity Lane -----
@@ -115,6 +116,13 @@ function _prXToSamples(x) { return (x + _prScrollX) / _prPixelsPerSample(); }
 function _prPitchToY(pitch) { return (PR_MAX_PITCH - pitch) * PR_ROW_H - _prScrollY; }
 function _prYToPitch(y) { return PR_MAX_PITCH - Math.floor((y + _prScrollY) / PR_ROW_H); }
 
+// Piano Roll - Authority - Live Key Highlight -----
+function prSetLiveKeyPitch(pitch, active) {
+  if (active) _prLiveKeyPitches.add(pitch);
+  else _prLiveKeyPitches.delete(pitch);
+  if (_prClip) _prDrawKeys(_prKeysCanvas());
+}
+
 // Piano Roll - Rendering -----
 function _prDrawKeys(canvas) {
   const ctx = canvas.getContext("2d");
@@ -129,7 +137,7 @@ function _prDrawKeys(canvas) {
     const y = _prPitchToY(pitch);
     if (y + PR_ROW_H < 0 || y > canvas.height) continue;
     const black = _prIsBlack(pitch);
-    const isActive = pitch === _prActiveKeyPitch;
+    const isActive = pitch === _prActiveKeyPitch || _prLiveKeyPitches.has(pitch);
 
     if (isPerc) {
       const percName = typeof sfGetPercussionName === "function" ? sfGetPercussionName(pitch) : null;
@@ -813,8 +821,17 @@ function pianoRollOpen(clip, track) {
 
   requestAnimationFrame(() => {
     _prResizeCanvases();
-    // Zoom so the note content fills ~90% of the canvas width
+    // Scroll to SFZ instrument range if no existing notes dictate position
     const notes = _prClip.notes;
+    if (!notes?.length && _prTrack?.instrument === 'sfz' && _prTrack.sfzName) {
+      const range = typeof sfzGetKeyRange === 'function' ? sfzGetKeyRange(_prTrack.sfzName) : null;
+      if (range) {
+        const midPitch = Math.round((range.lo + range.hi) / 2);
+        const h = _prCanvas()?.height ?? 400;
+        _prScrollY = Math.max(0, (PR_MAX_PITCH - midPitch) * PR_ROW_H - h / 2);
+      }
+    }
+    // Zoom so the note content fills ~90% of the canvas width
     if (notes?.length) {
       const firstStart = notes[0].startSamples;
       const lastEnd = notes.reduce((m, n) => Math.max(m, n.startSamples + n.durationSamples), 0);
@@ -850,6 +867,7 @@ function pianoRollClose() {
   _prStopLoop();
   _prClip  = null;
   _prTrack = null;
+  _prLiveKeyPitches.clear();
   const panel = document.getElementById("piano-roll-panel");
   panel.setAttribute("hidden", "");
 }

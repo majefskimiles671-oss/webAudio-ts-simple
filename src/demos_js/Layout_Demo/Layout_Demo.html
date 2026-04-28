@@ -617,6 +617,22 @@ Rule - Add comments before code snippets in this format:
                     </div>
                     <div class="master-section-body">
                         <div class="master-gain-row">
+                            <span class="master-gain-label">Oct</span>
+                            <select id="midi-keys-octave" class="master-preset-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4" selected>4</option>
+                                <option value="5">5</option>
+                            </select>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label"></span>
+                            <label class="metronome-count-in-only-label">
+                                <input type="checkbox" id="midi-keys-inline-scale"> Inline scale
+                            </label>
+                        </div>
+                        <div class="master-gain-row">
                             <span class="master-gain-label">Root</span>
                             <select id="midi-keys-root" class="master-preset-select">
                                 <option value="C" selected>C</option>
@@ -626,16 +642,6 @@ Rule - Add comments before code snippets in this format:
                                 <option value="G">G</option>
                                 <option value="A">A</option>
                                 <option value="B">B</option>
-                            </select>
-                        </div>
-                        <div class="master-gain-row">
-                            <span class="master-gain-label">Oct</span>
-                            <select id="midi-keys-octave" class="master-preset-select">
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4" selected>4</option>
-                                <option value="5">5</option>
                             </select>
                         </div>
                         <div class="master-gain-row">

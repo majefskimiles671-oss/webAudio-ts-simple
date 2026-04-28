@@ -210,20 +210,34 @@ function showToast(msg) {
   _toastTimer = setTimeout(() => el.classList.remove('visible'), 1500);
 }
 
+const _MIDI_KEYS_BLACK = ['w','e','t','y','u','o','p'];
+const _MIDI_KEYS_CHROMATIC_OFFSETS = {
+  'a': 0, 'w': 1, 's': 2, 'e': 3, 'd': 4, 'f': 5, 't': 6,
+  'g': 7, 'y': 8, 'h': 9, 'u': 10, 'j': 11, 'k': 12, 'o': 13, 'l': 14, 'p': 15,
+};
+
 let _prevOctave = 4;
 function updateMidiKeyMap() {
-  const root   = document.getElementById('midi-keys-root').value;
-  const octave = parseInt(document.getElementById('midi-keys-octave').value, 10);
-  const scale  = document.getElementById('midi-keys-scale').value;
+  const octave      = parseInt(document.getElementById('midi-keys-octave').value, 10);
+  const inlineScale = document.getElementById('midi-keys-inline-scale').checked;
   if (octave !== _prevOctave) {
     showToast(`Octave ${_prevOctave} → ${octave}`);
     _prevOctave = octave;
   }
-  const base   = (octave + 1) * 12 + _MIDI_KEYS_CHROMATIC[root];
-  _MIDI_KEYS_ROW.forEach((key, i) => {
-    const interval = _MIDI_KEYS_INTERVALS[scale][i];
-    KEY_NOTE_MAP[key] = interval == null ? undefined : base + interval;
-  });
+  const base = (octave + 1) * 12;
+  if (inlineScale) {
+    const root  = document.getElementById('midi-keys-root').value;
+    const scale = document.getElementById('midi-keys-scale').value;
+    _MIDI_KEYS_ROW.forEach((key, i) => {
+      const interval = _MIDI_KEYS_INTERVALS[scale][i];
+      KEY_NOTE_MAP[key] = interval == null ? undefined : base + _MIDI_KEYS_CHROMATIC[root] + interval;
+    });
+    _MIDI_KEYS_BLACK.forEach(key => { KEY_NOTE_MAP[key] = undefined; });
+  } else {
+    Object.entries(_MIDI_KEYS_CHROMATIC_OFFSETS).forEach(([key, offset]) => {
+      KEY_NOTE_MAP[key] = base + offset;
+    });
+  }
 }
 const GM_INSTRUMENTS = [
   "Acoustic Grand Piano","Bright Acoustic Piano","Electric Grand Piano","Honky-tonk Piano",
@@ -3213,6 +3227,7 @@ document.addEventListener("keydown", (e) => {
     if (pitch !== undefined && armedMidiTrack && !_activeKeys.has(e.key)) {
       e.preventDefault();
       _activeKeys.add(e.key);
+      if (typeof prSetLiveKeyPitch === "function") prSetLiveKeyPitch(pitch, true);
       audioEngineEnsureLiveOutput();
       startMeterAnimation();
       audioEngineEnsureTrackMixer(
@@ -3326,6 +3341,7 @@ document.addEventListener("keyup", (e) => {
   const live = _liveKeyNotes.get(e.key);
   if (!live) return;
   _liveKeyNotes.delete(e.key);
+  if (typeof prSetLiveKeyPitch === "function") prSetLiveKeyPitch(live.pitch, false);
   if (live.sfzHandle) {
     sfzNoteOff(live.sfzHandle);
   } else if (live.sfHandle) {
@@ -5098,7 +5114,7 @@ document.getElementById("tanpura-synth-len-preset").addEventListener("change", (
 });
 
 // Event Handlers - Midi Keys - Intent Layer -----
-['midi-keys-root', 'midi-keys-octave', 'midi-keys-scale'].forEach(id => {
+['midi-keys-root', 'midi-keys-octave', 'midi-keys-scale', 'midi-keys-inline-scale'].forEach(id => {
   document.getElementById(id).addEventListener('change', updateMidiKeyMap);
 });
 updateMidiKeyMap();
