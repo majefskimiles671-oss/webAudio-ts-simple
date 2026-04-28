@@ -48,10 +48,44 @@ async function getExportFolder() {
   return { handle, displayPath: `mixdown/${timestamp}` };
 }
 
-function renderTrackGroupToStereo(trackList, raw = false) {
+async function _renderMidiTrackToBuffer(track, totalSamples) {
+  if (!track.midiClips?.length) return null;
+  const sr      = SAMPLE_RATE;
+  const offCtx  = new OfflineAudioContext(2, totalSamples, sr);
+  const isGm    = track.instrument === 'gm';
+  const isSfz   = track.instrument === 'sfz';
+  const program = track.gmProgram ?? 0;
+  const sfzName = track.sfzName   ?? null;
+  const midiToFreq = p => 440 * Math.pow(2, (p - 69) / 12);
+
+  for (const clip of track.midiClips) {
+    const clipStartSec = clip.startSample / sr;
+    const clipEndSec   = (clip.startSample + clip.durationSamples) / sr;
+    for (const n of (clip.notes ?? [])) {
+      const t = clipStartSec + n.startSamples / sr;
+      if (t >= clipEndSec || t >= totalSamples / sr) continue;
+      const dur = n.durationSamples / sr;
+      const vel = n.velocity ?? 100;
+      if (isGm) {
+        sfScheduleNoteInContext(offCtx, offCtx.destination, program, n.pitch, vel, t, dur);
+      } else if (isSfz) {
+        sfzScheduleNoteInContext(offCtx, offCtx.destination, sfzName, n.pitch, vel, t, dur);
+      } else {
+        cpScheduleNoteAt(midiToFreq(n.pitch), offCtx, t, dur, vel, track.instrument ?? 'pluck', offCtx.destination);
+      }
+    }
+  }
+  return offCtx.startRendering();
+}
+
+async function renderTrackGroupToStereo(trackList, raw = false) {
   let totalSamples = 0;
   for (const track of trackList) {
     for (const clip of track.clips) {
+      const end = clip.startSample + clip.durationSamples;
+      if (end > totalSamples) totalSamples = end;
+    }
+    for (const clip of (track.midiClips ?? [])) {
       const end = clip.startSample + clip.durationSamples;
       if (end > totalSamples) totalSamples = end;
     }
@@ -91,6 +125,18 @@ function renderTrackGroupToStereo(trackList, raw = false) {
         outR[start + i] += chR[i] * panR;
       }
     }
+
+    if (track.midiClips?.length) {
+      const midiBuffer = await _renderMidiTrackToBuffer(track, totalSamples);
+      if (midiBuffer) {
+        const mL = midiBuffer.getChannelData(0);
+        const mR = midiBuffer.numberOfChannels > 1 ? midiBuffer.getChannelData(1) : mL;
+        for (let i = 0; i < totalSamples; i++) {
+          outL[i] += mL[i] * panL;
+          outR[i] += mR[i] * panR;
+        }
+      }
+    }
   }
 
   return out;
@@ -114,7 +160,7 @@ async function exportMixdown({ scenes, modes, folderHandle }) {
     }
     for (const [trackId, filename] of trackFilenames) {
       const track = tracks.find(t => t.id === trackId);
-      const rendered = renderTrackGroupToStereo([track], true);
+      const rendered = await renderTrackGroupToStereo([track], true);
       const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
       const fh = await folderHandle.getFileHandle(filename, { create: true });
       const w = await fh.createWritable();
@@ -130,7 +176,7 @@ async function exportMixdown({ scenes, modes, folderHandle }) {
 
     if (modes.includes('stereo')) {
       const filename = `Scene-${letter}.wav`;
-      const rendered = renderTrackGroupToStereo(sceneTracks);
+      const rendered = await renderTrackGroupToStereo(sceneTracks);
       const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
       const fh = await folderHandle.getFileHandle(filename, { create: true });
       const w = await fh.createWritable();
@@ -162,7 +208,7 @@ async function exportAllTracks({ modes, folderHandle }) {
 
   if (modes.includes('stereo')) {
     const filename = 'All Tracks.wav';
-    const rendered = renderTrackGroupToStereo(tracks);
+    const rendered = await renderTrackGroupToStereo(tracks);
     const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
     const fh = await folderHandle.getFileHandle(filename, { create: true });
     const w = await fh.createWritable();
@@ -177,7 +223,7 @@ async function exportAllTracks({ modes, folderHandle }) {
     const stemFiles = [];
     for (const track of tracks) {
       const filename = uniqueFilename(sanitizeFilename(track.name), usedNames);
-      const rendered = renderTrackGroupToStereo([track]);
+      const rendered = await renderTrackGroupToStereo([track]);
       const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
       const fh = await folderHandle.getFileHandle(filename, { create: true });
       const w = await fh.createWritable();
@@ -221,7 +267,7 @@ async function _loadFFmpegScript() {
 
 async function exportVideo({ sceneLetter, folderHandle, onProgress, setCancelFn }) {
   const sceneMap = getSceneTrackMap();
-  const audioBuffer = renderTrackGroupToStereo(sceneMap[sceneLetter]);
+  const audioBuffer = await renderTrackGroupToStereo(sceneMap[sceneLetter]);
   const wavBytes = audioBuffer ? audioEngineEncodeWav(audioBuffer) : buildPlaceholderWav();
 
   onProgress('Loading FFmpeg…');

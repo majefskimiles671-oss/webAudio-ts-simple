@@ -5281,13 +5281,19 @@ function showAudioReconnectBanner(projectId) {
 document.querySelectorAll('.master-section-header').forEach(header => {
     header.addEventListener('click', e => {
         if (e.target.closest('.master-fx-controls, select, button')) return;
-        header.closest('.master-section').classList.toggle('collapsed');
+        const section = header.closest('.master-section');
+        section.classList.toggle('collapsed');
+        if (!section.classList.contains('collapsed'))
+            setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 190);
     });
 });
 
 document.querySelectorAll('.master-group-label').forEach(label => {
     label.addEventListener('click', () => {
-        label.closest('.master-group').classList.toggle('collapsed');
+        const group = label.closest('.master-group');
+        group.classList.toggle('collapsed');
+        if (!group.classList.contains('collapsed'))
+            setTimeout(() => group.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 210);
     });
 });
 

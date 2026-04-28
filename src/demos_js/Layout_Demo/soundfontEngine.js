@@ -156,3 +156,33 @@ function sfScheduleNote(dest, program, pitch, velocity, audioTime, durationSec) 
 
   return [src];
 }
+
+function sfScheduleNoteInContext(ctx, dest, program, pitch, velocity, audioTime, durationSec) {
+  const noteMap = _sfCache.get(program);
+  if (!noteMap) return [];
+  const srcPitch = _sfClosestPitch(noteMap, pitch);
+  if (srcPitch === null) return [];
+  const entry = noteMap.get(srcPitch);
+
+  const src = ctx.createBufferSource();
+  src.buffer       = entry.buffer;
+  src.detune.value = (pitch - srcPitch) * 100;
+  if (entry.loops && entry.loopEnd > entry.loopStart) {
+    src.loop      = true;
+    src.loopStart = entry.loopStart;
+    src.loopEnd   = entry.loopEnd;
+  }
+
+  const gain = ctx.createGain();
+  const vol  = (velocity / 127) * 0.9;
+  gain.gain.setValueAtTime(vol, audioTime);
+  gain.gain.setTargetAtTime(0, audioTime + durationSec, 0.08);
+
+  src.connect(gain);
+  gain.connect(dest ?? ctx.destination);
+
+  src.start(audioTime);
+  src.stop(Math.min(audioTime + durationSec + 0.5, ctx.length / ctx.sampleRate));
+
+  return [src];
+}

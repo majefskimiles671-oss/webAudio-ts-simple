@@ -223,6 +223,20 @@ function sfzScheduleNote(dest, sfzName, pitch, velocity, audioTime, durationSec)
   return [src];
 }
 
+function sfzScheduleNoteInContext(ctx, dest, sfzName, pitch, velocity, audioTime, durationSec) {
+  const regions = _sfzLibrary.get(sfzName);
+  if (!regions) return [];
+  const region = _sfzFindRegion(regions, pitch, velocity);
+  if (!region) return [];
+
+  const { src, gain } = _sfzBuildSource(region, pitch, velocity, ctx);
+  gain.gain.setTargetAtTime(0, audioTime + Math.max(0.05, durationSec - 0.05), 0.08);
+  gain.connect(dest ?? ctx.destination);
+  src.start(audioTime);
+  src.stop(Math.min(audioTime + durationSec + 0.5, ctx.length / ctx.sampleRate));
+  return [src];
+}
+
 function sfzNoteOn(dest, sfzName, pitch, velocity) {
   const regions = _sfzLibrary.get(sfzName);
   if (!regions) return null;
