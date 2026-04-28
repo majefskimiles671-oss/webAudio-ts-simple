@@ -232,6 +232,17 @@ function _prDraw() {
     ctx.fillRect(x, y + 1, 2, PR_ROW_H - 2);
   }
 
+  // Ghost note placement preview
+  if (_prGhostSamples !== null && _prGhostPitch !== null && !_prDragMode) {
+    const gx = _prSamplesToX(_prGhostSamples);
+    const gy = _prPitchToY(_prGhostPitch);
+    const gw = Math.max(4, _prDefaultNoteDur() * pps);
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = "#4ab0d0";
+    ctx.fillRect(gx, gy + 1, gw - 1, PR_ROW_H - 2);
+    ctx.globalAlpha = 1;
+  }
+
   // Area selection box
   if (_prSelBox) {
     const bw = _prSelBox.x1 - _prSelBox.x0, bh = _prSelBox.y1 - _prSelBox.y0;
@@ -417,6 +428,8 @@ let _prDragMultiOrig = new Map();     // note obj → {startSamples, pitch}
 let _prDragSelectedNotes = new Set(); // note objs being moved (for post-sort index rebuild)
 let _prSelBox = null;                 // {x0,y0,x1,y1} during area select, null otherwise
 let _prCopyOnDrag = false;            // shift-click on selected note — copy if dragged, deselect if not
+let _prGhostSamples = null;           // snapped start for placement ghost, null = hidden
+let _prGhostPitch   = null;
 
 function _prOnPointerDown(e) {
   if (e.button !== 0) return;
@@ -475,7 +488,23 @@ function _prOnPointerDown(e) {
 
 function _prOnPointerMove(e) {
   const canvas = _prCanvas();
-  if (!canvas.hasPointerCapture(e.pointerId)) return;
+  if (!canvas.hasPointerCapture(e.pointerId)) {
+    const rect = canvas.getBoundingClientRect();
+    const hx = e.clientX - rect.left;
+    const hy = e.clientY - rect.top;
+    const hit = _prHitTest(hx, hy);
+    canvas.style.cursor = hit?.isResize ? 'ew-resize' : '';
+    if (hit) {
+      _prGhostSamples = null;
+      _prGhostPitch   = null;
+    } else {
+      let s = _prXToSamples(hx);
+      if (_prSnapEnabled) s = _prSnapSamples(s);
+      _prGhostSamples = Math.max(0, s);
+      _prGhostPitch   = _prYToPitch(hy);
+    }
+    return;
+  }
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
@@ -814,9 +843,10 @@ function pianoRollOpen(clip, track) {
   newCanvas.id = "piano-roll-canvas";
   oldCanvas.replaceWith(newCanvas);
 
-  newCanvas.addEventListener("pointerdown", _prOnPointerDown);
-  newCanvas.addEventListener("pointermove", _prOnPointerMove);
-  newCanvas.addEventListener("pointerup",   _prOnPointerUp);
+  newCanvas.addEventListener("pointerdown",  _prOnPointerDown);
+  newCanvas.addEventListener("pointermove",  _prOnPointerMove);
+  newCanvas.addEventListener("pointerup",    _prOnPointerUp);
+  newCanvas.addEventListener("pointerleave", () => { newCanvas.style.cursor = ''; _prGhostSamples = null; _prGhostPitch = null; });
   newCanvas.addEventListener("wheel", _prOnWheel, { passive: false });
 
   const oldKeys = document.getElementById("piano-roll-keys");

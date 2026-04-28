@@ -406,10 +406,13 @@ function serializeProject() {
       soundfontFileName: (typeof sfGetProjectFile === 'function') ? (sfGetProjectFile()?.name ?? null) : null,
     },
     metronome: {
-      enabled:     document.getElementById("metronome-toggle").classList.contains("active"),
-      volume:      parseInt(document.getElementById("metronome-volume").value),
-      countIn:     parseInt(document.getElementById("metronome-count-in").value),
-      countInOnly: document.getElementById("metronome-count-in-only").checked,
+      enabled:           document.getElementById("metronome-toggle").classList.contains("active"),
+      volume:            parseInt(document.getElementById("metronome-volume").value),
+      countIn:           parseInt(document.getElementById("metronome-count-in").value),
+      countInBeforeRec:  document.getElementById("metronome-ci-rec").checked,
+      countInBeforePlay: document.getElementById("metronome-ci-play").checked,
+      clickWhileRec:     document.getElementById("metronome-click-rec").checked,
+      clickWhilePlay:    document.getElementById("metronome-click-play").checked,
     },
     video: videoFile
       ? {
@@ -574,9 +577,21 @@ function deserializeProject(data) {
     metronomeSetCountIn(countIn);
     document.getElementById("metronome-count-in").value = countIn;
 
-    const countInOnly = met.countInOnly ?? false;
-    metronomeSetCountInOnly(countInOnly);
-    document.getElementById("metronome-count-in-only").checked = countInOnly;
+    const countInBeforeRec = met.countInBeforeRec ?? true;
+    metronomeSetCountInBeforeRecording(countInBeforeRec);
+    document.getElementById("metronome-ci-rec").checked = countInBeforeRec;
+
+    const countInBeforePlay = met.countInBeforePlay ?? true;
+    metronomeSetCountInBeforePlaying(countInBeforePlay);
+    document.getElementById("metronome-ci-play").checked = countInBeforePlay;
+
+    const clickWhileRec = met.clickWhileRec ?? true;
+    metronomeSetWhileRecording(clickWhileRec);
+    document.getElementById("metronome-click-rec").checked = clickWhileRec;
+
+    const clickWhilePlay = met.clickWhilePlay ?? true;
+    metronomeSetWhilePlaying(clickWhilePlay);
+    document.getElementById("metronome-click-play").checked = clickWhilePlay;
   }
 
   if (data.theme) setTheme(data.theme, { silent: true });
