@@ -54,6 +54,7 @@ async function sf2Parse(arrayBuffer, audioCtx) {
   const ibag = records(pdta.ibag,  4, o => ({ genNdx: dv.getUint16(o, true) }));
   const igen = records(pdta.igen,  4, o => ({ oper: dv.getUint16(o, true), lo: u8[o+2], hi: u8[o+3] }));
   const shdr = records(pdta.shdr, 46, o => ({
+    name:       str(o, 20),
     start:      dv.getUint32(o + 20, true),
     end:        dv.getUint32(o + 24, true),
     startloop:  dv.getUint32(o + 28, true),
@@ -96,12 +97,13 @@ async function sf2Parse(arrayBuffer, audioCtx) {
   }
 
   // SF2 generator operator codes used here
+  const GEN_KEYRANGE     = 43;
   const GEN_INSTRUMENT   = 41;
   const GEN_SAMPLEID     = 53;
   const GEN_SAMPLEMODES  = 54;
   const GEN_OVERRIDEROOT = 58;
 
-  const result = new Map(); // program → Map<rootPitch, {buffer, loops, loopStart, loopEnd}>
+  const result = new Map(); // program → Map<rootPitch, {buffer, loops, loopStart, loopEnd, name?}>
 
   for (let pi = 0; pi < phdr.length - 1; pi++) {
     const p = phdr[pi];
@@ -147,6 +149,7 @@ async function sf2Parse(arrayBuffer, audioCtx) {
             loops,
             loopStart: loops ? (h.startloop - h.start) / h.sampleRate : 0,
             loopEnd:   loops ? (h.endloop   - h.start) / h.sampleRate : 0,
+            name:      program === SF_PERCUSSION ? h.name : undefined,
           });
         }
       }
@@ -154,6 +157,29 @@ async function sf2Parse(arrayBuffer, audioCtx) {
 
     if (noteMap.size > 0) result.set(program, noteMap);
   }
+
+  // Human-readable summary
+  console.group('[sf2] Loaded soundfont');
+  const melodic = [...result.keys()].filter(k => k !== SF_PERCUSSION).sort((a, b) => a - b);
+  const percMap  = result.get(SF_PERCUSSION);
+  const percNameCount = percMap ? [...percMap.values()].filter(e => e.name).length : 0;
+  console.log(`Programs (melodic): ${melodic.length}  |  Percussion notes named: ${percNameCount}`);
+  if (melodic.length) {
+    console.groupCollapsed('Melodic programs');
+    for (const prog of melodic) {
+      console.log(`  Program ${String(prog).padStart(3)}: ${result.get(prog).size} samples`);
+    }
+    console.groupEnd();
+  }
+  if (percMap?.size) {
+    console.groupCollapsed('Percussion note names (by rootPitch)');
+    const sorted = [...percMap.entries()].sort(([a], [b]) => a - b);
+    for (const [pitch, entry] of sorted) {
+      console.log(`  ${String(pitch).padStart(3)}: ${entry.name ?? '(unnamed)'}`);
+    }
+    console.groupEnd();
+  }
+  console.groupEnd();
 
   return result;
 }

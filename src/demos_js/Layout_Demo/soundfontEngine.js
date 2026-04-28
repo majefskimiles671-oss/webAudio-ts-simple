@@ -3,7 +3,7 @@
 
 const SF_PERCUSSION = -1; // sentinel for GM channel 9 (drums / bank 128)
 
-// Cache: program → Map<rootMidiPitch, {buffer, loops, loopStart, loopEnd}>
+// Cache: program → Map<rootMidiPitch, {buffer, loops, loopStart, loopEnd, name?}>
 const _sfCache = new Map();
 
 // --- SF2 state (priority: project > global > default) ---
@@ -23,6 +23,13 @@ function sfGetProjectFile() { return _sf2ProjectFile; }
 async function _sfPopulateCache(data) {
   _sfCache.clear();
   for (const [program, noteMap] of data) _sfCache.set(program, noteMap);
+}
+
+function sfGetPercussionName(pitch) {
+  const noteMap = _sfCache.get(SF_PERCUSSION);
+  if (!noteMap) return null;
+  const srcPitch = _sfClosestPitch(noteMap, pitch);
+  return srcPitch !== null ? (noteMap.get(srcPitch)?.name ?? null) : null;
 }
 
 async function sfLoadDefault(arrayBuffer) {

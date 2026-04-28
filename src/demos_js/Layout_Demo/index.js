@@ -4690,6 +4690,7 @@ document.getElementById("sf2-load-btn").addEventListener("click", async () => {
     try {
       await sfLoadFromFile(file);
       _updateSf2Display();
+      pianoRollRefreshKeys();
       markDirty();
       log(`[sf2] loaded: ${file.name}`);
     } catch (err) {
@@ -4757,6 +4758,7 @@ document.getElementById("menu-load-soundfont").addEventListener("click", async (
     const file = await fileHandle.getFile();
     await sfLoadGlobal(file);
     _updateSf2Display();
+    pianoRollRefreshKeys();
     await _saveGlobalSoundfontHandle(fileHandle);
     log(`[sf2] global font loaded: ${file.name}`);
   } catch (err) {

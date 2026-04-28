@@ -27,12 +27,18 @@ function _prPlayheadX() {
   return _prSamplesToX(getPlayheadTime() * _prGetSR() - _prClip.startSample);
 }
 
-const PR_ROW_H    = 14;   // pixels per semitone
+const PR_ROW_H    = 20;   // pixels per semitone
 const PR_KEY_W    = 44;   // piano keyboard width
 const PR_MIN_PITCH = 21;  // A0
 const PR_MAX_PITCH = 108; // C8
 const PR_PITCH_RANGE = PR_MAX_PITCH - PR_MIN_PITCH + 1;
 const PR_RESIZE_ZONE = 8; // px from right edge that triggers resize
+const PR_PERC_LABEL_W = 120; // extra width for percussion instrument name labels
+
+
+function _prIsPercussion() {
+  return typeof SF_PERCUSSION !== "undefined" && _prTrack?.gmProgram === SF_PERCUSSION;
+}
 
 // Piano Roll - Helpers -----
 function _prMidiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
@@ -99,29 +105,44 @@ function _prYToPitch(y) { return PR_MAX_PITCH - Math.floor((y + _prScrollY) / PR
 // Piano Roll - Rendering -----
 function _prDrawKeys(canvas) {
   const ctx = canvas.getContext("2d");
-  const w = PR_KEY_W, totalH = PR_PITCH_RANGE * PR_ROW_H;
+  const isPerc = _prIsPercussion();
+  const labelW = isPerc ? PR_PERC_LABEL_W : 0;
+  const keyX = labelW;
+  const w = PR_KEY_W;
   canvas.height = canvas.clientHeight || 400;
-  ctx.clearRect(0, 0, w, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   for (let pitch = PR_MAX_PITCH; pitch >= PR_MIN_PITCH; pitch--) {
     const y = _prPitchToY(pitch);
     if (y + PR_ROW_H < 0 || y > canvas.height) continue;
     const black = _prIsBlack(pitch);
     const isActive = pitch === _prActiveKeyPitch;
-    ctx.fillStyle = isActive ? "#5a9fd4" : (black ? "#1a1a1a" : "#e0e0e0");
-    ctx.fillRect(0, y, w, PR_ROW_H - 1);
 
-    // C note label
-    if (pitch % 12 === 0) {
-      ctx.fillStyle = "#555";
-      ctx.font = "9px sans-serif";
-      ctx.fillText(_prNoteName(pitch), 3, y + PR_ROW_H - 3);
+    if (isPerc) {
+      const percName = typeof sfGetPercussionName === "function" ? sfGetPercussionName(pitch) : null;
+      ctx.fillStyle = isActive ? "#3a6fa0" : (percName ? "#2a2a2a" : "#1a1a1a");
+      ctx.fillRect(0, y, labelW, PR_ROW_H - 1);
+      if (percName) {
+        ctx.fillStyle = isActive ? "#fff" : "#bbb";
+        ctx.font = "12px sans-serif";
+        ctx.textBaseline = "middle";
+        ctx.fillText(percName, 4, y + (PR_ROW_H - 1) / 2);
+      }
     }
-    // White key border
+
+    ctx.fillStyle = isActive ? "#5a9fd4" : (black ? "#1a1a1a" : "#e0e0e0");
+    ctx.fillRect(keyX, y, w, PR_ROW_H - 1);
+
+    if (!isPerc && pitch % 12 === 0) {
+      ctx.fillStyle = "#555";
+      ctx.font = "12px sans-serif";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText(_prNoteName(pitch), keyX + 3, y + PR_ROW_H - 3);
+    }
     if (!black) {
       ctx.strokeStyle = "#999";
       ctx.lineWidth = 0.5;
-      ctx.strokeRect(0, y, w - 1, PR_ROW_H - 1);
+      ctx.strokeRect(keyX, y, w - 1, PR_ROW_H - 1);
     }
   }
 }
@@ -202,7 +223,7 @@ function _prDrawRuler() {
   const bpm = _prGetBPM(), sr = _prGetSR();
   const samplesPerBeat = (60 / bpm) * sr;
 
-  ctx.font = "9px sans-serif";
+  ctx.font = "12px sans-serif";
   let beat = 0;
   while (true) {
     const x = _prSamplesToX(beat * samplesPerBeat);
@@ -559,9 +580,11 @@ function _prResizeCanvases() {
   const rollCvs = _prCanvas();
   const rulerCvs = _prRulerCanvas();
   if (!body || !keyCvs || !rollCvs) return;
-  const rollW = rollCvs.clientWidth  || (body.clientWidth - PR_KEY_W - 1);
+  const keyW = PR_KEY_W + (_prIsPercussion() ? PR_PERC_LABEL_W : 0);
+  const rollW = rollCvs.clientWidth  || (body.clientWidth - keyW - 1);
   const rollH = rollCvs.clientHeight || (body.clientHeight - (rulerCvs?.clientHeight ?? 20));
-  keyCvs.width   = PR_KEY_W;
+  keyCvs.width        = keyW;
+  keyCvs.style.width  = keyW + "px";
   keyCvs.height  = rollH;
   rollCvs.width  = rollW;
   rollCvs.height = rollH;
@@ -731,6 +754,12 @@ function pianoRollClose() {
   _prTrack = null;
   const panel = document.getElementById("piano-roll-panel");
   panel.setAttribute("hidden", "");
+}
+
+function pianoRollRefreshKeys() {
+  if (!_prClip) return;
+  _prResizeCanvases();
+  _prDrawKeys(_prKeysCanvas());
 }
 
 // Piano Roll - Init -----

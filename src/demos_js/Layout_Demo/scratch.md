@@ -156,15 +156,15 @@ npm run serve
 http://localhost:8080/src/demos_js/Layout_Demo/Layout_Demo.html
 
 ```bash
-git switch -c miles_midi_vol
+git switch -c miles_midi_fix
 ```
 
 ```bash
 git switch main
-git merge miles_midi_vol
+git merge miles_midi_fix
 ```
 
 ```bash
 git push
-git branch -d miles_midi_vol
+git branch -d miles_midi_fix
 ```
