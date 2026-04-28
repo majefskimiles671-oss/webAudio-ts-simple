@@ -5,7 +5,7 @@
 const LOOKAHEAD_SECS = 0.5; // schedule this far ahead of ctx.currentTime
 
 let _scheduledMidiNodes = [];
-let _pendingNoteQueue   = []; // { audioTime, pitch, durationSec, velocity, instrument, program, dest }
+let _pendingNoteQueue   = []; // { audioTime, pitch, durationSec, velocity, instrument, program, sfzName, dest }
 const GM_LIVE_CHANNEL   = 15; // reserved for live keyboard input; never assigned to playback tracks
 
 // Helpers - MIDI Engine -----
@@ -26,10 +26,12 @@ function _schedulerTick() {
   const horizon = ctx.currentTime + LOOKAHEAD_SECS;
 
   while (_pendingNoteQueue.length > 0 && _pendingNoteQueue[0].audioTime <= horizon) {
-    const { audioTime, pitch, durationSec, velocity, instrument, program, dest } = _pendingNoteQueue.shift();
+    const { audioTime, pitch, durationSec, velocity, instrument, program, sfzName, dest } = _pendingNoteQueue.shift();
     const nodes = instrument === 'gm'
       ? sfScheduleNote(dest, program, pitch, velocity, audioTime, durationSec)
-      : cpScheduleNoteAt(_midiToFreq(pitch), ctx, audioTime, durationSec, velocity, instrument, dest);
+      : instrument === 'sfz'
+        ? sfzScheduleNote(dest, sfzName, pitch, velocity, audioTime, durationSec)
+        : cpScheduleNoteAt(_midiToFreq(pitch), ctx, audioTime, durationSec, velocity, instrument, dest);
     _scheduledMidiNodes.push(...nodes);
   }
 
@@ -68,7 +70,9 @@ async function midiEnginePlay(tracks, playheadSeconds) {
     if (!audible) continue;
 
     const isGm      = track.instrument === 'gm';
+    const isSfz     = track.instrument === 'sfz';
     const program   = track.gmProgram ?? 0;
+    const sfzName   = track.sfzName   ?? null;
     const dest      = audioEngineGetTrackMixerInput(track.id);
 
     for (const clip of track.midiClips) {
@@ -89,6 +93,11 @@ async function midiEnginePlay(tracks, playheadSeconds) {
             const nodes = sfScheduleNote(dest, program, pitch, 100, audioTime + i * 0.022, 2.0);
             _scheduledMidiNodes.push(...nodes);
           });
+        } else if (isSfz) {
+          _chordToMidiNotes(chord).forEach((pitch, i) => {
+            const nodes = sfzScheduleNote(dest, sfzName, pitch, 100, audioTime + i * 0.022, 2.0);
+            _scheduledMidiNodes.push(...nodes);
+          });
         } else {
           const nodes = cpScheduleChordAt(chord, ctx, audioTime, track.instrument ?? "pluck", dest);
           _scheduledMidiNodes.push(...nodes);
@@ -104,8 +113,9 @@ async function midiEnginePlay(tracks, playheadSeconds) {
           pitch:       n.pitch,
           durationSec: n.durationSamples / SAMPLE_RATE,
           velocity:    n.velocity ?? 100,
-          instrument:  isGm ? 'gm' : (track.instrument ?? 'pluck'),
+          instrument:  isGm ? 'gm' : isSfz ? 'sfz' : (track.instrument ?? 'pluck'),
           program,
+          sfzName:     isSfz ? sfzName : undefined,
           dest,
         });
       }

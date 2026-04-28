@@ -59,6 +59,8 @@ function _prPreviewNote(pitch, durationSec, velocity = 100) {
   startMeterAnimation();
   if (_prTrack?.instrument === 'gm') {
     sfScheduleNote(dest, _prTrack.gmProgram ?? 0, pitch, velocity, ctx.currentTime, durationSec);
+  } else if (_prTrack?.instrument === 'sfz') {
+    sfzScheduleNote(dest, _prTrack.sfzName, pitch, velocity, ctx.currentTime, durationSec);
   } else {
     cpScheduleNoteAt(_prMidiToFreq(pitch), ctx, ctx.currentTime, durationSec, velocity, _prTrack?.instrument ?? 'pluck', dest);
   }
@@ -212,6 +214,16 @@ function _prDraw() {
     ctx.fillRect(x, y + 1, nw - 1, PR_ROW_H - 2);
     ctx.fillStyle = selected ? "#ffc060" : "#6cd0f0";
     ctx.fillRect(x, y + 1, 2, PR_ROW_H - 2);
+  }
+
+  // Area selection box
+  if (_prSelBox) {
+    const bw = _prSelBox.x1 - _prSelBox.x0, bh = _prSelBox.y1 - _prSelBox.y0;
+    ctx.fillStyle = "rgba(100,180,255,0.12)";
+    ctx.fillRect(_prSelBox.x0, _prSelBox.y0, bw, bh);
+    ctx.strokeStyle = "rgba(100,180,255,0.8)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(_prSelBox.x0, _prSelBox.y0, bw, bh);
   }
 
   const phX = _prPlayheadX();
@@ -372,11 +384,14 @@ function _prRefreshClipDOM() {
 }
 
 // Piano Roll - Pointer Interaction -----
-let _prDragMode   = null; // "move" | "resize" | "create" | null
+let _prDragMode   = null; // "move" | "resize" | "select" | null
 let _prDragIndex  = -1;
 let _prDragOriginX = 0, _prDragOriginY = 0;
 let _prDragOrigStart = 0, _prDragOrigDur = 0, _prDragOrigPitch = 0;
 let _prSnapEnabled = true;
+let _prDragMultiOrig = new Map();     // note obj → {startSamples, pitch}
+let _prDragSelectedNotes = new Set(); // note objs being moved (for post-sort index rebuild)
+let _prSelBox = null;                 // {x0,y0,x1,y1} during area select, null otherwise
 
 function _prOnPointerDown(e) {
   if (e.button !== 0) return;
@@ -396,28 +411,36 @@ function _prOnPointerDown(e) {
     _prDragOrigPitch = n.pitch;
     _prDragIndex = hit.index;
 
-    if (!e.shiftKey) _prSelected.clear();
-    _prSelected.add(hit.index);
+    if (e.shiftKey) {
+      if (_prSelected.has(hit.index)) _prSelected.delete(hit.index);
+      else _prSelected.add(hit.index);
+    } else if (!_prSelected.has(hit.index)) {
+      _prSelected.clear();
+      _prSelected.add(hit.index);
+    }
+    // Clicking an already-selected note with no shift keeps the full selection
+
     _prDragMode = hit.isResize ? "resize" : "move";
-    const _hn = _prClip.notes[hit.index];
-    _prPreviewNote(_hn.pitch, _hn.durationSamples / _prGetSR(), _hn.velocity ?? 100);
+
+    // Save originals for all selected notes so multi-note drag works
+    _prDragMultiOrig.clear();
+    _prDragSelectedNotes.clear();
+    _prSelected.forEach(i => {
+      const note = _prClip.notes[i];
+      if (note) {
+        _prDragMultiOrig.set(note, { startSamples: note.startSamples, pitch: note.pitch });
+        _prDragSelectedNotes.add(note);
+      }
+    });
+
+    _prPreviewNote(n.pitch, n.durationSamples / _prGetSR(), n.velocity ?? 100);
   } else {
-    // Create new note
+    // Start area select on empty space; a click (no drag) will create a note on pointer up
     canvas.setPointerCapture(e.pointerId);
-    _prSelected.clear();
-    const pitch = _prYToPitch(y);
-    let startSamples = _prXToSamples(x);
-    if (_prSnapEnabled) startSamples = _prSnapSamples(startSamples);
-    const dur = _prDefaultNoteDur();
-    _prAddNote(pitch, startSamples, dur);
-    const newIdx = _prClip.notes.findIndex(n => n.startSamples === Math.max(0, Math.round(_prSnapEnabled ? _prSnapSamples(_prXToSamples(x)) : _prXToSamples(x))));
-    _prDragMode = "create";
-    _prDragIndex = _prClip.notes.length - 1;
-    _prDragOrigStart = _prClip.notes[_prDragIndex].startSamples;
-    _prDragOrigDur   = _prClip.notes[_prDragIndex].durationSamples;
-    _prDragOrigPitch = _prClip.notes[_prDragIndex].pitch;
+    if (!e.shiftKey) _prSelected.clear();
+    _prDragMode = "select";
     _prDragOriginX = x; _prDragOriginY = y;
-    _prSelected.add(_prDragIndex);
+    _prSelBox = null;
   }
   _prFullDraw();
 }
@@ -432,7 +455,7 @@ function _prOnPointerMove(e) {
   const deltaX = x - _prDragOriginX;
   const deltaSamples = deltaX / pps;
 
-  if (_prDragMode === "resize" || _prDragMode === "create") {
+  if (_prDragMode === "resize") {
     let newDur = _prDragOrigDur + deltaSamples;
     if (_prSnapEnabled) {
       const endSamples = _prDragOrigStart + newDur;
@@ -441,16 +464,27 @@ function _prOnPointerMove(e) {
     const minDur = Math.round(_prGetSR() / 32);
     _prClip.notes[_prDragIndex].durationSamples = Math.max(minDur, Math.round(newDur));
   } else if (_prDragMode === "move") {
-    let newStart = _prDragOrigStart + deltaSamples;
-    if (_prSnapEnabled) newStart = _prSnapSamples(newStart);
-    newStart = Math.max(0, Math.min(_prClip.durationSamples - 1, Math.round(newStart)));
-
     const deltaY = y - _prDragOriginY;
     const deltaPitch = -Math.round(deltaY / PR_ROW_H);
-    const newPitch = Math.max(PR_MIN_PITCH, Math.min(PR_MAX_PITCH, _prDragOrigPitch + deltaPitch));
 
-    _prClip.notes[_prDragIndex].startSamples = newStart;
-    _prClip.notes[_prDragIndex].pitch        = newPitch;
+    // Compute snapped sample delta using the anchor note
+    let newAnchorStart = _prDragOrigStart + deltaSamples;
+    if (_prSnapEnabled) newAnchorStart = _prSnapSamples(newAnchorStart);
+    const snappedDelta = newAnchorStart - _prDragOrigStart;
+
+    // Apply the same delta to every note in the multi-selection
+    _prDragMultiOrig.forEach((orig, note) => {
+      let ns = Math.max(0, Math.min(_prClip.durationSamples - 1, Math.round(orig.startSamples + snappedDelta)));
+      note.startSamples = ns;
+      note.pitch = Math.max(PR_MIN_PITCH, Math.min(PR_MAX_PITCH, orig.pitch + deltaPitch));
+    });
+  } else if (_prDragMode === "select") {
+    if (Math.abs(deltaX) > 3 || Math.abs(y - _prDragOriginY) > 3) {
+      _prSelBox = {
+        x0: Math.min(_prDragOriginX, x), y0: Math.min(_prDragOriginY, y),
+        x1: Math.max(_prDragOriginX, x), y1: Math.max(_prDragOriginY, y)
+      };
+    }
   }
   _prDraw();
 }
@@ -459,14 +493,51 @@ function _prOnPointerUp(e) {
   const canvas = _prCanvas();
   if (!canvas.hasPointerCapture(e.pointerId)) return;
   canvas.releasePointerCapture(e.pointerId);
-  if (_prDragMode) {
+
+  if (_prDragMode === "select") {
+    if (_prSelBox) {
+      // Apply area selection: add notes overlapping the box; shift toggles
+      const pps = _prPixelsPerSample();
+      _prClip.notes?.forEach((n, i) => {
+        const nx = _prSamplesToX(n.startSamples);
+        const nw = Math.max(4, n.durationSamples * pps);
+        const ny = _prPitchToY(n.pitch);
+        const inBox = nx < _prSelBox.x1 && nx + nw > _prSelBox.x0 &&
+                      ny < _prSelBox.y1 && ny + PR_ROW_H > _prSelBox.y0;
+        if (inBox) {
+          if (e.shiftKey && _prSelected.has(i)) _prSelected.delete(i);
+          else _prSelected.add(i);
+        }
+      });
+      _prSelBox = null;
+    } else {
+      // Click on empty space with no drag — create a note
+      const pitch = _prYToPitch(_prDragOriginY);
+      let startSamples = _prXToSamples(_prDragOriginX);
+      if (_prSnapEnabled) startSamples = _prSnapSamples(startSamples);
+      const beforeSet = new Set(_prClip.notes);
+      _prAddNote(pitch, startSamples, _prDefaultNoteDur());
+      _prSelected.clear();
+      _prClip.notes.forEach((n, i) => { if (!beforeSet.has(n)) _prSelected.add(i); });
+      _prRefreshClipDOM();
+      if (typeof markDirty === "function") markDirty();
+    }
+  } else if (_prDragMode === "move" || _prDragMode === "resize") {
     _prClip.notes.sort((a, b) => a.startSamples - b.startSamples);
-    _prFullDraw();
+    // Rebuild _prSelected by note-object identity after sort reorders indices
+    if (_prDragSelectedNotes.size > 0) {
+      _prSelected.clear();
+      _prClip.notes.forEach((n, i) => { if (_prDragSelectedNotes.has(n)) _prSelected.add(i); });
+    }
+    _prDragMultiOrig.clear();
+    _prDragSelectedNotes.clear();
     _prRefreshClipDOM();
     if (typeof markDirty === "function") markDirty();
   }
+
   _prDragMode = null;
   _prDragIndex = -1;
+  _prFullDraw();
 }
 
 function _prOnWheel(e) {

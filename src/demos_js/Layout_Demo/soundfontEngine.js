@@ -9,13 +9,14 @@ const _sfCache = new Map();
 // --- SF2 state (priority: project > global > default) ---
 let _sf2DefaultData = null; // Map<program,noteMap> from auto-loaded default.sf2
 let _sf2GlobalData  = null; // session-wide font chosen by user (not saved with projects)
+let _sf2DefaultName = null;
 let _sf2GlobalName  = null;
 let _sf2ProjectData = null; // parsed data for the current project's font
 let _sf2ProjectFile = null; // File object (written into project on save)
 let _sf2ProjectName = null;
 
 function sfGetLoadedName() {
-  return _sf2ProjectName ?? _sf2GlobalName ?? (_sf2DefaultData ? 'default.sf2' : null);
+  return _sf2ProjectName ?? _sf2GlobalName ?? _sf2DefaultName ?? null;
 }
 function sfGetGlobalName()  { return _sf2GlobalName; }
 function sfGetProjectFile() { return _sf2ProjectFile; }
@@ -32,11 +33,12 @@ function sfGetPercussionName(pitch) {
   return srcPitch !== null ? (noteMap.get(srcPitch)?.name ?? null) : null;
 }
 
-async function sfLoadDefault(arrayBuffer) {
+async function sfLoadDefault(arrayBuffer, name) {
   const data = await sf2Parse(arrayBuffer, getAudioContext());
   _sf2DefaultData = data;
+  _sf2DefaultName = name ?? null;
   if (!_sf2GlobalData && !_sf2ProjectData) await _sfPopulateCache(data);
-  log(`[soundfont] default.sf2 loaded: ${data.size} programs`);
+  log(`[soundfont] ${name ?? 'default'} loaded: ${data.size} programs`);
 }
 
 async function sfLoadGlobal(file) {
@@ -48,14 +50,14 @@ async function sfLoadGlobal(file) {
   log(`[soundfont] global SF2 loaded: ${file.name}, ${data.size} programs`);
 }
 
-async function sfLoadFromFile(file) {
+async function sfLoadFromFile(file, nameOverride) {
   const ab   = await file.arrayBuffer();
   const data = await sf2Parse(ab, getAudioContext());
   _sf2ProjectFile = file;
-  _sf2ProjectName = file.name;
+  _sf2ProjectName = nameOverride ?? file.name;
   _sf2ProjectData = data;
   await _sfPopulateCache(data);
-  log(`[soundfont] project SF2 loaded: ${file.name}, ${data.size} programs`);
+  log(`[soundfont] project SF2 loaded: ${_sf2ProjectName}, ${data.size} programs`);
 }
 
 function sfClearProjectFont() {

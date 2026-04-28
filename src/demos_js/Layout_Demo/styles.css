@@ -931,7 +931,7 @@
             color: var(--text-secondary);
             cursor: pointer;
             appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='#888'/></svg>");
             background-repeat: no-repeat;
             background-position: right 5px center;
             background-size: 7px;
@@ -977,7 +977,7 @@
             color: var(--text-secondary);
             cursor: pointer;
             appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='#888'/></svg>");
             background-repeat: no-repeat;
             background-position: right 5px center;
             background-size: 7px;
@@ -985,6 +985,28 @@
         }
 
         .gm-program-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            color: var(--text-main);
+        }
+
+        .sfz-instrument-select {
+            font-size: 10px;
+            padding: 3px 18px 3px 6px;
+            border-radius: 6px;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='#888'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 5px center;
+            background-size: 7px;
+            max-width: 160px;
+        }
+
+        .sfz-instrument-select:focus {
             outline: none;
             border-color: var(--accent-primary);
             color: var(--text-main);
@@ -2616,6 +2638,55 @@
             max-height: 0;
             opacity: 0;
             padding-top: 0;
+        }
+
+        .master-group-label {
+            margin: 0 -12px;
+            padding: 3px 12px;
+            background: var(--bg-panel);
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .master-group-label::before {
+            content: '▾';
+            font-size: 10px;
+            display: inline-block;
+            transition: transform 0.15s ease;
+        }
+
+        .master-group.collapsed .master-group-label::before {
+            transform: rotate(-90deg);
+        }
+
+        .master-group {
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 4px;
+        }
+
+        .master-group:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .master-group-body {
+            overflow: hidden;
+            max-height: 2000px;
+            transition: max-height 0.2s ease, opacity 0.15s ease;
+            opacity: 1;
+        }
+
+        .master-group.collapsed .master-group-body {
+            max-height: 0;
+            opacity: 0;
         }
 
         .master-sub-label {

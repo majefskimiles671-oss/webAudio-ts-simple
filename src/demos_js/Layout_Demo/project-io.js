@@ -324,6 +324,7 @@ function serializeProject() {
       opacity:    track.opacity,
       instrument:     track.instrument,
       gmProgram:      track.gmProgram ?? 0,
+      sfzName:        track.sfzName   ?? null,
       outputDeviceId: track.outputDeviceId ?? null,
       scenes:         [...track.scenes],
       clips:  track.clips.map(clip => {
@@ -394,6 +395,12 @@ function serializeProject() {
         [...document.querySelectorAll('.master-section')].map(s => [
           s.querySelector('.master-heading').textContent.trim().toLowerCase(),
           s.classList.contains('collapsed'),
+        ])
+      ),
+      groupCollapsed:      Object.fromEntries(
+        [...document.querySelectorAll('.master-group')].map(g => [
+          g.querySelector('.master-group-label').textContent.trim().toLowerCase(),
+          g.classList.contains('collapsed'),
         ])
       ),
       soundfontFileName: (typeof sfGetProjectFile === 'function') ? (sfGetProjectFile()?.name ?? null) : null,
@@ -535,7 +542,14 @@ function deserializeProject(data) {
     const sc = mx.sectionCollapsed ?? {};
     document.querySelectorAll('.master-section').forEach(s => {
       const name = s.querySelector('.master-heading').textContent.trim().toLowerCase();
-      s.classList.toggle('collapsed', sc[name] ?? false);
+      const defaultCollapsed = name !== 'master';
+      s.classList.toggle('collapsed', sc[name] ?? defaultCollapsed);
+    });
+
+    const gc = mx.groupCollapsed ?? {};
+    document.querySelectorAll('.master-group').forEach(g => {
+      const name = g.querySelector('.master-group-label').textContent.trim().toLowerCase();
+      g.classList.toggle('collapsed', gc[name] ?? true);
     });
   }
 
@@ -608,12 +622,18 @@ function deserializeProject(data) {
     // Instrument (Pluck / Synth / GM)
     track.instrument = saved.instrument ?? "pluck";
     track.gmProgram  = saved.gmProgram  ?? 0;
+    track.sfzName    = saved.sfzName    ?? null;
     const instrBtn = track.controlRow.querySelector(".instrument-toggle");
-    if (instrBtn) instrBtn.textContent = { pluck: "Pluck", synth: "Synth", gm: "GM" }[track.instrument] ?? "Pluck";
+    if (instrBtn) instrBtn.textContent = { pluck: "Pluck", synth: "Synth", gm: "GM", sfz: "SFZ" }[track.instrument] ?? "Pluck";
     const gmSel = track.controlRow.querySelector(".gm-program-select");
     if (gmSel) {
       gmSel.value = track.gmProgram ?? 0;
       gmSel.style.display = track.instrument === "gm" ? "" : "none";
+    }
+    const sfzSel = track.controlRow.querySelector(".sfz-instrument-select");
+    if (sfzSel) {
+      sfzSel._refresh?.();
+      sfzSel.style.display = track.instrument === "sfz" ? "" : "none";
     }
 
     // Output device
@@ -726,12 +746,12 @@ function deserializeProject(data) {
 // Save / Open (File System Access API) -----
 // ============================================================
 
-async function loadSoundfontFromFolder(dataHandle) {
+async function loadSoundfontFromFolder(dataHandle, originalName) {
   if (typeof sfLoadFromFile !== 'function') return;
   try {
     const sfHandle = await dataHandle.getFileHandle('soundfont.sf2');
     const sfFile   = await sfHandle.getFile();
-    await sfLoadFromFile(sfFile);
+    await sfLoadFromFile(sfFile, originalName ?? undefined);
   } catch {
     // no project-specific soundfont — revert to default.sf2 if loaded
     if (typeof sfClearProjectFont === 'function') sfClearProjectFont();
@@ -855,7 +875,7 @@ async function reconnectProjectFolder() {
       }
     }
     await loadVideoFromFolder(dataHandle, projectData);
-    await loadSoundfontFromFolder(dataHandle);
+    await loadSoundfontFromFolder(dataHandle, projectData.soundfontFileName ?? undefined);
   } else {
     if (typeof sfClearProjectFont === 'function') sfClearProjectFont();
     if (typeof _updateSf2Display === 'function') _updateSf2Display();
@@ -910,7 +930,7 @@ async function openProject() {
         }
       }
       await loadVideoFromFolder(dataHandle, data);
-      await loadSoundfontFromFolder(dataHandle);
+      await loadSoundfontFromFolder(dataHandle, data.soundfontFileName ?? undefined);
     } else {
       if (typeof sfClearProjectFont === 'function') sfClearProjectFont();
       if (typeof _updateSf2Display === 'function') _updateSf2Display();

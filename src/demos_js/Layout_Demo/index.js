@@ -1094,18 +1094,53 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
       markDirty();
     }, { signal });
 
-    const _instrCycle = ["pluck", "synth", "gm"];
+    const sfzSelect = document.createElement("select");
+    sfzSelect.className = "sfz-instrument-select";
+    sfzSelect.title = "SFZ instrument";
+    sfzSelect.style.display = "none";
+    function _sfzRefreshSelect() {
+      sfzSelect.innerHTML = "";
+      const names = sfzGetNames();
+      if (!names.length) {
+        const opt = document.createElement("option");
+        opt.value = ""; opt.textContent = "(no SFZ loaded)";
+        sfzSelect.appendChild(opt);
+      } else {
+        for (const n of names) {
+          const opt = document.createElement("option");
+          opt.value = n; opt.textContent = n;
+          sfzSelect.appendChild(opt);
+        }
+        if (track.sfzName && names.includes(track.sfzName)) sfzSelect.value = track.sfzName;
+        else { track.sfzName = names[0]; sfzSelect.value = names[0]; }
+      }
+    }
+    sfzSelect._refresh = _sfzRefreshSelect;
+    sfzSelect.addEventListener("change", () => {
+      track.sfzName = sfzSelect.value || null;
+      markDirty();
+    }, { signal });
+    document.addEventListener("sfz-library-updated", () => {
+      if (track.instrument === "sfz") _sfzRefreshSelect();
+    }, { signal });
+
+    const _instrCycle = ["pluck", "synth", "gm", "sfz"];
+    const _instrLabels = { pluck: "Pluck", synth: "Synth", gm: "GM", sfz: "SFZ" };
     instrBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       const idx = _instrCycle.indexOf(track.instrument ?? "pluck");
       track.instrument = _instrCycle[(idx + 1) % _instrCycle.length];
-      instrBtn.textContent = { pluck: "Pluck", synth: "Synth", gm: "GM" }[track.instrument] ?? "Pluck";
-      gmSelect.style.display = track.instrument === "gm" ? "" : "none";
+      instrBtn.textContent = _instrLabels[track.instrument] ?? "Pluck";
+      gmSelect.style.display  = track.instrument === "gm"  ? "" : "none";
+      sfzSelect.style.display = track.instrument === "sfz" ? "" : "none";
       if (track.instrument === "gm") {
         const out = gmMidiGetOutput();
         const prog = track.gmProgram ?? 0;
         if (out && prog !== SF_PERCUSSION) gmMidiProgramChange(out, GM_LIVE_CHANNEL, prog);
+      } else if (track.instrument === "sfz") {
+        _sfzRefreshSelect();
       }
+      markDirty();
     }, { signal });
 
     const addMidiBtn = document.createElement("button");
@@ -1122,6 +1157,7 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     midiControls.appendChild(instrBtn);
     midiControls.appendChild(addMidiBtn);
     midiControls.appendChild(gmSelect);
+    midiControls.appendChild(sfzSelect);
     controlRow.querySelector(".track-row-instr").append(midiControls);
   }
 
@@ -3191,6 +3227,10 @@ document.addEventListener("keydown", (e) => {
           }
         }
         _liveKeyNotes.set(e.key, { nodes: [], sfHandle, pitch, startSample, gmLive: !sfHandle });
+      } else if (armedMidiTrack.instrument === "sfz") {
+        const mixerInput = audioEngineGetTrackMixerInput(armedMidiTrack.id);
+        const sfzHandle = sfzNoteOn(mixerInput, armedMidiTrack.sfzName, pitch, 100);
+        _liveKeyNotes.set(e.key, { nodes: [], sfzHandle, pitch, startSample });
       } else {
         const freq = _midiToFreq(pitch);
         const now = ctx.currentTime;
@@ -3279,7 +3319,9 @@ document.addEventListener("keyup", (e) => {
   const live = _liveKeyNotes.get(e.key);
   if (!live) return;
   _liveKeyNotes.delete(e.key);
-  if (live.sfHandle) {
+  if (live.sfzHandle) {
+    sfzNoteOff(live.sfzHandle);
+  } else if (live.sfHandle) {
     sfNoteOff(live.sfHandle);
   } else if (live.gmLive) {
     gmMidiNoteOff(gmMidiGetOutput(), GM_LIVE_CHANNEL, live.pitch);
@@ -4761,16 +4803,39 @@ document.getElementById("menu-load-soundfont").addEventListener("click", async (
   }
 });
 
-// Auto-load default.sf2 from the same origin on startup
+document.getElementById("menu-load-sfz").addEventListener("click", async () => {
+  let dirHandle;
+  try {
+    dirHandle = await window.showDirectoryPicker();
+  } catch (err) {
+    if (err.name !== 'AbortError') log("[sfz] picker error:", err);
+    return;
+  }
+  try {
+    const { name, loadedRegions, totalRegions } = await sfzLoadFromDirectory(dirHandle);
+    log(`[sfz] loaded "${name}" — ${loadedRegions}/${totalRegions} regions ready`);
+  } catch (err) {
+    log("[sfz] load failed:", err);
+    alert(`SFZ load failed: ${err.message}`);
+  }
+});
+
+// Auto-load the first .sf2 found in ./midi/ on startup
 (async () => {
   try {
-    const resp = await fetch("./midi/default.sf2");
+    const indexResp = await fetch("./midi/");
+    if (!indexResp.ok) return;
+    const html = await indexResp.text();
+    const match = html.match(/href="([^"?#]*\.sf2)"/i);
+    if (!match) return;
+    const filename = match[1];
+    const resp = await fetch("./midi/" + filename);
     if (!resp.ok) return;
     const ab = await resp.arrayBuffer();
-    await sfLoadDefault(ab);
+    await sfLoadDefault(ab, decodeURIComponent(filename));
     _updateSf2Display();
-    log("[sf2] auto-loaded default.sf2");
-  } catch { /* no default.sf2 present — use CDN */ }
+    log(`[sf2] auto-loaded ${filename}`);
+  } catch { /* no sf2 in ./midi — skip */ }
 })();
 
 _initGlobalSoundfont();
@@ -5187,6 +5252,12 @@ document.querySelectorAll('.master-section-header').forEach(header => {
     header.addEventListener('click', e => {
         if (e.target.closest('.master-fx-controls, select, button')) return;
         header.closest('.master-section').classList.toggle('collapsed');
+    });
+});
+
+document.querySelectorAll('.master-group-label').forEach(label => {
+    label.addEventListener('click', () => {
+        label.closest('.master-group').classList.toggle('collapsed');
     });
 });
 
