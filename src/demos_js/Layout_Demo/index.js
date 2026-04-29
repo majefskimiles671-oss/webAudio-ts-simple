@@ -5330,6 +5330,18 @@ document.querySelectorAll('.master-group-label').forEach(label => {
     });
 });
 
+document.getElementById('master-collapse-all-btn').addEventListener('click', () => {
+    document.querySelectorAll('#master-effects .master-group, #master-effects .master-section').forEach(el => el.classList.add('collapsed'));
+});
+
+document.getElementById('master-expand-btn').addEventListener('click', () => {
+    document.querySelectorAll('#master-effects .master-group').forEach(g => g.classList.remove('collapsed'));
+});
+
+document.getElementById('master-expand-all-btn').addEventListener('click', () => {
+    document.querySelectorAll('#master-effects .master-group, #master-effects .master-section').forEach(el => el.classList.remove('collapsed'));
+});
+
 pianoRollInit();
 syncRecordBtnEnabled();
 

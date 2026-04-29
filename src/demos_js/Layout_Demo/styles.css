@@ -2640,6 +2640,29 @@
             padding-top: 0;
         }
 
+        .master-collapse-controls {
+            display: flex;
+            gap: 4px;
+            padding: 4px 0 6px;
+        }
+
+        .master-collapse-controls button {
+            flex: 1;
+            background: var(--bg-surface);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-size: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .master-collapse-controls button:hover {
+            color: var(--text-main);
+        }
+
         .master-group-label {
             margin: 0 -12px;
             padding: 4px 12px;
