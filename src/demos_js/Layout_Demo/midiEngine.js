@@ -41,23 +41,11 @@ function _schedulerTick() {
 // Shared DOM References - MIDI Engine -----
 // Fills _pendingNoteQueue with all upcoming notes and kicks off the scheduler loop.
 // Called from onTransportStart and jumpPlayheadToTime.
-async function midiEnginePlay(tracks, playheadSeconds) {
+async function midiEnginePlay(tracks, playheadSeconds, startT = null) {
   midiEngineStop();
 
-  // Preload every soundfont needed before the scheduler fires
-  const gmPrograms = new Set(
-    tracks.filter(t => t.instrument === 'gm' && t.midiClips?.length)
-          .map(t => t.gmProgram ?? 0)
-  );
-  if (gmPrograms.size > 0) await Promise.allSettled([...gmPrograms].map(sfEnsureProgram));
-
-  // Re-arm output after the async soundfont gap — browser may have paused
-  // the <audio> element during the network load.
-  audioEngineEnsureOutput();
-
   const ctx = getAudioContext();
-  if (ctx.state === "suspended") ctx.resume();
-  const now = ctx.currentTime;
+  const now = startT ?? ctx.currentTime;
 
   const activeScene = document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim();
   const soloedControlRow = document.querySelector(".solo-btn.active")?.closest(".control-row");
@@ -123,6 +111,7 @@ async function midiEnginePlay(tracks, playheadSeconds) {
   }
 
   _pendingNoteQueue.sort((a, b) => a.audioTime - b.audioTime);
+  log('[midiEngine] pendingNoteQueue audioTimes:', _pendingNoteQueue.map(n => n.audioTime.toFixed(3)));
   if (_pendingNoteQueue.length > 0) _timerWorker.postMessage('start');
 }
 

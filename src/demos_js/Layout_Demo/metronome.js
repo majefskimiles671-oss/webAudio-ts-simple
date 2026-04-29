@@ -56,14 +56,25 @@ function metronomeSetCountIn(beats) {
   _metCountIn = beats;
 }
 
-function metronomeStart() {
+function metronomeSetStartTime(startT, playheadSeconds) {
+  const secPerBeat     = 60 / tempoBPM;
+  const beatsFromStart = playheadSeconds / secPerBeat;
+  const nextBeatIndex  = Math.ceil(beatsFromStart);
+  _nextBeatTime = startT + (nextBeatIndex - beatsFromStart) * secPerBeat;
+  _beatIndex    = nextBeatIndex % timeSignature.beats;
+}
+
+function metronomeStart(playheadSeconds = 0) {
   if (_metInterval !== null) return;
   const ctx = getAudioContext();
   // If _nextBeatTime is in the future (e.g. handed off from count-in), keep it;
   // otherwise reset to now so there's no burst of catch-up beats.
   if (_nextBeatTime < ctx.currentTime + 0.01) {
-    _nextBeatTime = ctx.currentTime + 0.05;
-    _beatIndex    = 0;
+    const secPerBeat     = 60 / tempoBPM;
+    const beatsFromStart = playheadSeconds / secPerBeat;
+    const nextBeatIndex  = Math.ceil(beatsFromStart);
+    _nextBeatTime = ctx.currentTime + 0.1 + (nextBeatIndex - beatsFromStart) * secPerBeat;
+    _beatIndex    = nextBeatIndex % timeSignature.beats;
   }
   _metInterval = setInterval(_schedule, TICK_MS);
 }
@@ -94,7 +105,7 @@ function metronomeRunCountIn(onDone) {
       if (beatsLeft === 0) {
         clearInterval(iv);
         const delay = (_nextBeatTime - ctx.currentTime) * 1000;
-        setTimeout(() => { if (!cancelled) onDone(); }, Math.max(0, delay - 10));
+        setTimeout(() => { if (!cancelled) onDone(); }, Math.max(0, delay - 100));
       }
     }
   }, TICK_MS);
@@ -102,6 +113,7 @@ function metronomeRunCountIn(onDone) {
   return cancel;
 }
 
+function metronomeGetNextBeatTime() { return _nextBeatTime; }
 function metronomeIsEnabled() { return _metEnabled; }
 function metronomeGetCountIn() { return _metCountIn; }
 function metronomeSetCountInBeforeRecording(bool) { _metCountInBeforeRecording = bool; }
@@ -121,6 +133,8 @@ function _scheduleBeat(when) {
   src.buffer = buf;
   src.connect(_metGain);
   src.start(when);
+  const aheadMs = ((when - ctx.currentTime) * 1000).toFixed(1);
+  log(`[metronome] beat scheduled: when=${when.toFixed(3)} currentTime=${ctx.currentTime.toFixed(3)} ahead=${aheadMs}ms beat=${_beatIndex}`);
 }
 
 function _schedule() {

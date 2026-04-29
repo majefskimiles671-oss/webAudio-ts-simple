@@ -380,6 +380,13 @@ function serializeProject() {
       compRatio:           parseFloat(document.getElementById("master-comp-ratio").value),
       synthLen:            parseInt(document.getElementById("synth-note-length").value),
       synthLenPreset:      document.getElementById("synth-len-preset").value,
+      pluckLength:         parseInt(document.getElementById("pluck-length").value),
+      pluckProminence:     parseInt(document.getElementById("pluck-prominence").value),
+      pluckAttack:         parseInt(document.getElementById("pluck-attack").value),
+      pluckDecay:          parseInt(document.getElementById("pluck-decay").value),
+      pluckSustain:        parseInt(document.getElementById("pluck-sustain").value),
+      pluckRelease:        parseInt(document.getElementById("pluck-release").value),
+      pluckPreset:         document.getElementById("pluck-preset").value,
       tanpuraOn:           document.getElementById("tanpura-toggle").classList.contains("active"),
       tanpuraMode:         document.getElementById("tanpura-mode").value,
       tanpuraVol:          parseInt(document.getElementById("tanpura-volume").value),
@@ -522,6 +529,26 @@ function deserializeProject(data) {
     cpSetSynthMult(sLen / 100);
     document.getElementById("synth-note-length").value = sLen;
     document.getElementById("synth-len-preset").value  = mx.synthLenPreset ?? "";
+
+    const pLen = mx.pluckLength     ?? 90;
+    const pPrm = mx.pluckProminence ?? 60;
+    const pAtk = mx.pluckAttack     ?? 4;
+    const pDec = mx.pluckDecay      ?? 15;
+    const pSus = mx.pluckSustain    ?? 80;
+    const pRel = mx.pluckRelease    ?? 12;
+    document.getElementById("pluck-length").value     = pLen;
+    document.getElementById("pluck-prominence").value = pPrm;
+    document.getElementById("pluck-attack").value     = pAtk;
+    document.getElementById("pluck-decay").value      = pDec;
+    document.getElementById("pluck-sustain").value    = pSus;
+    document.getElementById("pluck-release").value    = pRel;
+    document.getElementById("pluck-preset").value     = mx.pluckPreset ?? "";
+    cpSetPluckMult   (pLen / 100);
+    cpSetPluckVolume (pPrm / 50);
+    cpSetPluckAttack (pAtk * 0.002);
+    cpSetPluckDecay  (pDec * 0.01);
+    cpSetPluckSustain(pSus / 100);
+    cpSetPluckRelease(pRel * 0.02);
 
     _tanpuraEnabled = mx.tanpuraOn ?? true;
     document.getElementById("tanpura-toggle").classList.toggle("active", _tanpuraEnabled);

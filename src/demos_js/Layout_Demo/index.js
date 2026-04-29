@@ -161,6 +161,7 @@ const timelineInner = document.getElementById("timeline-inner");
 const BASE_PPS = 100;
 const SCROLL_THRESHOLD = 120;
 const MAX_CANVAS_PX = 16383; // Chrome hardware canvas width limit
+const SCHEDULE_AHEAD_SEC = 0.1; // scheduling lookahead: minimum gap between startT pick and first scheduled event
 
 //  Zoom State
 // 7 log-spaced levels (~×3.3 per step ≈ √10); center index 3 = 1×
@@ -379,7 +380,7 @@ let inRecordingSession = false;
 let masterGain = 100;
 let startTime = 0;
 let recordStartX = null;
-let playbackStartX = 0; // px offset where playback begins
+let playbackStartSeconds = 0; // playhead position (seconds) when playback began
 
 // State - Video Backdrop - Truth Layer -----
 let videoEl = null;
@@ -395,9 +396,11 @@ async function jumpPlayheadToTime(seconds) {
   const px = secondsToPixels(seconds);
   setPlayheadPositionPx(px);
   if (playing) {
-    playbackStartX = px;
+    playbackStartSeconds = seconds;
     startTime = performance.now();
     if (videoEl) videoEl.currentTime = seconds;
+    const jumpDeviceIds = [...new Set(tracks.map(t => t.outputDeviceId).filter(Boolean))];
+    await Promise.all(jumpDeviceIds.map(id => audioEngineEnsureOutputBus(id)));
     await audioEnginePlay(
       tracks.map(t => ({
         id: t.id,
@@ -529,14 +532,12 @@ function getTransportState() {
   return "IDLE";
 }
 
-function getPlayheadX() {
-  const transform = playhead.style.transform;
-  if (!transform) {
-    return 0;
-  }
+// function getPlayheadX() {
+//   return secondsToPixels(currentTimeSeconds);
+// }
 
-  const match = transform.match(/translateX\(([-\d.]+)px\)/);
-  return match ? parseFloat(match[1]) : 0;
+function getPlayheadTime() {
+  return currentTimeSeconds;
 }
 
 // ----- Track Name Generator
@@ -701,8 +702,8 @@ function selectMarkerByIndex(index) {
 //  -----------Apply Transport Change
 function _metronomeCheckStart() {
   if (!metronomeIsEnabled()) { metronomeStop(); return; }
-  if (recording && metronomeWhileRecording()) { metronomeStart(); return; }
-  if (playing && !recording && metronomeWhilePlaying()) { metronomeStart(); return; }
+  if (recording && metronomeWhileRecording()) { metronomeStart(currentTimeSeconds); return; }
+  if (playing && !recording && metronomeWhilePlaying()) { metronomeStart(currentTimeSeconds); return; }
   metronomeStop();
 }
 
@@ -724,7 +725,6 @@ function applyTransportChange({ play, record }) {
   if (!wasPlaying && playing) {
     onTransportStart();
     startMeterAnimation();
-    _metronomeCheckStart();
   }
 
   if (wasPlaying && !playing) {
@@ -1416,11 +1416,6 @@ function startRecordingRange() {
   recordStartTime = getPlayheadTime(); // seconds
   recordRange.style.display = "block";
   recordRange.style.width = "0px";
-}
-
-function getPlayheadTime() {
-  const x = getPlayheadX();
-  return pixelsToSeconds(x);
 }
 
 function updateRecordRange() {
@@ -3569,7 +3564,7 @@ function _renderGRMeter() {
 }
 
 //  Transport Transitions
-function syncTrackMutes() {
+function syncTrackMutes(playheadSeconds, startT) {
   const activeScene    = document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim();
   const soloedControlRow = document.querySelector(".solo-btn.active")?.closest(".control-row");
   const soloedTrack    = soloedControlRow ? tracks.find(t => t.controlRow === soloedControlRow) : null;
@@ -3580,25 +3575,49 @@ function syncTrackMutes() {
   }
   if (playing) {
     midiEngineStop();
-    midiEnginePlay(tracks, getPlayheadTime());
+    midiEnginePlay(tracks, playheadSeconds ?? getPlayheadTime(), startT ?? null);
   }
 }
 
 async function onTransportStart() {
-  playbackStartX = getPlayheadX(); // ← THIS is the fix
+  playbackStartSeconds = currentTimeSeconds;
   startTime = performance.now();
   if (videoEl) { videoEl.currentTime = getPlayheadTime(); videoEl.play().catch(() => {}); }
   requestAnimationFrame(updatePlayhead);
+
+  const playheadSeconds = getPlayheadTime();
+
+  // Preload all GM soundfonts before scheduling anything so nothing delays the start time.
+  const gmPrograms = new Set(
+    tracks.filter(t => t.instrument === 'gm' && t.midiClips?.length)
+          .map(t => t.gmProgram ?? 0)
+  );
+  if (gmPrograms.size > 0) await Promise.allSettled([...gmPrograms].map(sfEnsureProgram));
+
+  // Pre-ensure all per-track output buses before picking startT — the await inside
+  // audioEnginePlay would otherwise eat into the scheduling buffer after T is chosen.
+  const outputDeviceIds = [...new Set(tracks.map(t => t.outputDeviceId).filter(Boolean))];
+  await Promise.all(outputDeviceIds.map(id => audioEngineEnsureOutputBus(id)));
+
+  // Pick a shared start time all engines schedule against.
+  // If count-in already established a beat time, honour it; otherwise pick 100ms out.
+  const ctx = getAudioContext();
+  const nextBeat = metronomeGetNextBeatTime();
+  const startT = (nextBeat > ctx.currentTime + SCHEDULE_AHEAD_SEC) ? nextBeat : ctx.currentTime + SCHEDULE_AHEAD_SEC;
+
   await audioEnginePlay(
     tracks.map(t => ({
       id: t.id,
       deviceId: t.outputDeviceId,
       clips: t.clips.map(clip => ({ ...clip, gain: t.gain / 100, pan: t.pan / 100 })),
     })),
-    getPlayheadTime()
+    playheadSeconds,
+    startT
   );
-  syncTrackMutes();
-  if (recording && recordingTrackRow) audioEngineStartRecording(); // record was armed before play — start now
+  syncTrackMutes(playheadSeconds, startT);
+  metronomeSetStartTime(startT, playheadSeconds);
+  _metronomeCheckStart();
+  if (recording && recordingTrackRow) audioEngineStartRecording();
   if (_tanpuraEnabled) {
     const cur = markers.find(m => m.id === selectedMarkerId);
     if (cur) _applyTanpuraMarker(cur);
@@ -3609,13 +3628,11 @@ async function onTransportStart() {
 function updatePlayhead() {
   if (!playing) return;
   const elapsed = (performance.now() - startTime) / 1000;
-  const deltaX = elapsed * BASE_PPS * zoom;
-
-  const x = playbackStartX + deltaX;
+  currentTimeSeconds = playbackStartSeconds + elapsed;
+  const x = secondsToPixels(currentTimeSeconds);
 
   playhead.style.transform = `translateX(${x}px)`;
   rulerPlayhead.style.transform = `translateX(${x}px)`;
-  currentTimeSeconds = pixelsToSeconds(x);
 
   if (recording) {
     updateRecordRange();

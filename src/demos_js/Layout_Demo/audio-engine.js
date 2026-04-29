@@ -2,6 +2,7 @@
 // Audio Engine — AudioContext, WAV decoding, clip scheduling -----
 
 const _audioCtx = new AudioContext();
+_audioCtx.addEventListener('statechange', () => log(`[audio-engine] AudioContext state → ${_audioCtx.state}`));
 const _buffers = new Map(); // clipId (string) → AudioBuffer
 let _activeSources = [];
 const _trackMixers = new Map(); // trackId → { mixerGain, analyserL, analyserR }
@@ -108,7 +109,7 @@ function audioEngineCreateBuffer(numChannels, numSamples) {
 // trackGroups: array of { id, clips: [{ id, startSample, durationSamples, gain?, pan? }] }
 // gain: 0..1, pan: -1..1 (optional, defaults to 1 and 0)
 // SAMPLE_RATE is a global from index.js, available by call time
-async function audioEnginePlay(trackGroups, playheadSeconds) {
+async function audioEnginePlay(trackGroups, playheadSeconds, startT = null) {
   audioEngineStop();
   if (_audioCtx.state === "suspended") _audioCtx.resume();
 
@@ -120,7 +121,7 @@ async function audioEnginePlay(trackGroups, playheadSeconds) {
   _speakersAudioEl.play().catch(() => {});
   for (const bus of _outputBuses.values()) bus.audioEl.play().catch(() => {});
   _dumpMediaState();
-  const now = _audioCtx.currentTime;
+  const now = startT ?? _audioCtx.currentTime;
 
   for (const { id: trackId, pan: trackPan = 0, deviceId = null, clips } of trackGroups) {
     // Disconnect any live mixer that was created while transport was stopped.
