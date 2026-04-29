@@ -420,6 +420,7 @@ function serializeProject() {
       countInBeforePlay: document.getElementById("metronome-ci-play").checked,
       clickWhileRec:     document.getElementById("metronome-click-rec").checked,
       clickWhilePlay:    document.getElementById("metronome-click-play").checked,
+      busLatencyMs:      parseInt(document.getElementById("bus-latency").value),
     },
     video: videoFile
       ? {
@@ -619,6 +620,11 @@ function deserializeProject(data) {
     const clickWhilePlay = met.clickWhilePlay ?? true;
     metronomeSetWhilePlaying(clickWhilePlay);
     document.getElementById("metronome-click-play").checked = clickWhilePlay;
+
+    const busLatencyMs = met.busLatencyMs ?? 0;
+    metronomeSetLatencyMs(busLatencyMs);
+    document.getElementById("bus-latency").value = busLatencyMs;
+    document.getElementById("bus-latency-display").textContent = `${busLatencyMs} ms`;
   }
 
   if (data.theme) setTheme(data.theme, { silent: true });

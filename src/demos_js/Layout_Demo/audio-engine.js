@@ -2,7 +2,7 @@
 // Audio Engine — AudioContext, WAV decoding, clip scheduling -----
 
 const _audioCtx = new AudioContext();
-_audioCtx.addEventListener('statechange', () => log(`[audio-engine] AudioContext state → ${_audioCtx.state}`));
+_audioCtx.addEventListener('statechange', () => console.log(`[audio-engine] AudioContext state → ${_audioCtx.state}`));
 const _buffers = new Map(); // clipId (string) → AudioBuffer
 let _activeSources = [];
 const _trackMixers = new Map(); // trackId → { mixerGain, analyserL, analyserR }

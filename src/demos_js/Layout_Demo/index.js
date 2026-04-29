@@ -1137,8 +1137,8 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
       if (track.instrument === "sfz") _sfzRefreshSelect();
     }, { signal });
 
-    const _instrCycle = ["pluck", "synth", "gm", "sfz"];
-    const _instrLabels = { pluck: "Pluck", synth: "Synth", gm: "GM", sfz: "SFZ" };
+    const _instrCycle = ["pluck", "click", "synth", "gm", "sfz"];
+    const _instrLabels = { pluck: "Pluck", click: "Click", synth: "Synth", gm: "GM", sfz: "SFZ" };
     instrBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       const idx = _instrCycle.indexOf(track.instrument ?? "pluck");
@@ -4896,6 +4896,12 @@ document.getElementById("menu-load-sfz").addEventListener("click", async () => {
 })();
 
 _initGlobalSoundfont();
+
+document.getElementById("bus-latency").addEventListener("input", (e) => {
+  const ms = Math.round(e.target.value);
+  metronomeSetLatencyMs(ms);
+  document.getElementById("bus-latency-display").textContent = `${ms} ms`;
+});
 
 document.getElementById("master-reverb-wet").addEventListener("input", (e) => {
   audioEngineSetReverbWet(e.target.value / 100);

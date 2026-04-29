@@ -15,6 +15,7 @@ let _beatIndex     = 0;
 let _accentBuf     = null;
 let _normalBuf     = null;
 let _metGain       = null;
+let _metLatencyMs  = 0;
 
 const LOOKAHEAD_SEC = 0.1;
 const TICK_MS       = 25;
@@ -41,6 +42,9 @@ function metronomeInit() {
   // Connect directly to destination — click stays out of master effects chain
   _metGain.connect(ctx.destination);
 }
+
+function metronomeSetLatencyMs(ms) { _metLatencyMs = ms; }
+function metronomeGetLatencyMs()   { return _metLatencyMs; }
 
 function metronomeSetEnabled(bool) {
   _metEnabled = bool;
@@ -127,14 +131,15 @@ function metronomeWhilePlaying()   { return _metWhilePlaying;   }
 
 // Helpers - Metronome - Pure Computation Layer -----
 function _scheduleBeat(when) {
+  const t   = when + _metLatencyMs / 1000;
   const buf = (_beatIndex === 0) ? _accentBuf : _normalBuf;
   const ctx = getAudioContext();
   const src = ctx.createBufferSource();
   src.buffer = buf;
   src.connect(_metGain);
-  src.start(when);
-  const aheadMs = ((when - ctx.currentTime) * 1000).toFixed(1);
-  log(`[metronome] beat scheduled: when=${when.toFixed(3)} currentTime=${ctx.currentTime.toFixed(3)} ahead=${aheadMs}ms beat=${_beatIndex}`);
+  src.start(t);
+  const aheadMs = ((t - ctx.currentTime) * 1000).toFixed(1);
+  log(`[metronome] beat scheduled: when=${t.toFixed(3)} currentTime=${ctx.currentTime.toFixed(3)} ahead=${aheadMs}ms beat=${_beatIndex}`);
 }
 
 function _schedule() {

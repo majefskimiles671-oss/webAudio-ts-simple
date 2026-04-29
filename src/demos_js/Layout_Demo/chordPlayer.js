@@ -293,12 +293,37 @@ function playChordSpaced(chord) {
   }
 }
 
+// Metronome-style click: sine wave with exponential decay, pitch-mapped.
+function _clickPlayNote(ctx, freq, startTime, gainMult = 1, destination = null) {
+  const sr  = ctx.sampleRate;
+  const len = Math.ceil(sr * 0.08);
+  const buf = ctx.createBuffer(1, len, sr);
+  const d   = buf.getChannelData(0);
+  for (let i = 0; i < len; i++)
+    d[i] = Math.sin(2 * Math.PI * freq * i / sr) * Math.exp(-30 * i / sr);
+
+  const gain = ctx.createGain();
+  gain.gain.value = gainMult * 1.5;
+  gain.connect(destination ?? getMasterGainNode());
+
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(gain);
+  src.start(startTime);
+  src.addEventListener("ended", () => { src.disconnect(); gain.disconnect(); });
+  return src;
+}
+
 // Chord Player - Scheduling - Playback -----
 // Schedules a single MIDI note at an exact WebAudio time. Returns stoppable nodes.
 function cpScheduleNoteAt(freq, ctx, audioTime, durationSec, velocity = 100, mode = "pluck", destination = null) {
   const gainMult = velocity / 127;
   if (mode === "pluck") {
     const src = _ksPluck(ctx, freq, audioTime, Math.max(durationSec, 0.1) * _pluckDurationMult, gainMult, destination);
+    return src ? [src] : [];
+  }
+  if (mode === "click") {
+    const src = _clickPlayNote(ctx, freq, audioTime, gainMult, destination);
     return src ? [src] : [];
   }
   const voice = _synthPlayNote(ctx, freq, audioTime, durationSec * _synthNoteMult, gainMult, destination);
@@ -313,6 +338,9 @@ function cpScheduleChordAt(chord, ctx, audioTime, mode = "pluck", destination = 
     const t = audioTime + i * 0.022;
     if (mode === "pluck") {
       const src = _ksPluck(ctx, freq, t, 3.5 * _pluckDurationMult, 1, destination);
+      if (src) nodes.push(src);
+    } else if (mode === "click") {
+      const src = _clickPlayNote(ctx, freq, t, 1, destination);
       if (src) nodes.push(src);
     } else {
       const voice = _synthPlayNote(ctx, freq, t, 2.0 * _synthNoteMult, 1, destination);
