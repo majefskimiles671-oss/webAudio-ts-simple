@@ -381,6 +381,7 @@ let masterGain = 100;
 let startTime = 0;
 let recordStartX = null;
 let playbackStartSeconds = 0; // playhead position (seconds) when playback began
+let playbackStartT = null;    // audio context time (seconds) when playback began
 
 // State - Video Backdrop - Truth Layer -----
 let videoEl = null;
@@ -1362,8 +1363,8 @@ async function onRecordStop() {
 
     const audioBuffer = await audioEngineStopRecording();
 
-    const _latencyOffset = audioEngineGetCalibratedLatency() / 1000;
-    addClipToTrack(row, Math.max(0, startTime - _latencyOffset), duration);
+    const _latencyOffset = Math.round(document.getElementById("rec-offset").value) / 1000;
+    addClipToTrack(row, startTime - _latencyOffset, duration);
 
     // Use row reference to find the track — it may have been promoted to `tracks`
     // by the synchronous applyTransportChange IDLE transition before this await resumed.
@@ -3038,6 +3039,13 @@ function _executeDeleteTrack() {
   if (trackIdx === -1) return;
   const trackName = track.name;
   if (selectedTrack === track) selectedTrack = null;
+  const soloBtn = track.controlRow.querySelector(".solo-btn");
+  if (soloBtn?.classList.contains("active")) {
+    const allSoloBtns = Array.from(document.querySelectorAll(".solo-btn"));
+    allSoloBtns.forEach(b => { b.classList.remove("active"); b.setAttribute("aria-pressed", "false"); b.disabled = false; });
+    updateSoloMask();
+    syncTrackMutes();
+  }
   tracks.splice(trackIdx, 1);
   trackController.abort();
   ro.disconnect();
@@ -3575,7 +3583,7 @@ function syncTrackMutes(playheadSeconds, startT) {
   }
   if (playing) {
     midiEngineStop();
-    midiEnginePlay(tracks, playheadSeconds ?? getPlayheadTime(), startT ?? null);
+    midiEnginePlay(tracks, playheadSeconds ?? getPlayheadTime(), startT ?? playbackStartT);
   }
 }
 
@@ -3614,6 +3622,7 @@ async function onTransportStart() {
     playheadSeconds,
     startT
   );
+  playbackStartT = startT;
   syncTrackMutes(playheadSeconds, startT);
   metronomeSetStartTime(startT, playheadSeconds);
   _metronomeCheckStart();
@@ -4901,6 +4910,11 @@ document.getElementById("bus-latency").addEventListener("input", (e) => {
   const ms = Math.round(e.target.value);
   metronomeSetLatencyMs(ms);
   document.getElementById("bus-latency-display").textContent = `${ms} ms`;
+});
+
+document.getElementById("rec-offset").addEventListener("input", (e) => {
+  const ms = Math.round(e.target.value);
+  document.getElementById("rec-offset-display").textContent = `${ms} ms`;
 });
 
 document.getElementById("master-reverb-wet").addEventListener("input", (e) => {

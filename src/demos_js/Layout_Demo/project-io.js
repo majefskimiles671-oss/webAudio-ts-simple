@@ -421,6 +421,7 @@ function serializeProject() {
       clickWhileRec:     document.getElementById("metronome-click-rec").checked,
       clickWhilePlay:    document.getElementById("metronome-click-play").checked,
       busLatencyMs:      parseInt(document.getElementById("bus-latency").value),
+      recOffsetMs:       parseInt(document.getElementById("rec-offset").value),
     },
     video: videoFile
       ? {
@@ -625,6 +626,10 @@ function deserializeProject(data) {
     metronomeSetLatencyMs(busLatencyMs);
     document.getElementById("bus-latency").value = busLatencyMs;
     document.getElementById("bus-latency-display").textContent = `${busLatencyMs} ms`;
+
+    const recOffsetMs = met.recOffsetMs ?? 0;
+    document.getElementById("rec-offset").value = recOffsetMs;
+    document.getElementById("rec-offset-display").textContent = `${recOffsetMs} ms`;
   }
 
   if (data.theme) setTheme(data.theme, { silent: true });
@@ -771,7 +776,6 @@ function deserializeProject(data) {
       drawDummyWaveform(canvas);
 
       waveform.appendChild(canvas);
-      attachClipDeleteButton(waveform);
       rowInner.appendChild(waveform);
     }
 
