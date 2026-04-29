@@ -149,6 +149,33 @@ Short answer: importing WAVs of any sample rate or bit depth just works.
 ---
 the real solution would be a soundfont-based synthesizer in the browser — libraries like MIDI.js or soundfont-player load SF2 font files and handle all of this in Web Audio directly. Worth considering if you want this to be self-contained.
 ---
+
+Good context. This is a browser DAW with real audio recording. Here's what I know about the problem space:
+
+# The core issue
+The browser audio clock (AudioContext.currentTime) and the wall clock (performance.now()) drift relative to each other, and MediaRecorder / getUserMedia pipelines introduce an unknown, variable input latency that you can't measure precisely from JS. Your code already has the manual rec-offset slider — that's the industry-standard "good enough" answer for most web DAWs, but it requires per-user calibration.
+
+The paths and their real ceilings
+1. Manual latency offset (what you have)
+Simple, always works, but the user has to tune it and it can drift between sessions.
+
+2. AudioWorklet-based recording
+Record directly into an AudioWorklet processor; timestamp each chunk against AudioContext.currentTime. This is the most accurate you can get from JS — you eliminate the MediaRecorder pipeline entirely. Latency is still there from the hardware, but it's measurable because the worklet fires at the exact audio render quantum. This is how Bandlab and Soundtrap do it.
+
+3. Automatic latency measurement (loopback test)
+Play a loud click, record it, measure the sample offset between the scheduled click and its appearance in the recording buffer. This is what iOS CoreAudio calls "measured latency" — you can automate it on first launch. The tricky part is reliably detecting the click in a noisy mic environment.
+
+4. AudioContext outputLatency + baseLatency properties
+These are available in Chrome/Edge and give a reasonable estimate of the roundtrip — not perfect, but much better than nothing, and no user interaction needed.
+
+5. MIDI-only path
+If the user is triggering instruments via MIDI (which you already support), latency is a non-issue because you're recording note events with sample-accurate timestamps, not audio. The "recording problem" disappears. This is why professional browser tools push users toward MIDI + VST-style synthesis rather than raw audio input.
+
+The honest ceiling
+Pro tools like Soundtrap/BandLab all still rely on the manual offset for audio recording — they just auto-populate it using the loopback test. Nobody has solved this perfectly in the browser because the hardware buffer size is controlled by the OS, not JS. The AudioWorklet path gets you within 5-10ms reliably, which is inaudible for most purposes.
+
+The loopback auto-cal + AudioWorklet combination is probably the highest-fidelity path available without leaving the browser. Want to explore either of those?
+---
 ---
 
 ---

@@ -1216,8 +1216,11 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
   drawDummyWaveform(canvas);
 
   waveform.appendChild(canvas);
+  attachClipDragListeners(waveform, clip);
+  rowInner.appendChild(waveform);
+}
 
-  // Drag to move audio clip
+function attachClipDragListeners(waveform, clip) {
   const AUDIO_DRAG_THRESHOLD = 5;
   let wfDragStartX = 0, wfDragStartSample = 0, wfIsDragging = false;
 
@@ -1237,7 +1240,7 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
       waveform.classList.add("wf-dragging");
     }
     if (wfIsDragging) {
-      let newSec = Math.max(0, wfDragStartSample / SAMPLE_RATE + pixelsToSeconds(deltaX));
+      let newSec = wfDragStartSample / SAMPLE_RATE + pixelsToSeconds(deltaX);
       if (rulerMode === "bars") newSec = snapToHalfBeat(newSec);
       clip.startSample = Math.round(newSec * SAMPLE_RATE);
       waveform.dataset.startSeconds = newSec;
@@ -1255,8 +1258,6 @@ function addClipToTrack(timelineRow, startSeconds, durationSeconds) {
     }
     wfIsDragging = false;
   });
-
-  rowInner.appendChild(waveform);
 }
 
 function createRecordingLane() {
@@ -3133,6 +3134,7 @@ document.getElementById("track-edit-dialog").addEventListener("click", (e) => {
 
 // Map<clipId, originalStartSample> for all selected clips being synced
 let _syncDialogOriginalStartSamples = null;
+let _syncDialogPrimaryOriginalSamples = 0;
 
 document.getElementById("clip-popup-sync-btn").addEventListener("click", () => {
   if (!_clipPopupClipId) return;
@@ -3149,21 +3151,29 @@ document.getElementById("clip-popup-sync-btn").addEventListener("click", () => {
   if (!_syncDialogOriginalStartSamples.has(_clipPopupClipId)) {
     _syncDialogOriginalStartSamples.set(_clipPopupClipId, clip.startSample);
   }
+  _syncDialogPrimaryOriginalSamples = _syncDialogOriginalStartSamples.get(_clipPopupClipId);
 
   document.getElementById("sync-dialog-slider").value = 0;
   document.getElementById("sync-dialog-number").value = 0;
+  document.getElementById("sync-dialog-set-rec-latency").checked = false;
   const count = _syncDialogOriginalStartSamples.size;
   document.getElementById("sync-dialog-title").textContent = count > 1
     ? `Clip Sync — ${count} clips`
     : `Clip Sync — ${track.name}`;
+  document.getElementById("sync-dialog-total").textContent = `${_syncDialogTotalMs(0)} ms`;
   document.getElementById("sync-dialog").hidden = false;
   hideClipPopup();
 });
 
+function _syncDialogTotalMs(deltaMs) {
+  return Math.round(_syncDialogPrimaryOriginalSamples / SAMPLE_RATE * 1000) + deltaMs;
+}
+
 document.getElementById("sync-dialog-slider").addEventListener("input", (e) => {
-  document.getElementById("sync-dialog-number").value = e.target.value;
-  if (!_syncDialogOriginalStartSamples) return;
   const deltaMs = parseInt(e.target.value) || 0;
+  document.getElementById("sync-dialog-number").value = deltaMs;
+  document.getElementById("sync-dialog-total").textContent = `${_syncDialogTotalMs(deltaMs)} ms`;
+  if (!_syncDialogOriginalStartSamples) return;
   _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
     const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
     if (waveform) waveform.style.left = `${secondsToPixels(origStart / SAMPLE_RATE + deltaMs / 1000)}px`;
@@ -3171,13 +3181,15 @@ document.getElementById("sync-dialog-slider").addEventListener("input", (e) => {
 });
 
 document.getElementById("sync-dialog-number").addEventListener("input", (e) => {
-  const clamped = Math.max(-500, Math.min(500, parseInt(e.target.value) || 0));
+  const clamped = Math.max(-300, Math.min(0, parseInt(e.target.value) || 0));
   document.getElementById("sync-dialog-slider").value = clamped;
+  document.getElementById("sync-dialog-total").textContent = `${_syncDialogTotalMs(clamped)} ms`;
 });
 
 document.getElementById("sync-dialog-reset").addEventListener("click", () => {
   document.getElementById("sync-dialog-slider").value = 0;
   document.getElementById("sync-dialog-number").value = 0;
+  document.getElementById("sync-dialog-total").textContent = `${_syncDialogTotalMs(0)} ms`;
   if (!_syncDialogOriginalStartSamples) return;
   _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
     const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
@@ -3188,7 +3200,7 @@ document.getElementById("sync-dialog-reset").addEventListener("click", () => {
 function _applySyncDialog() {
   document.getElementById("sync-dialog").hidden = true;
   if (!_syncDialogOriginalStartSamples) return;
-  const deltaMs = Math.max(-500, Math.min(500,
+  const deltaMs = Math.max(-300, Math.min(0,
     parseInt(document.getElementById("sync-dialog-number").value) || 0));
   _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
     const t = findTrackByClipId(clipId);
@@ -3203,6 +3215,12 @@ function _applySyncDialog() {
     }
   });
   _syncDialogOriginalStartSamples = null;
+  if (document.getElementById("sync-dialog-set-rec-latency").checked) {
+    const recMs = Math.min(300, Math.abs(_syncDialogTotalMs(deltaMs)));
+    const recSlider = document.getElementById("rec-offset");
+    recSlider.value = recMs;
+    recSlider.dispatchEvent(new Event("input", { bubbles: true }));
+  }
   markDirty();
   if (playing) { audioEngineStop(); onTransportStart(); }
 }
@@ -4915,6 +4933,38 @@ document.getElementById("bus-latency").addEventListener("input", (e) => {
 document.getElementById("rec-offset").addEventListener("input", (e) => {
   const ms = Math.round(e.target.value);
   document.getElementById("rec-offset-display").textContent = `${ms} ms`;
+});
+
+document.getElementById("estimate-latency-btn").addEventListener("click", async () => {
+  const ctx = getAudioContext();
+  let inputLatencyMs = null;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const track = stream.getAudioTracks()[0];
+    const settings = track.getSettings();
+    if (settings.latency != null) inputLatencyMs = Math.round(settings.latency * 1000);
+    stream.getTracks().forEach(t => t.stop());
+  } catch (_) {}
+
+  const outputMs = Math.round((ctx.outputLatency + ctx.baseLatency) * 1000);
+  const recMs    = inputLatencyMs != null ? inputLatencyMs + outputMs : outputMs * 2;
+
+  const busSlider = document.getElementById("bus-latency");
+  const recSlider = document.getElementById("rec-offset");
+
+  console.log("[latency estimate] outputMs:", outputMs, "recMs:", recMs, "inputLatencyMs:", inputLatencyMs);
+  console.log("[latency estimate] busSlider:", busSlider, "busSlider._max:", busSlider._max, "busSlider.max attr:", busSlider.getAttribute("max"));
+  console.log("[latency estimate] recSlider:", recSlider, "recSlider._max:", recSlider._max, "recSlider.max attr:", recSlider.getAttribute("max"));
+
+  const busMax = busSlider._max;
+  const recMax = recSlider._max;
+  console.log("[latency estimate] busMax:", busMax, "recMax:", recMax);
+
+  busSlider.value = Math.min(outputMs, busMax);
+  busSlider.dispatchEvent(new Event("input"));
+
+  recSlider.value = Math.min(recMs, recMax);
+  recSlider.dispatchEvent(new Event("input"));
 });
 
 document.getElementById("master-reverb-wet").addEventListener("input", (e) => {

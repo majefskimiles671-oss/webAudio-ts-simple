@@ -697,6 +697,9 @@ Rule - Add comments before code snippets in this format:
                             <gain-slider id="rec-offset" min="0" max="300" value="0"></gain-slider>
                             <span id="rec-offset-display" style="font-size:11px;min-width:36px;text-align:right">0 ms</span>
                         </div>
+                        <div class="master-gain-row" style="justify-content:center;margin-top:4px">
+                            <button id="estimate-latency-btn" style="font-size:11px;padding:2px 8px;">Get Estimated Latencies</button>
+                        </div>
                     </div>
                 </div>
                 </div><!-- .master-group-body Advanced -->
@@ -925,10 +928,16 @@ Rule - Add comments before code snippets in this format:
     <label id="sync-dialog-label">
       Offset
       <div id="sync-dialog-row">
-        <input id="sync-dialog-slider" type="range" min="-500" max="500" value="0">
-        <input id="sync-dialog-number" type="number" min="-500" max="500" value="0"> ms
+        <input id="sync-dialog-slider" type="range" min="-300" max="0" value="0">
+        <input id="sync-dialog-number" type="number" min="-300" max="0" value="0"> ms
         <button id="sync-dialog-reset" type="button">↺</button>
       </div>
+    </label>
+    <div id="sync-dialog-total-row">
+      Total Offset: <span id="sync-dialog-total">0 ms</span>
+    </div>
+    <label id="sync-dialog-rec-label">
+      <input type="checkbox" id="sync-dialog-set-rec-latency"> Set Global Recording Latency
     </label>
     <div id="sync-dialog-actions">
       <button id="sync-dialog-cancel">Cancel</button>

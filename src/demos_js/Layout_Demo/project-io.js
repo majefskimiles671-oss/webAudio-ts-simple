@@ -776,6 +776,7 @@ function deserializeProject(data) {
       drawDummyWaveform(canvas);
 
       waveform.appendChild(canvas);
+      attachClipDragListeners(waveform, clip);
       rowInner.appendChild(waveform);
     }
 
