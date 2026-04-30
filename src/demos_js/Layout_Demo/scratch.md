@@ -183,15 +183,15 @@ npm run serve
 http://localhost:8080/src/demos_js/Layout_Demo/Layout_Demo.html
 
 ```bash
-git switch -c miles_rec_lat
+git switch -c miles_audio_worklet
 ```
 
 ```bash
 git switch main
-git merge miles_rec_lat
+git merge miles_audio_worklet
 ```
 
 ```bash
 git push
-git branch -d miles_rec_lat
+git branch -d miles_audio_worklet
 ```

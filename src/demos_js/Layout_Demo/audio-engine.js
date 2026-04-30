@@ -338,13 +338,31 @@ function audioEngineEnsureOutput() {
 
 // ---- Microphone recording
 
-let _micStream      = null;
-let _micAnalyser    = null;
-let _mediaRecorder  = null;
-let _recordedChunks = [];
-let _rawMicMode     = false;
+let _micStream        = null;
+let _micAnalyser      = null;
+let _rawMicMode       = false;
+let _workletNode      = null;
+let _workletReady     = false;
+let _recordedChunks   = []; // [{ channels: Float32Array[], t: number }]
+let _isWorkletRecording = false;
 
 function audioEngineIsRawMicMode() { return _rawMicMode; }
+
+async function _ensureWorklet(micSource) {
+  if (_workletReady) return;
+  await _audioCtx.audioWorklet.addModule('./worklet-recorder.js');
+  _workletNode = new AudioWorkletNode(_audioCtx, 'recorder', { channelCount: 2, channelCountMode: 'explicit' });
+  _workletNode.port.onmessage = ({ data }) => {
+    if (_isWorkletRecording) _recordedChunks.push(data);
+  };
+  micSource.connect(_workletNode);
+  // worklet must be connected downstream to keep the graph active, but we don't want mic → speakers
+  const _silentGain = _audioCtx.createGain();
+  _silentGain.gain.value = 0;
+  _workletNode.connect(_silentGain);
+  _silentGain.connect(_audioCtx.destination);
+  _workletReady = true;
+}
 
 async function audioEngineEnsureMicStream() {
   if (!_micStream) {
@@ -352,16 +370,20 @@ async function audioEngineEnsureMicStream() {
       ? { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false }
       : { audio: true, video: false };
     _micStream = await navigator.mediaDevices.getUserMedia(constraints);
-    if (_audioCtx.state === "suspended") _audioCtx.resume();
+    if (_audioCtx.state === "suspended") await _audioCtx.resume();
     const src = _audioCtx.createMediaStreamSource(_micStream);
     _micAnalyser = _audioCtx.createAnalyser();
     src.connect(_micAnalyser);
+    await _ensureWorklet(src);
   }
   return _micStream;
 }
 
 async function audioEngineToggleRawMicMode() {
   _rawMicMode = !_rawMicMode;
+  _workletReady = false; // force reconnect with new stream
+  _workletNode?.disconnect();
+  _workletNode = null;
   audioEngineCloseMicStream(); // force re-acquire with new constraints on next use
   return _rawMicMode;
 }
@@ -371,34 +393,57 @@ function audioEngineGetInputLevel() {
   return _getRMS(_micAnalyser);
 }
 
-function audioEngineStartRecording() {
-  if (!_micStream || _mediaRecorder) return; // idempotent
-  const chunks = [];
-  _recordedChunks = chunks;
-  _mediaRecorder = new MediaRecorder(_micStream);
-  _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-  _mediaRecorder.start();
+let _recordingStartT = null; // ctx time of the intended downbeat — chunks before this are pre-roll
+
+function audioEngineStartRecording(playbackStartT) {
+  if (!_workletReady) return;
+  if (_isWorkletRecording) {
+    // Already running from an early call (e.g. count-in hand-off) — update trim point now that we have the real downbeat
+    if (playbackStartT != null) _recordingStartT = playbackStartT;
+    console.log('[rec] updated _recordingStartT:', _recordingStartT, 'ctx.currentTime:', _audioCtx.currentTime);
+    return;
+  }
+  _recordedChunks = [];
+  _recordingStartT = playbackStartT ?? null;
+  _isWorkletRecording = true;
+  _workletNode.port.postMessage('start');
+  console.log('[rec] start — playbackStartT:', playbackStartT, '_recordingStartT:', _recordingStartT, 'ctx.currentTime:', _audioCtx.currentTime);
 }
 
 function audioEngineStopRecording() {
   return new Promise(resolve => {
-    if (!_mediaRecorder) { resolve(null); return; }
-    const recorder = _mediaRecorder;
-    const chunks   = _recordedChunks;
-    _mediaRecorder  = null;
+    if (!_isWorkletRecording) { resolve(null); return; }
+    _isWorkletRecording = false;
+    _workletNode.port.postMessage('stop');
+
+    let chunks = _recordedChunks;
     _recordedChunks = [];
-    recorder.onstop = async () => {
-      const blob = new Blob(chunks, { type: recorder.mimeType });
-      try {
-        const ab = await blob.arrayBuffer();
-        const decoded = await _audioCtx.decodeAudioData(ab);
-        if (_autoNormalize) _normalizeBuffer(decoded);
-        resolve(decoded);
-      } catch {
-        resolve(null);
+
+    // Drop any chunks captured before the intended downbeat
+    const beforeFilter = chunks.length;
+    if (_recordingStartT != null) {
+      chunks = chunks.filter(c => c.t >= _recordingStartT);
+    }
+    console.log('[rec] stop — _recordingStartT:', _recordingStartT, 'chunks before filter:', beforeFilter, 'after filter:', chunks.length, 'firstChunkT:', chunks[0]?.t);
+
+    if (!chunks.length) { resolve(null); return; }
+
+    const numChannels = chunks[0].channels.length;
+    const totalSamples = chunks.reduce((sum, c) => sum + c.channels[0].length, 0);
+    const buf = _audioCtx.createBuffer(numChannels, totalSamples, _audioCtx.sampleRate);
+
+    for (let ch = 0; ch < numChannels; ch++) {
+      const out = buf.getChannelData(ch);
+      let offset = 0;
+      for (const chunk of chunks) {
+        const src = chunk.channels[ch] ?? chunk.channels[0]; // fall back to ch0 if mono
+        out.set(src, offset);
+        offset += src.length;
       }
-    };
-    recorder.stop();
+    }
+
+    if (_autoNormalize) _normalizeBuffer(buf);
+    resolve({ buffer: buf, firstChunkT: chunks[0].t });
   });
 }
 

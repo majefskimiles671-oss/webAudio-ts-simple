@@ -1326,7 +1326,7 @@ function onRecordStart() {
     recordingTrackRow = null;
   }
   _pendingMidiNotes = [];
-  if (playing && recordingTrackRow) audioEngineStartRecording(); // armed while playing — start immediately
+  if (playing && recordingTrackRow) audioEngineStartRecording(playbackStartT); // armed while playing — start immediately
   // if not playing, onTransportStart() will call audioEngineStartRecording() when play begins
   timelineArea.scrollTop = 0;
   controlsScrollCol.scrollTop = 0;
@@ -1362,10 +1362,16 @@ async function onRecordStop() {
     recordingTrackRow = null;
     armedRecordTarget = null;
 
-    const audioBuffer = await audioEngineStopRecording();
+    const { buffer: audioBuffer, firstChunkT } = await audioEngineStopRecording() ?? {};
 
-    const _latencyOffset = Math.round(document.getElementById("rec-offset").value) / 1000;
-    addClipToTrack(row, startTime - _latencyOffset, duration);
+    // Map the worklet's AudioContext timestamp to app timeline position.
+    // playbackStartT is the ctx time that corresponds to playbackStartSeconds on the timeline.
+    const clipStart = (firstChunkT != null && playbackStartT != null)
+      ? playbackStartSeconds + (firstChunkT - playbackStartT)
+      : startTime;
+
+    console.log('[rec] placement — playbackStartSeconds:', playbackStartSeconds, 'playbackStartT:', playbackStartT, 'firstChunkT:', firstChunkT, 'clipStart:', clipStart);
+    addClipToTrack(row, clipStart, duration);
 
     // Use row reference to find the track — it may have been promoted to `tracks`
     // by the synchronous applyTransportChange IDLE transition before this await resumed.
@@ -3644,7 +3650,7 @@ async function onTransportStart() {
   syncTrackMutes(playheadSeconds, startT);
   metronomeSetStartTime(startT, playheadSeconds);
   _metronomeCheckStart();
-  if (recording && recordingTrackRow) audioEngineStartRecording();
+  if (recording && recordingTrackRow) audioEngineStartRecording(playbackStartT);
   if (_tanpuraEnabled) {
     const cur = markers.find(m => m.id === selectedMarkerId);
     if (cur) _applyTanpuraMarker(cur);
