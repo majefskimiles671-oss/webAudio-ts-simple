@@ -2311,6 +2311,7 @@ document.getElementById("debug-log-project").onclick = () => logProject();
 
 {
   const btn = document.getElementById("debug-toggle-raw-mic");
+  btn.textContent = "Mic: Raw (no processing)";
   btn.onclick = async () => {
     const isRaw = await audioEngineToggleRawMicMode();
     btn.textContent = isRaw ? "Mic: Raw (no processing)" : "Mic: Default (noise suppressed)";
@@ -4762,6 +4763,18 @@ tanpuraSetVolume(0.5);
 tanpuraSetSynthMult(1.0);         // Long
 [0, 1, 2, 3].forEach(i => tanpuraSetStringGain(i, 0.5));
 
+// Load device-level latency settings from localStorage
+{
+  const busMs = parseInt(localStorage.getItem("busLatencyMs") ?? "0") || 0;
+  document.getElementById("bus-latency").value = busMs;
+  document.getElementById("bus-latency-display").textContent = `${busMs} ms`;
+  metronomeSetLatencyMs(busMs);
+
+  const recMs = parseInt(localStorage.getItem("recOffsetMs") ?? "0") || 0;
+  document.getElementById("rec-offset").value = recMs;
+  document.getElementById("rec-offset-display").textContent = `${recMs} ms`;
+}
+
 // Reverb default: Room
 audioEngineSetReverbWet(0.20);
 audioEngineSetReverbDecay(0.3 + (18 / 100) * 5.7);
@@ -4936,44 +4949,15 @@ document.getElementById("bus-latency").addEventListener("input", (e) => {
   const ms = Math.round(e.target.value);
   metronomeSetLatencyMs(ms);
   document.getElementById("bus-latency-display").textContent = `${ms} ms`;
+  localStorage.setItem("busLatencyMs", ms);
 });
 
 document.getElementById("rec-offset").addEventListener("input", (e) => {
   const ms = Math.round(e.target.value);
   document.getElementById("rec-offset-display").textContent = `${ms} ms`;
+  localStorage.setItem("recOffsetMs", ms);
 });
 
-document.getElementById("estimate-latency-btn").addEventListener("click", async () => {
-  const ctx = getAudioContext();
-  let inputLatencyMs = null;
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const track = stream.getAudioTracks()[0];
-    const settings = track.getSettings();
-    if (settings.latency != null) inputLatencyMs = Math.round(settings.latency * 1000);
-    stream.getTracks().forEach(t => t.stop());
-  } catch (_) {}
-
-  const outputMs = Math.round((ctx.outputLatency + ctx.baseLatency) * 1000);
-  const recMs    = inputLatencyMs != null ? inputLatencyMs + outputMs : outputMs * 2;
-
-  const busSlider = document.getElementById("bus-latency");
-  const recSlider = document.getElementById("rec-offset");
-
-  console.log("[latency estimate] outputMs:", outputMs, "recMs:", recMs, "inputLatencyMs:", inputLatencyMs);
-  console.log("[latency estimate] busSlider:", busSlider, "busSlider._max:", busSlider._max, "busSlider.max attr:", busSlider.getAttribute("max"));
-  console.log("[latency estimate] recSlider:", recSlider, "recSlider._max:", recSlider._max, "recSlider.max attr:", recSlider.getAttribute("max"));
-
-  const busMax = busSlider._max;
-  const recMax = recSlider._max;
-  console.log("[latency estimate] busMax:", busMax, "recMax:", recMax);
-
-  busSlider.value = Math.min(outputMs, busMax);
-  busSlider.dispatchEvent(new Event("input"));
-
-  recSlider.value = Math.min(recMs, recMax);
-  recSlider.dispatchEvent(new Event("input"));
-});
 
 document.getElementById("master-reverb-wet").addEventListener("input", (e) => {
   audioEngineSetReverbWet(e.target.value / 100);
