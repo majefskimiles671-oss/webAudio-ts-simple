@@ -1366,11 +1366,13 @@ async function onRecordStop() {
 
     // Map the worklet's AudioContext timestamp to app timeline position.
     // playbackStartT is the ctx time that corresponds to playbackStartSeconds on the timeline.
-    const clipStart = (firstChunkT != null && playbackStartT != null)
+    const rawClipStart = (firstChunkT != null && playbackStartT != null)
       ? playbackStartSeconds + (firstChunkT - playbackStartT)
       : startTime;
+    const recOffsetSec = Math.round(document.getElementById("rec-offset").value) / 1000;
+    const clipStart = rawClipStart - recOffsetSec;
 
-    console.log('[rec] placement — playbackStartSeconds:', playbackStartSeconds, 'playbackStartT:', playbackStartT, 'firstChunkT:', firstChunkT, 'clipStart:', clipStart);
+    console.log('[rec] placement — playbackStartSeconds:', playbackStartSeconds, 'playbackStartT:', playbackStartT, 'firstChunkT:', firstChunkT, 'rawClipStart:', rawClipStart, 'recOffsetSec:', recOffsetSec, 'clipStart:', clipStart);
     addClipToTrack(row, clipStart, duration);
 
     // Use row reference to find the track — it may have been promoted to `tracks`
