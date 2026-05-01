@@ -2030,7 +2030,6 @@ function rerenderMidiClipEvents(clip, el) {
   el.querySelectorAll(".midi-notes-miniature").forEach(n => n.remove());
   if (Array.isArray(clip.notes)) {
     _renderMidiNotesMiniature(clip, el);
-    return;
   }
   for (const ev of clip.events) {
     const chord = (typeof chords !== "undefined") && chords.find(c => c.id === ev.chordId);
@@ -3078,7 +3077,7 @@ function _executeDuplicateTrack() {
   let n = 2;
   while (!isNameUnique(newName)) newName = `${track.name} copy ${n++}`;
 
-  const newTrack = createTrack(newName);
+  const newTrack = createTrack(newName, { type: track.type });
 
   // Insert into tracks array right after source
   const idx = tracks.indexOf(track);
@@ -3089,10 +3088,24 @@ function _executeDuplicateTrack() {
   track.timelineRow.after(newTrack.timelineRow);
 
   // Apply source settings
-  newTrack.gain    = track.gain;
-  newTrack.pan     = track.pan;
-  newTrack.opacity = track.opacity;
-  newTrack.scenes  = [...track.scenes];
+  newTrack.gain       = track.gain;
+  newTrack.pan        = track.pan;
+  newTrack.opacity    = track.opacity;
+  newTrack.scenes     = [...track.scenes];
+  if (track.type === 'midi') {
+    newTrack.instrument = track.instrument;
+    newTrack.gmProgram  = track.gmProgram;
+    newTrack.sfzName    = track.sfzName;
+    const _labels = { pluck: "Pluck", click: "Click", synth: "Synth", gm: "GM", sfz: "SFZ" };
+    const instrBtn  = newTrack.controlRow.querySelector(".instrument-toggle");
+    const gmSelect  = newTrack.controlRow.querySelector(".gm-program-select");
+    const sfzSelect = newTrack.controlRow.querySelector(".sfz-instrument-select");
+    if (instrBtn)  instrBtn.textContent        = _labels[track.instrument] ?? "Pluck";
+    if (gmSelect)  { gmSelect.value            = track.gmProgram ?? 0;
+                     gmSelect.style.display    = track.instrument === "gm"  ? "" : "none"; }
+    if (sfzSelect) { sfzSelect._refresh?.();
+                     sfzSelect.style.display   = track.instrument === "sfz" ? "" : "none"; }
+  }
 
   newTrack.controlRow.querySelector("gain-slider").value = track.gain;
   newTrack.controlRow.querySelector("pan-slider").value  = track.pan;
@@ -3120,6 +3133,19 @@ function _executeDuplicateTrack() {
       audioEngineStoreBuffer(newClip.id, buf);
       updateClipWaveform(newClip.id, buf);
     }
+  }
+
+  // Copy MIDI clips
+  for (const srcClip of track.midiClips) {
+    const newClip = {
+      id:              crypto.randomUUID(),
+      startSample:     srcClip.startSample,
+      durationSamples: srcClip.durationSamples,
+      events:          srcClip.events.map(e => ({ ...e })),
+      notes:           srcClip.notes ? srcClip.notes.map(n => ({ ...n })) : undefined,
+    };
+    newTrack.midiClips.push(newClip);
+    renderMidiClip(newTrack, newClip);
   }
 
   syncTimelineMinWidth();
