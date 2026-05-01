@@ -498,6 +498,8 @@
         #controls-scroll-column {
             background: var(--bg-app);
             overflow-y: hidden;
+            flex: 1 1 0;
+            min-height: 0;
         }
 
         .control-row {
@@ -920,6 +922,12 @@
             align-items: center;
             gap: 4px;
         }
+
+        .is-minimized.control-row .track-row-instr,
+        .is-minimized.control-row .track-row-3,
+        .is-minimized.control-row .track-row-4 { display: none; }
+
+        .is-minimized.timeline-row .row-inner { height: 82px !important; }
 
         .output-select {
             width: 100%;

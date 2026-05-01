@@ -866,6 +866,7 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     pan:         0,
     outputDeviceId: null,
     opacity:     100,
+    minimized:   false,
     scenes:      [],
     clips:       [],
     midiClips:   [],
@@ -1018,10 +1019,17 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     hideClipPopup();
   }, { signal });
 
-  // Drag to reorder
+  // Drag to reorder; click to minimize
   const dragHandle = controlFrag.querySelector(".drag-handle");
   dragHandle.addEventListener("pointerdown", () => { controlRow.draggable = true; }, { signal });
   dragHandle.addEventListener("pointerup",   () => { controlRow.draggable = false; }, { signal });
+  dragHandle.addEventListener("click", () => {
+    track.minimized = !track.minimized;
+    controlRow.classList.toggle("is-minimized", track.minimized);
+    track.timelineRow.classList.toggle("is-minimized", track.minimized);
+    requestAnimationFrame(() => syncTimelineOverlay());
+    markDirty();
+  }, { signal });
 
   controlRow.addEventListener("dragstart", (e) => {
     dragState.track = track;

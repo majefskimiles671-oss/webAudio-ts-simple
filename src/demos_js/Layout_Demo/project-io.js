@@ -324,6 +324,7 @@ function serializeProject() {
       gain:       track.gain,
       pan:        track.pan,
       opacity:    track.opacity,
+      minimized:  track.minimized ?? false,
       instrument:     track.instrument,
       gmProgram:      track.gmProgram ?? 0,
       sfzName:        track.sfzName   ?? null,
@@ -711,6 +712,10 @@ function deserializeProject(data) {
     const opEl = track.controlRow.querySelector(".row-opacity-slider");
     if (opEl) opEl.value = track.opacity;
     track.timelineRow.style.setProperty('--row-opacity', track.opacity / 100);
+
+    track.minimized = saved.minimized ?? false;
+    track.controlRow.classList.toggle("is-minimized", track.minimized);
+    track.timelineRow.classList.toggle("is-minimized", track.minimized);
 
     // Instrument (Pluck / Synth / GM)
     track.instrument = saved.instrument ?? "pluck";
