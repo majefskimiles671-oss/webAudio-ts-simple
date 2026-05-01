@@ -151,7 +151,8 @@ controlsScrollCol.addEventListener("input", (e) => {
   }
 });
 const timelineArea = document.getElementById("timeline-area");
-const timelineInner = document.getElementById("timeline-inner");
+const timelineInner      = document.getElementById("timeline-inner");
+const timelineRulerInner = document.querySelector(".timeline-ruler-inner");
 
 // ============================================================
 // State (Truth Layer) -----
@@ -2030,16 +2031,12 @@ function renderMidiClip(track, clip) {
           {
             label: "Duplicate clip",
             action: () => {
-              const newClip = {
-                id:              crypto.randomUUID(),
-                startSample:     clip.startSample + clip.durationSamples,
-                durationSamples: clip.durationSamples,
-                events:          clip.events.map(ev => ({ ...ev })),
-                notes:           clip.notes ? clip.notes.map(n => ({ ...n })) : undefined,
-              };
-              track.midiClips.push(newClip);
-              renderMidiClip(track, newClip);
-              markDirty();
+              _duplicateMidiState = { track, clip };
+              const input = document.getElementById("duplicate-dialog-input");
+              input.value = 1;
+              document.getElementById("duplicate-dialog").hidden = false;
+              input.focus();
+              input.select();
             },
           },
           {
@@ -2421,13 +2418,17 @@ function syncTimelineMinWidth() {
     }
   }
   const buffer = timelineArea.clientWidth;
-  timelineInner.style.minWidth = `${maxPx > floorPx ? maxPx + buffer * 2 : floorPx}px`;
+  const w = `${maxPx > floorPx ? maxPx + buffer * 2 : floorPx}px`;
+  timelineInner.style.minWidth      = w;
+  timelineRulerInner.style.minWidth = w;
 }
 
 function ensureTimelineWidth(px) {
   const buffer = timelineArea.clientWidth;
   if (px + buffer > timelineInner.scrollWidth) {
-    timelineInner.style.minWidth = `${px + buffer * 2}px`;
+    const w = `${px + buffer * 2}px`;
+    timelineInner.style.minWidth      = w;
+    timelineRulerInner.style.minWidth = w;
   }
 }
 
