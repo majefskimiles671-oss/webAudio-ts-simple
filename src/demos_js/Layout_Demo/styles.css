@@ -5512,6 +5512,13 @@
   white-space: nowrap;
 }
 
+.pp-saved-at {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  opacity: 0.7;
+}
+
 .pp-open-btn {
   padding: 4px 12px;
   border-radius: 4px;

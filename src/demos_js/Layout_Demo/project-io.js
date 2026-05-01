@@ -134,6 +134,7 @@ async function scanWorkspaceProjects() {
         timeSignature: data.timeSignature,
         trackCount: data.tracks?.length ?? 0,
         theme: data.theme,
+        savedAt: data.savedAt ?? null,
       });
     } catch { /* skip — no project.json or malformed JSON */ }
   }
@@ -168,11 +169,19 @@ async function showProjectPicker() {
         proj.theme || "",
       ].filter(Boolean).join(" · ");
 
+      const savedAtStr = proj.savedAt
+        ? new Date(proj.savedAt).toLocaleString(undefined, {
+            month: "short", day: "numeric", year: "numeric",
+            hour: "numeric", minute: "2-digit",
+          })
+        : "";
+
       const row = document.createElement("div");
       row.className = "pp-row";
       row.innerHTML = `
         <span class="pp-name">${escapeHtml(proj.name)}</span>
         <span class="pp-meta">${escapeHtml(meta)}</span>
+        ${savedAtStr ? `<span class="pp-saved-at">Saved ${escapeHtml(savedAtStr)}</span>` : ""}
         <button class="pp-open-btn">Open</button>
       `;
       row.querySelector(".pp-open-btn").addEventListener("click", async () => {
@@ -304,6 +313,7 @@ function serializeProject() {
   return {
     version: 1,
     id:         projectId,
+    savedAt:    new Date().toISOString(),
     theme:        document.body.getAttribute("data-theme") ?? "Ice9",
     notesMono:    document.body.getAttribute("data-notes-font") === "mono",
     viewState:    { ...viewState },
