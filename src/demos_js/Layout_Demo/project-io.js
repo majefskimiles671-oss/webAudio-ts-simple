@@ -921,6 +921,16 @@ async function saveProject() {
       }
     }
 
+    // Delete WAV files for clips that no longer exist
+    const liveClipIds = new Set(tracks.flatMap(t => t.clips.map(c => c.id)));
+    for await (const entry of dataHandle.values()) {
+      if (entry.kind !== "file") continue;
+      const m = entry.name.match(/^clip-(.+)\.wav$/);
+      if (m && !liveClipIds.has(m[1])) {
+        await dataHandle.removeEntry(entry.name);
+      }
+    }
+
     // Write project soundfont into data/ if a custom one is loaded
     if (typeof sfGetProjectFile === 'function') {
       const sfFile = sfGetProjectFile();
