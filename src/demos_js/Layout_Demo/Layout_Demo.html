@@ -121,7 +121,7 @@ Rule - Add comments before code snippets in this format:
             <div class="menu-pop" role="menu">
                 <div id="debug-log-project" role="menuitem" tabindex="-1">Log Project State</div>
                 <div id="debug-toggle-display" role="menuitem" tabindex="-1">Toggle Debug Display</div>
-                <div id="debug-toggle-raw-mic" role="menuitem" tabindex="-1">Mic: Default (noise suppressed)</div>
+                <div id="debug-toggle-raw-mic" role="menuitem" tabindex="-1">Mic: Raw (no processing)</div>
                 <div id="debug-toggle-auto-normalize" role="menuitem" tabindex="-1">Auto-normalize: Off</div>
                 <div id="menu-calibrate-latency" role="menuitem" tabindex="-1">Calibrate Latency…</div>
                 <div id="debug-purge-orphan-buffers" role="menuitem" tabindex="-1">Purge Orphan Audio Buffers</div>
@@ -697,9 +697,6 @@ Rule - Add comments before code snippets in this format:
                             <span class="master-gain-label">Rec</span>
                             <gain-slider id="rec-offset" min="0" max="300" value="0"></gain-slider>
                             <span id="rec-offset-display" style="font-size:11px;min-width:36px;text-align:right">0 ms</span>
-                        </div>
-                        <div class="master-gain-row" style="justify-content:center;margin-top:4px">
-                            <button id="estimate-latency-btn" style="font-size:11px;padding:2px 8px;">Get Estimated Latencies</button>
                         </div>
                     </div>
                 </div>

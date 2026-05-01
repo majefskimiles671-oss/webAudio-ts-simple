@@ -909,6 +909,7 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     pan:         0,
     outputDeviceId: null,
     opacity:     100,
+    minimized:   false,
     scenes:      [],
     clips:       [],
     midiClips:   [],
@@ -1074,10 +1075,17 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
     hideClipPopup();
   }, { signal });
 
-  // Drag to reorder
+  // Drag to reorder; click to minimize
   const dragHandle = controlFrag.querySelector(".drag-handle");
   dragHandle.addEventListener("pointerdown", () => { controlRow.draggable = true; }, { signal });
   dragHandle.addEventListener("pointerup",   () => { controlRow.draggable = false; }, { signal });
+  dragHandle.addEventListener("click", () => {
+    track.minimized = !track.minimized;
+    controlRow.classList.toggle("is-minimized", track.minimized);
+    track.timelineRow.classList.toggle("is-minimized", track.minimized);
+    requestAnimationFrame(() => syncTimelineOverlay());
+    markDirty();
+  }, { signal });
 
   controlRow.addEventListener("dragstart", (e) => {
     dragState.track = track;
@@ -2156,7 +2164,6 @@ function rerenderMidiClipEvents(clip, el) {
   el.querySelectorAll(".midi-notes-miniature").forEach(n => n.remove());
   if (Array.isArray(clip.notes)) {
     _renderMidiNotesMiniature(clip, el);
-    return;
   }
   for (const ev of clip.events) {
     const chord = (typeof chords !== "undefined") && chords.find(c => c.id === ev.chordId);
@@ -2220,6 +2227,12 @@ function refreshMidiClipDOM(clip) {
   const el = document.querySelector(`.midi-clip[data-clip-id="${clip.id}"]`);
   if (el) rerenderMidiClipEvents(clip, el);
 }
+
+document.addEventListener("chord-updated", () => {
+  for (const track of tracks) {
+    for (const clip of track.midiClips) refreshMidiClipDOM(clip);
+  }
+});
 
 function showContextMenu(items, x, y) {
   const menu = document.createElement("div");
@@ -2437,6 +2450,7 @@ document.getElementById("debug-log-project").onclick = () => logProject();
 
 {
   const btn = document.getElementById("debug-toggle-raw-mic");
+  btn.textContent = "Mic: Raw (no processing)";
   btn.onclick = async () => {
     const isRaw = await audioEngineToggleRawMicMode();
     btn.textContent = isRaw ? "Mic: Raw (no processing)" : "Mic: Default (noise suppressed)";
@@ -3111,7 +3125,8 @@ document.getElementById("clip-popup-info-btn").addEventListener("click", () => {
   hideClipPopup();
 });
 
-let _duplicateDialogClipId = null;
+let _duplicateDialogClipId  = null;
+let _duplicateMidiState     = null; // { track, clip } when duplicating a MIDI clip
 
 document.getElementById("clip-popup-normalize-btn").addEventListener("click", () => {
   if (!_clipPopupClipId) return;
@@ -3136,6 +3151,28 @@ function _executeDuplicate() {
   const dialog = document.getElementById("duplicate-dialog");
   const count  = Math.max(1, Math.min(99, parseInt(document.getElementById("duplicate-dialog-input").value) || 1));
   dialog.hidden = true;
+
+  if (_duplicateMidiState) {
+    const { track, clip: srcClip } = _duplicateMidiState;
+    _duplicateMidiState = null;
+    let tailSample = srcClip.startSample + srcClip.durationSamples;
+    for (let i = 0; i < count; i++) {
+      const newClip = {
+        id:              crypto.randomUUID(),
+        startSample:     tailSample,
+        durationSamples: srcClip.durationSamples,
+        events:          srcClip.events.map(e => ({ ...e })),
+        notes:           srcClip.notes ? srcClip.notes.map(n => ({ ...n })) : undefined,
+      };
+      track.midiClips.push(newClip);
+      renderMidiClip(track, newClip);
+      tailSample += srcClip.durationSamples;
+    }
+    syncTimelineMinWidth();
+    syncTimelineOverlay();
+    markDirty();
+    return;
+  }
 
   const clipId = _duplicateDialogClipId;
   if (!clipId) return;
@@ -3172,6 +3209,7 @@ document.getElementById("duplicate-dialog-input").addEventListener("keydown", (e
 
 document.getElementById("duplicate-dialog-cancel").addEventListener("click", () => {
   document.getElementById("duplicate-dialog").hidden = true;
+  _duplicateMidiState = null;
 });
 
 document.getElementById("clip-popup-delete-btn").addEventListener("click", () => {
@@ -3250,7 +3288,7 @@ function _executeDuplicateTrack() {
   let n = 2;
   while (!isNameUnique(newName)) newName = `${track.name} copy ${n++}`;
 
-  const newTrack = createTrack(newName);
+  const newTrack = createTrack(newName, { type: track.type });
 
   // Insert into tracks array right after source
   const idx = tracks.indexOf(track);
@@ -3261,10 +3299,27 @@ function _executeDuplicateTrack() {
   track.timelineRow.after(newTrack.timelineRow);
 
   // Apply source settings
-  newTrack.gain    = track.gain;
-  newTrack.pan     = track.pan;
-  newTrack.opacity = track.opacity;
-  newTrack.scenes  = [...track.scenes];
+  newTrack.gain       = track.gain;
+  newTrack.pan        = track.pan;
+  newTrack.opacity    = track.opacity;
+  newTrack.scenes     = [...track.scenes];
+  newTrack.minimized  = track.minimized;
+  newTrack.controlRow.classList.toggle("is-minimized", track.minimized);
+  newTrack.timelineRow.classList.toggle("is-minimized", track.minimized);
+  if (track.type === 'midi') {
+    newTrack.instrument = track.instrument;
+    newTrack.gmProgram  = track.gmProgram;
+    newTrack.sfzName    = track.sfzName;
+    const _labels = { pluck: "Pluck", click: "Click", synth: "Synth", gm: "GM", sfz: "SFZ" };
+    const instrBtn  = newTrack.controlRow.querySelector(".instrument-toggle");
+    const gmSelect  = newTrack.controlRow.querySelector(".gm-program-select");
+    const sfzSelect = newTrack.controlRow.querySelector(".sfz-instrument-select");
+    if (instrBtn)  instrBtn.textContent        = _labels[track.instrument] ?? "Pluck";
+    if (gmSelect)  { gmSelect.value            = track.gmProgram ?? 0;
+                     gmSelect.style.display    = track.instrument === "gm"  ? "" : "none"; }
+    if (sfzSelect) { sfzSelect._refresh?.();
+                     sfzSelect.style.display   = track.instrument === "sfz" ? "" : "none"; }
+  }
 
   newTrack.controlRow.querySelector("gain-slider").value = track.gain;
   newTrack.controlRow.querySelector("pan-slider").value  = track.pan;
@@ -3292,6 +3347,19 @@ function _executeDuplicateTrack() {
       audioEngineStoreBuffer(newClip.id, buf);
       updateClipWaveform(newClip.id, buf);
     }
+  }
+
+  // Copy MIDI clips
+  for (const srcClip of track.midiClips) {
+    const newClip = {
+      id:              crypto.randomUUID(),
+      startSample:     srcClip.startSample,
+      durationSamples: srcClip.durationSamples,
+      events:          srcClip.events.map(e => ({ ...e })),
+      notes:           srcClip.notes ? srcClip.notes.map(n => ({ ...n })) : undefined,
+    };
+    newTrack.midiClips.push(newClip);
+    renderMidiClip(newTrack, newClip);
   }
 
   syncTimelineMinWidth();
@@ -4979,6 +5047,18 @@ tanpuraSetVolume(0.5);
 tanpuraSetSynthMult(1.0);         // Long
 [0, 1, 2, 3].forEach(i => tanpuraSetStringGain(i, 0.5));
 
+// Load device-level latency settings from localStorage
+{
+  const busMs = parseInt(localStorage.getItem("busLatencyMs") ?? "0") || 0;
+  document.getElementById("bus-latency").value = busMs;
+  document.getElementById("bus-latency-display").textContent = `${busMs} ms`;
+  metronomeSetLatencyMs(busMs);
+
+  const recMs = parseInt(localStorage.getItem("recOffsetMs") ?? "0") || 0;
+  document.getElementById("rec-offset").value = recMs;
+  document.getElementById("rec-offset-display").textContent = `${recMs} ms`;
+}
+
 // Reverb default: Room
 audioEngineSetReverbWet(0.20);
 audioEngineSetReverbDecay(0.3 + (18 / 100) * 5.7);
@@ -5153,44 +5233,15 @@ document.getElementById("bus-latency").addEventListener("input", (e) => {
   const ms = Math.round(e.target.value);
   metronomeSetLatencyMs(ms);
   document.getElementById("bus-latency-display").textContent = `${ms} ms`;
+  localStorage.setItem("busLatencyMs", ms);
 });
 
 document.getElementById("rec-offset").addEventListener("input", (e) => {
   const ms = Math.round(e.target.value);
   document.getElementById("rec-offset-display").textContent = `${ms} ms`;
+  localStorage.setItem("recOffsetMs", ms);
 });
 
-document.getElementById("estimate-latency-btn").addEventListener("click", async () => {
-  const ctx = getAudioContext();
-  let inputLatencyMs = null;
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const track = stream.getAudioTracks()[0];
-    const settings = track.getSettings();
-    if (settings.latency != null) inputLatencyMs = Math.round(settings.latency * 1000);
-    stream.getTracks().forEach(t => t.stop());
-  } catch (_) {}
-
-  const outputMs = Math.round((ctx.outputLatency + ctx.baseLatency) * 1000);
-  const recMs    = inputLatencyMs != null ? inputLatencyMs + outputMs : outputMs * 2;
-
-  const busSlider = document.getElementById("bus-latency");
-  const recSlider = document.getElementById("rec-offset");
-
-  console.log("[latency estimate] outputMs:", outputMs, "recMs:", recMs, "inputLatencyMs:", inputLatencyMs);
-  console.log("[latency estimate] busSlider:", busSlider, "busSlider._max:", busSlider._max, "busSlider.max attr:", busSlider.getAttribute("max"));
-  console.log("[latency estimate] recSlider:", recSlider, "recSlider._max:", recSlider._max, "recSlider.max attr:", recSlider.getAttribute("max"));
-
-  const busMax = busSlider._max;
-  const recMax = recSlider._max;
-  console.log("[latency estimate] busMax:", busMax, "recMax:", recMax);
-
-  busSlider.value = Math.min(outputMs, busMax);
-  busSlider.dispatchEvent(new Event("input"));
-
-  recSlider.value = Math.min(recMs, recMax);
-  recSlider.dispatchEvent(new Event("input"));
-});
 
 document.getElementById("master-reverb-wet").addEventListener("input", (e) => {
   audioEngineSetReverbWet(e.target.value / 100);

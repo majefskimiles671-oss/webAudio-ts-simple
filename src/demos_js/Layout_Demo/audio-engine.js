@@ -344,7 +344,7 @@ function audioEngineEnsureOutput() {
 
 let _micStream        = null;
 let _micAnalyser      = null;
-let _rawMicMode       = false;
+let _rawMicMode       = true;
 let _workletNode      = null;
 let _workletReady     = false;
 let _recordedChunks   = []; // [{ channels: Float32Array[], t: number }]

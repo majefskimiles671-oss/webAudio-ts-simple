@@ -179,6 +179,8 @@ The loopback auto-cal + AudioWorklet combination is probably the highest-fidelit
 The remaining rough edge is the 68ms hardware input latency requiring manual rec-offset calibration. The loopback auto-cal (play a click, record it, measure the offset) would close that gap and make the whole thing feel polished for a first-time user. That's probably the next high-value thing to build if you want the recording experience to feel professional out of the box.
 
 ---
+
+---
 All looks correct. Here's a summary of what was implemented and how to test each phase:
 
 Done. All phases implemented across 4 files. Here's the test checklist:

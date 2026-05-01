@@ -307,6 +307,8 @@ function serializeProject() {
     theme:        document.body.getAttribute("data-theme") ?? "Ice9",
     notesMono:    document.body.getAttribute("data-notes-font") === "mono",
     viewState:    { ...viewState },
+    zoomIndex:    (typeof zoomIndex !== "undefined") ? zoomIndex : 3,
+    playheadSeconds: (typeof currentTimeSeconds !== "undefined") ? currentTimeSeconds : 0,
     themeRatings: { ...themeRatings },
     activeScene: document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim() ?? null,
     sampleRate: SAMPLE_RATE,
@@ -322,6 +324,7 @@ function serializeProject() {
       gain:       track.gain,
       pan:        track.pan,
       opacity:    track.opacity,
+      minimized:  track.minimized ?? false,
       instrument:     track.instrument,
       gmProgram:      track.gmProgram ?? 0,
       sfzName:        track.sfzName   ?? null,
@@ -420,8 +423,6 @@ function serializeProject() {
       countInBeforePlay: document.getElementById("metronome-ci-play").checked,
       clickWhileRec:     document.getElementById("metronome-click-rec").checked,
       clickWhilePlay:    document.getElementById("metronome-click-play").checked,
-      busLatencyMs:      parseInt(document.getElementById("bus-latency").value),
-      recOffsetMs:       parseInt(document.getElementById("rec-offset").value),
     },
     video: videoFile
       ? {
@@ -622,14 +623,14 @@ function deserializeProject(data) {
     metronomeSetWhilePlaying(clickWhilePlay);
     document.getElementById("metronome-click-play").checked = clickWhilePlay;
 
-    const busLatencyMs = met.busLatencyMs ?? 0;
-    metronomeSetLatencyMs(busLatencyMs);
-    document.getElementById("bus-latency").value = busLatencyMs;
-    document.getElementById("bus-latency-display").textContent = `${busLatencyMs} ms`;
+    const busMs = parseInt(localStorage.getItem("busLatencyMs") ?? "0") || 0;
+    document.getElementById("bus-latency").value = busMs;
+    document.getElementById("bus-latency-display").textContent = `${busMs} ms`;
+    metronomeSetLatencyMs(busMs);
 
-    const recOffsetMs = met.recOffsetMs ?? 0;
-    document.getElementById("rec-offset").value = recOffsetMs;
-    document.getElementById("rec-offset-display").textContent = `${recOffsetMs} ms`;
+    const recMs = parseInt(localStorage.getItem("recOffsetMs") ?? "0") || 0;
+    document.getElementById("rec-offset").value = recMs;
+    document.getElementById("rec-offset-display").textContent = `${recMs} ms`;
   }
 
   if (data.theme) setTheme(data.theme, { silent: true });
@@ -638,6 +639,20 @@ function deserializeProject(data) {
     Object.assign(viewState, data.viewState);
     applyViewState();
     syncViewSettingsCheckboxes();
+  }
+  if (typeof data.zoomIndex === "number" && typeof zoomIndex !== "undefined") {
+    zoomIndex = Math.max(0, Math.min(zoomLevels.length - 1, data.zoomIndex));
+    zoom = zoomLevels[zoomIndex];
+    const zoomSlider = document.getElementById("zoom-slider");
+    if (zoomSlider) zoomSlider.value = zoomIndex;
+    rerenderWaveforms();
+    syncTimelineMinWidth();
+    syncTimelineOverlay();
+    renderTimelineLayer();
+  }
+  if (typeof data.playheadSeconds === "number" && typeof currentTimeSeconds !== "undefined") {
+    currentTimeSeconds = data.playheadSeconds;
+    setPlayheadPositionPx(secondsToPixels(currentTimeSeconds));
   }
   if (data.themeRatings) {
     Object.keys(themeRatings).forEach(k => delete themeRatings[k]);
@@ -697,6 +712,10 @@ function deserializeProject(data) {
     const opEl = track.controlRow.querySelector(".row-opacity-slider");
     if (opEl) opEl.value = track.opacity;
     track.timelineRow.style.setProperty('--row-opacity', track.opacity / 100);
+
+    track.minimized = saved.minimized ?? false;
+    track.controlRow.classList.toggle("is-minimized", track.minimized);
+    track.timelineRow.classList.toggle("is-minimized", track.minimized);
 
     // Instrument (Pluck / Synth / GM)
     track.instrument = saved.instrument ?? "pluck";

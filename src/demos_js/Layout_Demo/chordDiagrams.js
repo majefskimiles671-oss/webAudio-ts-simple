@@ -266,9 +266,10 @@ function cdSaveChord() {
   if (idx !== -1) {
     chords[idx] = _editingChord;
   } else {
-    chords.push(_editingChord);
+    chords.unshift(_editingChord);
   }
   if (typeof markDirty === "function") markDirty();
+  document.dispatchEvent(new CustomEvent("chord-updated", { detail: { id: _editingChord.id } }));
   cdShowList();
   cdRenderDialog();
   if (typeof renderBottomPanel === "function") renderBottomPanel();
@@ -402,13 +403,29 @@ function cdRenderTabStrip() {
   const makeTab = (id, label) => {
     const el = document.createElement("div");
     el.className = "cd-tab" + (cdActiveTab === id ? " cd-tab-active" : "");
-    el.textContent = label;
     el.addEventListener("click", () => { cdActiveTab = id; cdRenderDialog(); });
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = label;
+    el.appendChild(labelSpan);
+    if (id !== "all") {
+      const delBtn = document.createElement("span");
+      delBtn.className = "cd-tab-delete";
+      delBtn.textContent = "×";
+      delBtn.title = "Delete tab and its chords";
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!confirm(`Delete tab "${label}" and all its chords?`)) return;
+        chords = chords.filter(c => c.tab !== id);
+        cdTabs = cdTabs.filter(t => t.id !== id);
+        if (cdActiveTab === id) cdActiveTab = "all";
+        if (typeof markDirty === "function") markDirty();
+        if (typeof renderBottomPanel === "function") renderBottomPanel();
+        cdRenderDialog();
+      });
+      el.appendChild(delBtn);
+    }
     strip.appendChild(el);
   };
-
-  makeTab("all", "All");
-  for (const t of cdTabs) makeTab(t.id, t.name);
 
   const addBtn = document.createElement("div");
   addBtn.className = "cd-tab cd-tab-add";
@@ -418,11 +435,14 @@ function cdRenderTabStrip() {
     const name = prompt("New tab name:");
     if (!name?.trim()) return;
     const id = "tab-" + crypto.randomUUID().slice(0, 8);
-    cdTabs.push({ id, name: name.trim() });
+    cdTabs.unshift({ id, name: name.trim() });
     cdActiveTab = id;
     cdRenderDialog();
   });
   strip.appendChild(addBtn);
+
+  makeTab("all", "All");
+  for (const t of cdTabs) makeTab(t.id, t.name);
 }
 
 function cdRenderListInto(container) {
