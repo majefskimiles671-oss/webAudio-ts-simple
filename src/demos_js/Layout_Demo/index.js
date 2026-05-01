@@ -3142,6 +3142,9 @@ function _executeDuplicateTrack() {
   newTrack.pan        = track.pan;
   newTrack.opacity    = track.opacity;
   newTrack.scenes     = [...track.scenes];
+  newTrack.minimized  = track.minimized;
+  newTrack.controlRow.classList.toggle("is-minimized", track.minimized);
+  newTrack.timelineRow.classList.toggle("is-minimized", track.minimized);
   if (track.type === 'midi') {
     newTrack.instrument = track.instrument;
     newTrack.gmProgram  = track.gmProgram;
