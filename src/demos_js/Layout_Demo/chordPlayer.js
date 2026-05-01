@@ -240,8 +240,8 @@ function cdBuildSoundToggle() {
 
 // Single click: strum for chords; ascending run for scales.
 function playChordStrum(chord) {
+  audioEngineEnsureLiveOutput();
   const ctx = getAudioContext();
-  if (ctx.state === "suspended") ctx.resume();
   startMeterAnimation();
   const now = ctx.currentTime + 0.01;
   if (_synthMode === "synth") {
@@ -264,8 +264,8 @@ function playChordStrum(chord) {
 
 // Double click: play notes spaced out over time.
 function playChordSpaced(chord) {
+  audioEngineEnsureLiveOutput();
   const ctx = getAudioContext();
-  if (ctx.state === "suspended") ctx.resume();
   startMeterAnimation();
   const now = ctx.currentTime + 0.01;
   if (_synthMode === "synth") {

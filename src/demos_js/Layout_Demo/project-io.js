@@ -307,6 +307,8 @@ function serializeProject() {
     theme:        document.body.getAttribute("data-theme") ?? "Ice9",
     notesMono:    document.body.getAttribute("data-notes-font") === "mono",
     viewState:    { ...viewState },
+    zoomIndex:    (typeof zoomIndex !== "undefined") ? zoomIndex : 3,
+    playheadSeconds: (typeof currentTimeSeconds !== "undefined") ? currentTimeSeconds : 0,
     themeRatings: { ...themeRatings },
     activeScene: document.querySelector("#transport-scenes .transport-scene.active")?.textContent.trim() ?? null,
     sampleRate: SAMPLE_RATE,
@@ -636,6 +638,20 @@ function deserializeProject(data) {
     Object.assign(viewState, data.viewState);
     applyViewState();
     syncViewSettingsCheckboxes();
+  }
+  if (typeof data.zoomIndex === "number" && typeof zoomIndex !== "undefined") {
+    zoomIndex = Math.max(0, Math.min(zoomLevels.length - 1, data.zoomIndex));
+    zoom = zoomLevels[zoomIndex];
+    const zoomSlider = document.getElementById("zoom-slider");
+    if (zoomSlider) zoomSlider.value = zoomIndex;
+    rerenderWaveforms();
+    syncTimelineMinWidth();
+    syncTimelineOverlay();
+    renderTimelineLayer();
+  }
+  if (typeof data.playheadSeconds === "number" && typeof currentTimeSeconds !== "undefined") {
+    currentTimeSeconds = data.playheadSeconds;
+    setPlayheadPositionPx(secondsToPixels(currentTimeSeconds));
   }
   if (data.themeRatings) {
     Object.keys(themeRatings).forEach(k => delete themeRatings[k]);

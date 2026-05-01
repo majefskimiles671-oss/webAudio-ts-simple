@@ -3286,6 +3286,23 @@
             letter-spacing: 0;
         }
 
+        .cd-tab-delete {
+            display: inline;
+            margin-inline-start: 5px;
+            font-size: 15px;
+            font-weight: 400;
+            letter-spacing: 0;
+            opacity: 0.4;
+        }
+        .cd-tab:hover .cd-tab-delete,
+        .cd-tab-active .cd-tab-delete {
+            opacity: 0.8;
+        }
+        .cd-tab-delete:hover {
+            opacity: 1 !important;
+            color: var(--red, #e05);
+        }
+
         .cd-resize-edge {
             position: absolute;
             z-index: 10;

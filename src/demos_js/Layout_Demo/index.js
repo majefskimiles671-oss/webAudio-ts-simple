@@ -1909,6 +1909,18 @@ function renderMidiClip(track, clip) {
             },
           },
           {
+            label: "Duplicate",
+            action: () => {
+              _duplicateMidiState = { track, clip };
+              _duplicateDialogClipId = null;
+              const input = document.getElementById("duplicate-dialog-input");
+              input.value = 1;
+              document.getElementById("duplicate-dialog").hidden = false;
+              input.focus();
+              input.select();
+            },
+          },
+          {
             label: "Delete clip",
             action: () => {
               track.midiClips = track.midiClips.filter(c => c !== clip);
@@ -2093,6 +2105,12 @@ function refreshMidiClipDOM(clip) {
   const el = document.querySelector(`.midi-clip[data-clip-id="${clip.id}"]`);
   if (el) rerenderMidiClipEvents(clip, el);
 }
+
+document.addEventListener("chord-updated", () => {
+  for (const track of tracks) {
+    for (const clip of track.midiClips) refreshMidiClipDOM(clip);
+  }
+});
 
 function showContextMenu(items, x, y) {
   const menu = document.createElement("div");
@@ -2958,7 +2976,8 @@ document.getElementById("clip-popup-info-btn").addEventListener("click", () => {
   hideClipPopup();
 });
 
-let _duplicateDialogClipId = null;
+let _duplicateDialogClipId  = null;
+let _duplicateMidiState     = null; // { track, clip } when duplicating a MIDI clip
 
 document.getElementById("clip-popup-normalize-btn").addEventListener("click", () => {
   if (!_clipPopupClipId) return;
@@ -2983,6 +3002,28 @@ function _executeDuplicate() {
   const dialog = document.getElementById("duplicate-dialog");
   const count  = Math.max(1, Math.min(99, parseInt(document.getElementById("duplicate-dialog-input").value) || 1));
   dialog.hidden = true;
+
+  if (_duplicateMidiState) {
+    const { track, clip: srcClip } = _duplicateMidiState;
+    _duplicateMidiState = null;
+    let tailSample = srcClip.startSample + srcClip.durationSamples;
+    for (let i = 0; i < count; i++) {
+      const newClip = {
+        id:              crypto.randomUUID(),
+        startSample:     tailSample,
+        durationSamples: srcClip.durationSamples,
+        events:          srcClip.events.map(e => ({ ...e })),
+        notes:           srcClip.notes ? srcClip.notes.map(n => ({ ...n })) : undefined,
+      };
+      track.midiClips.push(newClip);
+      renderMidiClip(track, newClip);
+      tailSample += srcClip.durationSamples;
+    }
+    syncTimelineMinWidth();
+    syncTimelineOverlay();
+    markDirty();
+    return;
+  }
 
   const clipId = _duplicateDialogClipId;
   if (!clipId) return;
@@ -3019,6 +3060,7 @@ document.getElementById("duplicate-dialog-input").addEventListener("keydown", (e
 
 document.getElementById("duplicate-dialog-cancel").addEventListener("click", () => {
   document.getElementById("duplicate-dialog").hidden = true;
+  _duplicateMidiState = null;
 });
 
 document.getElementById("clip-popup-delete-btn").addEventListener("click", () => {
