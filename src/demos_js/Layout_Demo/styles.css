@@ -1243,6 +1243,7 @@
             gap: 6px;
             height: 100%;
             box-sizing: border-box;
+            border-left: 4px solid transparent;
         }
 
         /* Timeline rows: no horizontal padding, fixed height, positioning context for clips */
@@ -4682,8 +4683,8 @@
         /* ----- Track Selection ----- */
 
         .control-row.selected > .row-inner {
-            border-left: 2px solid var(--accent-primary);
-            padding-left: 6px;
+            border-left: 4px solid var(--accent-primary);
+            /* padding-left: 6px; */
         }
 
 
@@ -5285,7 +5286,7 @@
 /* Track type visual distinction */
 .is-midi-track.control-row,
 .is-midi-track.timeline-row {
-  border-left: 3px solid var(--accent-primary);
+  /* border-left: 3px solid var(--accent-primary); */
   background: color-mix(in srgb, var(--accent-primary) 9%, var(--bg-app));
 }
 .is-audio-track.control-row,
