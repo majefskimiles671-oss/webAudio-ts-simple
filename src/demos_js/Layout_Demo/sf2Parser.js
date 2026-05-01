@@ -159,27 +159,27 @@ async function sf2Parse(arrayBuffer, audioCtx) {
   }
 
   // Human-readable summary
-  console.group('[sf2] Loaded soundfont');
-  const melodic = [...result.keys()].filter(k => k !== SF_PERCUSSION).sort((a, b) => a - b);
-  const percMap  = result.get(SF_PERCUSSION);
-  const percNameCount = percMap ? [...percMap.values()].filter(e => e.name).length : 0;
-  console.log(`Programs (melodic): ${melodic.length}  |  Percussion notes named: ${percNameCount}`);
-  if (melodic.length) {
-    console.groupCollapsed('Melodic programs');
-    for (const prog of melodic) {
-      console.log(`  Program ${String(prog).padStart(3)}: ${result.get(prog).size} samples`);
-    }
-    console.groupEnd();
-  }
-  if (percMap?.size) {
-    console.groupCollapsed('Percussion note names (by rootPitch)');
-    const sorted = [...percMap.entries()].sort(([a], [b]) => a - b);
-    for (const [pitch, entry] of sorted) {
-      console.log(`  ${String(pitch).padStart(3)}: ${entry.name ?? '(unnamed)'}`);
-    }
-    console.groupEnd();
-  }
-  console.groupEnd();
+  // console.group('[sf2] Loaded soundfont');
+  // const melodic = [...result.keys()].filter(k => k !== SF_PERCUSSION).sort((a, b) => a - b);
+  // const percMap  = result.get(SF_PERCUSSION);
+  // const percNameCount = percMap ? [...percMap.values()].filter(e => e.name).length : 0;
+  // console.log(`Programs (melodic): ${melodic.length}  |  Percussion notes named: ${percNameCount}`);
+  // if (melodic.length) {
+  //   console.groupCollapsed('Melodic programs');
+  //   for (const prog of melodic) {
+  //     console.log(`  Program ${String(prog).padStart(3)}: ${result.get(prog).size} samples`);
+  //   }
+  //   console.groupEnd();
+  // }
+  // if (percMap?.size) {
+  //   console.groupCollapsed('Percussion note names (by rootPitch)');
+  //   const sorted = [...percMap.entries()].sort(([a], [b]) => a - b);
+  //   for (const [pitch, entry] of sorted) {
+  //     console.log(`  ${String(pitch).padStart(3)}: ${entry.name ?? '(unnamed)'}`);
+  //   }
+  //   console.groupEnd();
+  // }
+  // console.groupEnd();
 
   return result;
 }

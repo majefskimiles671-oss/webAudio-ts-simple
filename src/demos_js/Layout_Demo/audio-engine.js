@@ -245,9 +245,9 @@ async function audioEngineGetOutputDevices() {
       log('[audio-engine] getUserMedia for device labels failed:', err);
     }
   }
-  log('[audio-engine] all devices:', devices.map(d => ({ kind: d.kind, label: d.label, deviceId: d.deviceId })));
+  // log('[audio-engine] all devices:', devices.map(d => ({ kind: d.kind, label: d.label, deviceId: d.deviceId })));
   const outputs = devices.filter(d => d.kind === 'audiooutput' && d.deviceId !== 'default');
-  log('[audio-engine] filtered outputs (non-default audiooutput):', outputs.map(d => ({ label: d.label, deviceId: d.deviceId })));
+  // log('[audio-engine] filtered outputs (non-default audiooutput):', outputs.map(d => ({ label: d.label, deviceId: d.deviceId })));
   return outputs;
 }
 

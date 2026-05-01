@@ -5224,7 +5224,7 @@ document.getElementById("menu-load-sfz").addEventListener("click", async () => {
     const ab = await resp.arrayBuffer();
     await sfLoadDefault(ab, decodeURIComponent(filename));
     _updateSf2Display();
-    log(`[sf2] auto-loaded ${filename}`);
+    // log(`[sf2] auto-loaded ${filename}`);
   } catch { /* no sf2 in ./midi — skip */ }
 })();
 

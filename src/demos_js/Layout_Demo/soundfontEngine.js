@@ -38,7 +38,7 @@ async function sfLoadDefault(arrayBuffer, name) {
   _sf2DefaultData = data;
   _sf2DefaultName = name ?? null;
   if (!_sf2GlobalData && !_sf2ProjectData) await _sfPopulateCache(data);
-  log(`[soundfont] ${name ?? 'default'} loaded: ${data.size} programs`);
+  // log(`[soundfont] ${name ?? 'default'} loaded: ${data.size} programs`);
 }
 
 async function sfLoadGlobal(file) {
@@ -47,7 +47,7 @@ async function sfLoadGlobal(file) {
   _sf2GlobalData = data;
   _sf2GlobalName = file.name;
   if (!_sf2ProjectData) await _sfPopulateCache(data);
-  log(`[soundfont] global SF2 loaded: ${file.name}, ${data.size} programs`);
+  // log(`[soundfont] global SF2 loaded: ${file.name}, ${data.size} programs`);
 }
 
 async function sfLoadFromFile(file, nameOverride) {
@@ -57,7 +57,7 @@ async function sfLoadFromFile(file, nameOverride) {
   _sf2ProjectName = nameOverride ?? file.name;
   _sf2ProjectData = data;
   await _sfPopulateCache(data);
-  log(`[soundfont] project SF2 loaded: ${_sf2ProjectName}, ${data.size} programs`);
+  // log(`[soundfont] project SF2 loaded: ${_sf2ProjectName}, ${data.size} programs`);
 }
 
 function sfClearProjectFont() {

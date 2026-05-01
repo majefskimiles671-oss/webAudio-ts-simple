@@ -12,6 +12,7 @@ let _tanpuraMode         = "pluck"; // "pluck" | "synth"
 let _tanpuraSynthMult    = 1;       // envelope length multiplier for synth mode
 let _tanpuraTimerId      = null;
 let _tanpuraStrIdx       = 0;
+let _nextPluckTime       = 0;   // AudioContext time of next scheduled pluck
 let _tanpuraStringGains  = [1, 1, 1, 1];
 let _tanpuraBpm          = 120;   // kept in sync with project BPM
 let _tanpuraSyncBeats    = null;  // null = free slider; 8/4/2/1 = note division in quarter-note beats
@@ -57,7 +58,7 @@ function _tanpuraRateToInterval(rate) {
   return 1.0 - (rate / 100) * 0.75;
 }
 
-function _tanpuraSynthNote(freq, gain, mult = 1) {
+function _tanpuraSynthNote(freq, gain, mult = 1, startTime = null) {
   const ctx    = _tanpuraCtx;
   const env    = ctx.createGain();
   const filter = ctx.createBiquadFilter();
@@ -82,7 +83,7 @@ function _tanpuraSynthNote(freq, gain, mult = 1) {
   filter.connect(env);
   env.connect(_tanpuraGain);
 
-  const now = ctx.currentTime;
+  const now = startTime !== null ? startTime : ctx.currentTime;
   const dur = 3.5 * mult, A = 0.3 * mult, R = 1.0 * mult;
   const peak = 0.8 * gain;
   env.gain.setValueAtTime(0, now);
@@ -100,29 +101,40 @@ function _tanpuraSynthNote(freq, gain, mult = 1) {
 function _tanpuraPluckNext() {
   if (!_tanpuraActive) return;
 
-  const midi      = _tanpuraStrings[_tanpuraStrIdx];
-  const freq      = _tanpuraMidiToFreq(midi);
-  const strGain   = _tanpuraStringGains[_tanpuraStrIdx];
+  const intervalSec = _tanpuraSyncBeats !== null
+    ? (60 / _tanpuraBpm) * _tanpuraSyncBeats
+    : _tanpuraRateToInterval(_tanpuraRate);
+
+  // If we're behind (e.g. tab was hidden), catch up to now so we don't
+  // fire a burst of back-dated notes.
+  if (_nextPluckTime < _tanpuraCtx.currentTime) {
+    _nextPluckTime = _tanpuraCtx.currentTime;
+  }
+
+  const midi    = _tanpuraStrings[_tanpuraStrIdx];
+  const freq    = _tanpuraMidiToFreq(midi);
+  const strGain = _tanpuraStringGains[_tanpuraStrIdx];
 
   if (_tanpuraMode === "synth") {
-    _tanpuraSynthNote(freq, strGain, _tanpuraSynthMult);
+    _tanpuraSynthNote(freq, strGain, _tanpuraSynthMult, _nextPluckTime);
   } else {
     const samples = _tanpuraKsGenerate(freq, _tanpuraCtx.sampleRate, _tanpuraSynthMult * 10);
     for (let i = 0; i < samples.length; i++) samples[i] *= strGain;
-    const buf     = _tanpuraCtx.createBuffer(1, samples.length, _tanpuraCtx.sampleRate);
+    const buf = _tanpuraCtx.createBuffer(1, samples.length, _tanpuraCtx.sampleRate);
     buf.copyToChannel(samples, 0);
     const src = _tanpuraCtx.createBufferSource();
     src.buffer = buf;
     src.connect(_tanpuraGain);
-    src.start();
+    src.start(_nextPluckTime);
     src.addEventListener("ended", () => src.disconnect());
   }
 
-  _tanpuraStrIdx = (_tanpuraStrIdx + 1) % 4;
-  const intervalMs = _tanpuraSyncBeats !== null
-    ? (60 / _tanpuraBpm) * _tanpuraSyncBeats * 1000
-    : _tanpuraRateToInterval(_tanpuraRate) * 1000;
-  _tanpuraTimerId = setTimeout(_tanpuraPluckNext, intervalMs);
+  _tanpuraStrIdx  = (_tanpuraStrIdx + 1) % 4;
+  _nextPluckTime += intervalSec;
+
+  // Wake up ~25 ms before the next pluck is due so we can schedule it on time.
+  const msUntilNext = (_nextPluckTime - _tanpuraCtx.currentTime - 0.025) * 1000;
+  _tanpuraTimerId = setTimeout(_tanpuraPluckNext, Math.max(0, msUntilNext));
 }
 
 function tanpuraInit(ctx) {
@@ -134,8 +146,9 @@ function tanpuraInit(ctx) {
 
 function tanpuraStart() {
   if (_tanpuraActive) return;
-  _tanpuraActive = true;
-  _tanpuraStrIdx = 0;
+  _tanpuraActive  = true;
+  _tanpuraStrIdx  = 0;
+  _nextPluckTime  = _tanpuraCtx.currentTime + 0.025;
   _tanpuraPluckNext();
 }
 
@@ -153,6 +166,7 @@ function tanpuraSetRate(r) {
   _tanpuraRate = r;
   if (_tanpuraActive) {
     clearTimeout(_tanpuraTimerId);
+    _nextPluckTime = _tanpuraCtx.currentTime + 0.025;
     _tanpuraPluckNext();
   }
 }
@@ -160,9 +174,9 @@ function tanpuraSetRate(r) {
 // midiArray: sorted ascending, 1–4 elements; pads to 4 by repeating lowest note down an octave.
 function tanpuraSetStrings(midiArray) {
   const arr = midiArray.slice(0, 4);
-  console.log("arr:" + arr);
+  // console.log("arr:" + arr);
   while (arr.length < 4) {
-    console.log("doing unshift");
+    // console.log("doing unshift");
     arr.unshift(arr[0] - 12);
   }
   _tanpuraStrings = arr;
@@ -193,6 +207,7 @@ function tanpuraSetRateSync(beats) {
   _tanpuraSyncBeats = beats;
   if (_tanpuraActive) {
     clearTimeout(_tanpuraTimerId);
+    _nextPluckTime = _tanpuraCtx.currentTime + 0.025;
     _tanpuraPluckNext();
   }
 }
