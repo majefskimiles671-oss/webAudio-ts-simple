@@ -64,6 +64,10 @@ function audioEngineHasBuffer(clipId) {
   return _buffers.has(clipId);
 }
 
+function audioEngineGetAllBufferIds() {
+  return [..._buffers.keys()];
+}
+
 function audioEngineEncodeWav(audioBuffer) {
   const numChannels  = audioBuffer.numberOfChannels;
   const sampleRate   = audioBuffer.sampleRate;

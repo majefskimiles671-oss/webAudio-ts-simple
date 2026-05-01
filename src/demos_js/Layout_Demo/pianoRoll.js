@@ -23,6 +23,17 @@ let _prAnimFrame = null;
 let _prVelDragIndex = -1;
 let _prVelDragging  = false;
 
+// Piano Roll - State - Undo/Redo -----
+const _prUndoStack = [];
+const _prRedoStack = [];
+function _prPushUndo(cmd) {
+  _prUndoStack.push(cmd);
+  if (_prUndoStack.length > 50) _prUndoStack.shift();
+  _prRedoStack.length = 0;
+}
+function _prExecuteUndo() { const c = _prUndoStack.pop(); if (c) { c.undo(); _prRedoStack.push(c); } }
+function _prExecuteRedo() { const c = _prRedoStack.pop(); if (c) { c.redo(); _prUndoStack.push(c); } }
+
 function _prPlayheadX() {
   if (!_prClip || typeof getPlayheadTime !== "function") return null;
   return _prSamplesToX(getPlayheadTime() * _prGetSR() - _prClip.startSample);
@@ -405,11 +416,25 @@ function _prAddNote(pitch, startSamples, durationSamples) {
 
 function _prDeleteSelected() {
   if (!_prSelected.size || !_prClip?.notes) return;
+  const removed = _prClip.notes.filter((_, i) => _prSelected.has(i));
   _prClip.notes = _prClip.notes.filter((_, i) => !_prSelected.has(i));
   _prSelected.clear();
   _prFullDraw();
   _prRefreshClipDOM();
   if (typeof markDirty === "function") markDirty();
+  _prPushUndo({
+    undo() {
+      removed.forEach(n => _prClip.notes.push(n));
+      _prClip.notes.sort((a, b) => a.startSamples - b.startSamples);
+      _prFullDraw(); _prRefreshClipDOM();
+      if (typeof markDirty === "function") markDirty();
+    },
+    redo() {
+      _prClip.notes = _prClip.notes.filter(n => !removed.includes(n));
+      _prFullDraw(); _prRefreshClipDOM();
+      if (typeof markDirty === "function") markDirty();
+    },
+  });
 }
 
 function _prRefreshClipDOM() {
@@ -469,7 +494,7 @@ function _prOnPointerDown(e) {
     _prSelected.forEach(i => {
       const note = _prClip.notes[i];
       if (note) {
-        _prDragMultiOrig.set(note, { startSamples: note.startSamples, pitch: note.pitch });
+        _prDragMultiOrig.set(note, { startSamples: note.startSamples, pitch: note.pitch, durationSamples: note.durationSamples });
         _prDragSelectedNotes.add(note);
       }
     });
@@ -535,7 +560,7 @@ function _prOnPointerMove(e) {
       const base = _prClip.notes.length - copies.length;
       copies.forEach((c, i) => {
         _prSelected.add(base + i);
-        _prDragMultiOrig.set(c, { startSamples: c.startSamples, pitch: c.pitch });
+        _prDragMultiOrig.set(c, { startSamples: c.startSamples, pitch: c.pitch, durationSamples: c.durationSamples });
         _prDragSelectedNotes.add(c);
       });
       _prCopyOnDrag = false;
@@ -597,6 +622,22 @@ function _prOnPointerUp(e) {
       _prClip.notes.forEach((n, i) => { if (!beforeSet.has(n)) _prSelected.add(i); });
       _prRefreshClipDOM();
       if (typeof markDirty === "function") markDirty();
+      const added = _prClip.notes.find(n => !beforeSet.has(n));
+      if (added) {
+        _prPushUndo({
+          undo() {
+            _prClip.notes = _prClip.notes.filter(n => n !== added);
+            _prFullDraw(); _prRefreshClipDOM();
+            if (typeof markDirty === "function") markDirty();
+          },
+          redo() {
+            _prClip.notes.push(added);
+            _prClip.notes.sort((a, b) => a.startSamples - b.startSamples);
+            _prFullDraw(); _prRefreshClipDOM();
+            if (typeof markDirty === "function") markDirty();
+          },
+        });
+      }
     }
   } else if (_prDragMode === "move" || _prDragMode === "resize") {
     if (_prCopyOnDrag) {
@@ -604,16 +645,41 @@ function _prOnPointerUp(e) {
       _prSelected.delete(_prDragIndex);
       _prCopyOnDrag = false;
     } else {
+      const originals = new Map(_prDragMultiOrig);
+      const movedNotes = [..._prDragSelectedNotes];
       _prClip.notes.sort((a, b) => a.startSamples - b.startSamples);
       // Rebuild _prSelected by note-object identity after sort reorders indices
       if (_prDragSelectedNotes.size > 0) {
         _prSelected.clear();
         _prClip.notes.forEach((n, i) => { if (_prDragSelectedNotes.has(n)) _prSelected.add(i); });
       }
+      const finals = new Map(movedNotes.map(n => [n, { startSamples: n.startSamples, pitch: n.pitch, durationSamples: n.durationSamples }]));
       _prDragMultiOrig.clear();
       _prDragSelectedNotes.clear();
       _prRefreshClipDOM();
       if (typeof markDirty === "function") markDirty();
+      if (originals.size > 0) {
+        _prPushUndo({
+          undo() {
+            originals.forEach(({ startSamples, pitch, durationSamples }, n) => {
+              n.startSamples = startSamples; n.pitch = pitch;
+              if (durationSamples !== undefined) n.durationSamples = durationSamples;
+            });
+            _prClip.notes.sort((a, b) => a.startSamples - b.startSamples);
+            _prFullDraw(); _prRefreshClipDOM();
+            if (typeof markDirty === "function") markDirty();
+          },
+          redo() {
+            finals.forEach(({ startSamples, pitch, durationSamples }, n) => {
+              n.startSamples = startSamples; n.pitch = pitch;
+              if (durationSamples !== undefined) n.durationSamples = durationSamples;
+            });
+            _prClip.notes.sort((a, b) => a.startSamples - b.startSamples);
+            _prFullDraw(); _prRefreshClipDOM();
+            if (typeof markDirty === "function") markDirty();
+          },
+        });
+      }
     }
   }
 
@@ -643,6 +709,12 @@ function _prOnWheel(e) {
 
 function _prOnKeyDown(e) {
   if (!_prClip) return;
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "z") {
+    e.preventDefault(); e.stopPropagation(); _prExecuteUndo(); return;
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.shiftKey && e.key === "z"))) {
+    e.preventDefault(); e.stopPropagation(); _prExecuteRedo(); return;
+  }
   if (e.key === "Delete" || e.key === "Backspace") {
     _prDeleteSelected();
     e.preventDefault();

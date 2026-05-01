@@ -179,6 +179,27 @@ The loopback auto-cal + AudioWorklet combination is probably the highest-fidelit
 The remaining rough edge is the 68ms hardware input latency requiring manual rec-offset calibration. The loopback auto-cal (play a click, record it, measure the offset) would close that gap and make the whole thing feel polished for a first-time user. That's probably the next high-value thing to build if you want the recording experience to feel professional out of the box.
 
 ---
+All looks correct. Here's a summary of what was implemented and how to test each phase:
+
+Done. All phases implemented across 4 files. Here's the test checklist:
+
+Foundation: Ctrl+Z / Ctrl+Y with nothing to undo → no crash.
+
+Phase 1 (tempo/time sig): Change BPM → Ctrl+Z restores old value, ruler updates. Change time sig → Ctrl+Z restores. Ctrl+Y re-applies both.
+
+Phase 2 (clip move): Drag an audio clip → Ctrl+Z snaps it back. Arrow-key nudge a clip → Ctrl+Z snaps it back.
+
+Phase 3 (clip delete): Delete a clip (Delete key or popup) → Ctrl+Z re-appears in the timeline with waveform intact and audio playable. Open console and confirm audioEngineHasBuffer(clipId) is true after delete.
+
+Phase 4 (add/delete track): + Audio or + MIDI → Ctrl+Z removes the track. Track options → Delete Track → Ctrl+Z restores it with clips. Ctrl+Y re-deletes.
+
+Phase 5 (track reorder): Drag track to new position → Ctrl+Z → original order restored.
+
+Phase 6 (track rename): Rename a track, blur → Ctrl+Z restores old name in both DOM and state.
+
+Phase 7 (piano roll): Open a MIDI clip. Add note → Ctrl+Z removes it. Delete note → Ctrl+Z restores. Drag/resize note → Ctrl+Z snaps back. Confirm global undo stack is unaffected.
+
+Purge orphaned buffers: Record a clip, delete it, open Debug menu → "Purge Orphan Audio Buffers" → toast reports count. If you then undo the delete, the clip reappears but audio is silent (expected — the buffer was explicitly freed).
 ---
 
 ---
@@ -186,15 +207,15 @@ npm run serve
 http://localhost:8080/src/demos_js/Layout_Demo/Layout_Demo.html
 
 ```bash
-git switch -c miles_audio_worklet
+git switch -c miles_undo_redo_spike
 ```
 
 ```bash
 git switch main
-git merge miles_audio_worklet
+git merge miles_undo_redo_spike
 ```
 
 ```bash
 git push
-git branch -d miles_audio_worklet
+git branch -d miles_undo_redo_spike
 ```

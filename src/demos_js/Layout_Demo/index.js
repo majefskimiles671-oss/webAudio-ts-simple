@@ -318,6 +318,25 @@ function clearDirty() {
   _unsavedIndicator.hidden = true;
 }
 
+// State - Undo/Redo - Truth Layer -----
+const _undoStack = [];
+const _redoStack = [];
+const UNDO_LIMIT = 50;
+
+function pushUndo(cmd) {
+  _undoStack.push(cmd);
+  if (_undoStack.length > UNDO_LIMIT) _undoStack.shift();
+  _redoStack.length = 0;
+}
+function executeUndo() {
+  const cmd = _undoStack.pop();
+  if (cmd) { cmd.undo(); _redoStack.push(cmd); }
+}
+function executeRedo() {
+  const cmd = _redoStack.pop();
+  if (cmd) { cmd.redo(); _undoStack.push(cmd); }
+}
+
 // State - View State - Truth Layer -----
 const viewState = {
   bottomPanel:          false,
@@ -654,15 +673,39 @@ function deselectClip() {
 
 function deleteSelectedClip() {
   if (selectedClipIds.size === 0) return;
+  const deletedItems = [];
   selectedClipIds.forEach(clipId => {
     const track = tracks.find(t => t.clips.some(c => c.id === clipId));
-    if (track) track.clips = track.clips.filter(c => c.id !== clipId);
-    document.querySelector(`.waveform[data-clip-id="${clipId}"]`)?.remove();
-    // Memory Leak Prevention: free the decoded AudioBuffer so the audio engine's _buffers map doesn't hold it indefinitely.
-    audioEngineRemoveBuffer(clipId);
+    if (!track) return;
+    const clip = track.clips.find(c => c.id === clipId);
+    const waveformEl = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+    track.clips = track.clips.filter(c => c.id !== clipId);
+    waveformEl?.remove();
+    // Buffer kept alive for undo. Use Debug → Purge Orphan Audio Buffers to free.
+    deletedItems.push({ track, clip, waveformEl });
   });
   deselectClip();
   markDirty();
+  if (deletedItems.length) {
+    pushUndo({
+      undo() {
+        deletedItems.forEach(({ track, clip, waveformEl }) => {
+          track.clips.push(clip);
+          track.clips.sort((a, b) => a.startSample - b.startSample);
+          const rowInner = track.timelineRow.querySelector(".row-inner");
+          if (waveformEl) rowInner.appendChild(waveformEl);
+        });
+        markDirty();
+      },
+      redo() {
+        deletedItems.forEach(({ track, clip, waveformEl }) => {
+          track.clips = track.clips.filter(c => c.id !== clip.id);
+          waveformEl?.remove();
+        });
+        markDirty();
+      },
+    });
+  }
 }
 
 
@@ -926,10 +969,17 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
   title.addEventListener("blur", () => {
     const t = title.textContent.trim();
     const finalName = t === "" ? label : t;
+    const prevName = track.name;
     if (isNameUnique(finalName, track)) {
       title.textContent = finalName;
       track.name = finalName;
       markDirty();
+      if (finalName !== prevName) {
+        pushUndo({
+          undo() { track.name = prevName; title.textContent = prevName; markDirty(); },
+          redo() { track.name = finalName; title.textContent = finalName; markDirty(); },
+        });
+      }
     } else {
       title.textContent = track.name;
       promptUniqueName(finalName, track).then(newName => {
@@ -937,6 +987,12 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
           title.textContent = newName;
           track.name = newName;
           markDirty();
+          if (newName !== prevName) {
+            pushUndo({
+              undo() { track.name = prevName; title.textContent = prevName; markDirty(); },
+              redo() { track.name = newName; title.textContent = newName; markDirty(); },
+            });
+          }
         }
       });
     }
@@ -1254,6 +1310,26 @@ function attachClipDragListeners(waveform, clip) {
     waveform.classList.remove("wf-dragging");
     if (wfIsDragging) {
       _audioDragJustCompleted = true;
+      const oldStart = wfDragStartSample;
+      const newStart = clip.startSample;
+      if (oldStart !== newStart) {
+        pushUndo({
+          undo() {
+            clip.startSample = oldStart;
+            const sec = oldStart / SAMPLE_RATE;
+            waveform.dataset.startSeconds = sec;
+            waveform.style.left = secondsToPixels(sec) + "px";
+            markDirty();
+          },
+          redo() {
+            clip.startSample = newStart;
+            const sec = newStart / SAMPLE_RATE;
+            waveform.dataset.startSeconds = sec;
+            waveform.style.left = secondsToPixels(sec) + "px";
+            markDirty();
+          },
+        });
+      }
       markDirty();
     }
     wfIsDragging = false;
@@ -1294,17 +1370,11 @@ function promoteRecordingLane() {
   updateSoloMask();
 }
 
-function reorderTrack(dragged, insertBefore) {
-  // insertBefore = null → append at end
-  if (dragged === insertBefore) return;
+function _reorderTrackSilent(dragged, insertBefore) {
   const fromIdx = tracks.indexOf(dragged);
-  const toIdx   = insertBefore ? tracks.indexOf(insertBefore) : tracks.length;
-  if (fromIdx === toIdx || fromIdx === toIdx - 1) return;
-
   tracks.splice(fromIdx, 1);
-  if (insertBefore) {
-    const destIdx = tracks.indexOf(insertBefore);
-    tracks.splice(destIdx, 0, dragged);
+  if (insertBefore && tracks.includes(insertBefore)) {
+    tracks.splice(tracks.indexOf(insertBefore), 0, dragged);
     controlsScrollCol.insertBefore(dragged.controlRow, insertBefore.controlRow);
     timelineCol.insertBefore(dragged.timelineRow, insertBefore.timelineRow);
   } else {
@@ -1312,7 +1382,22 @@ function reorderTrack(dragged, insertBefore) {
     controlsScrollCol.appendChild(dragged.controlRow);
     timelineCol.appendChild(dragged.timelineRow);
   }
+}
+
+function reorderTrack(dragged, insertBefore) {
+  // insertBefore = null → append at end
+  if (dragged === insertBefore) return;
+  const fromIdx = tracks.indexOf(dragged);
+  const toIdx   = insertBefore ? tracks.indexOf(insertBefore) : tracks.length;
+  if (fromIdx === toIdx || fromIdx === toIdx - 1) return;
+
+  const prevInsertBefore = tracks[fromIdx + 1] ?? null;
+  _reorderTrackSilent(dragged, insertBefore);
   markDirty();
+  pushUndo({
+    undo() { _reorderTrackSilent(dragged, prevInsertBefore); markDirty(); },
+    redo() { _reorderTrackSilent(dragged, insertBefore); markDirty(); },
+  });
 }
 
 function onRecordStart() {
@@ -1812,6 +1897,19 @@ function addMidiTrack() {
   updateSceneMask();
   updateSoloMask();
   markDirty();
+  pushUndo({
+    undo() {
+      tracks.splice(tracks.indexOf(track), 1);
+      track.controlRow.remove(); track.timelineRow.remove();
+      syncTimelineMinWidth(); syncTimelineOverlay(); syncRecordBtnEnabled(); updateSceneMask(); updateSoloMask(); markDirty();
+    },
+    redo() {
+      tracks.unshift(track);
+      controlsScrollCol.prepend(track.controlRow);
+      timelineCol.prepend(track.timelineRow);
+      syncTimelineMinWidth(); syncTimelineOverlay(); updateSceneMask(); updateSoloMask(); markDirty();
+    },
+  });
 }
 
 function addAudioTrack() {
@@ -1825,6 +1923,19 @@ function addAudioTrack() {
   updateSceneMask();
   updateSoloMask();
   markDirty();
+  pushUndo({
+    undo() {
+      tracks.splice(tracks.indexOf(track), 1);
+      track.controlRow.remove(); track.timelineRow.remove();
+      syncTimelineMinWidth(); syncTimelineOverlay(); syncRecordBtnEnabled(); updateSceneMask(); updateSoloMask(); markDirty();
+    },
+    redo() {
+      tracks.unshift(track);
+      controlsScrollCol.prepend(track.controlRow);
+      timelineCol.prepend(track.timelineRow);
+      syncTimelineMinWidth(); syncTimelineOverlay(); updateSceneMask(); updateSoloMask(); markDirty();
+    },
+  });
 }
 
 function renderMidiClip(track, clip) {
@@ -1906,6 +2017,21 @@ function renderMidiClip(track, clip) {
                 };
                 document.addEventListener("pointerdown", dismiss, { capture: true });
               }, 0);
+            },
+          },
+          {
+            label: "Duplicate clip",
+            action: () => {
+              const newClip = {
+                id:              crypto.randomUUID(),
+                startSample:     clip.startSample + clip.durationSamples,
+                durationSamples: clip.durationSamples,
+                events:          clip.events.map(ev => ({ ...ev })),
+                notes:           clip.notes ? clip.notes.map(n => ({ ...n })) : undefined,
+              };
+              track.midiClips.push(newClip);
+              renderMidiClip(track, newClip);
+              markDirty();
             },
           },
           {
@@ -2425,6 +2551,16 @@ function logProject() {
 }
 document.getElementById("debug-toggle-display").onclick = () => document.body.classList.toggle("debug");
 
+document.getElementById("debug-purge-orphan-buffers").onclick = () => {
+  const activeIds = new Set(tracks.flatMap(t => t.clips.map(c => c.id)));
+  let purged = 0;
+  for (const id of audioEngineGetAllBufferIds()) {
+    if (!activeIds.has(id)) { audioEngineRemoveBuffer(id); purged++; }
+  }
+  console.log(`Purged ${purged} orphaned audio buffer(s).`);
+  showToast(`Purged ${purged} orphan buffer${purged !== 1 ? "s" : ""}`);
+};
+
 
 
 timelineArea.addEventListener("scroll", () => {
@@ -2502,6 +2638,7 @@ tempoEl.addEventListener("blur", () => {
   recordInteraction("tempo");
   const raw = tempoEl.textContent.replace(/\D/g, "");
   const next = parseInt(raw, 10);
+  const prevBPM = tempoBPM;
 
   if (!Number.isNaN(next)) {
     tempoBPM = Math.min(300, Math.max(30, next));
@@ -2513,6 +2650,14 @@ tempoEl.addEventListener("blur", () => {
   renderTempo();
   syncTimelineMinWidth();
   renderTimelineLayer();
+
+  if (!Number.isNaN(next) && tempoBPM !== prevBPM) {
+    const newBPM = tempoBPM;
+    pushUndo({
+      undo() { tempoBPM = prevBPM; bpm = prevBPM; tanpuraSetBPM(bpm); renderTempo(); syncTimelineMinWidth(); renderTimelineLayer(); markDirty(); },
+      redo() { tempoBPM = newBPM;  bpm = newBPM;  tanpuraSetBPM(bpm); renderTempo(); syncTimelineMinWidth(); renderTimelineLayer(); markDirty(); },
+    });
+  }
 });
 
 // ----- Time Signature Dropdown
@@ -2533,11 +2678,19 @@ timeSigMenu.addEventListener("click", (e) => {
 
   const beats = Number(btn.dataset.beats);
   const noteValue = Number(btn.dataset.note);
+  const prevTS = { ...timeSignature };
 
   setTimeSignature(beats, noteValue);
   markDirty();
   timeSigWrapper.classList.remove("open");
   timeSigBtn.setAttribute("aria-expanded", "false");
+
+  if (beats !== prevTS.beats || noteValue !== prevTS.noteValue) {
+    pushUndo({
+      undo() { setTimeSignature(prevTS.beats, prevTS.noteValue); markDirty(); },
+      redo() { setTimeSignature(beats, noteValue); markDirty(); },
+    });
+  }
 });
 
 document.addEventListener("click", () => {
@@ -3047,6 +3200,7 @@ function _executeDeleteTrack() {
   const trackIdx = tracks.indexOf(track);
   if (trackIdx === -1) return;
   const trackName = track.name;
+  const prevInsertBefore = tracks[trackIdx + 1] ?? null;
   if (selectedTrack === track) selectedTrack = null;
   const soloBtn = track.controlRow.querySelector(".solo-btn");
   if (soloBtn?.classList.contains("active")) {
@@ -3056,8 +3210,7 @@ function _executeDeleteTrack() {
     syncTrackMutes();
   }
   tracks.splice(trackIdx, 1);
-  trackController.abort();
-  ro.disconnect();
+  // Don't abort/disconnect yet — undo needs live rows and listeners.
   track.controlRow.remove();
   track.timelineRow.remove();
   syncTimelineMinWidth();
@@ -3066,6 +3219,26 @@ function _executeDeleteTrack() {
   markDirty();
   announce(`${trackName} deleted`);
   closeTrackEditDialog();
+  pushUndo({
+    undo() {
+      if (prevInsertBefore && tracks.includes(prevInsertBefore)) {
+        tracks.splice(tracks.indexOf(prevInsertBefore), 0, track);
+        controlsScrollCol.insertBefore(track.controlRow, prevInsertBefore.controlRow);
+        timelineCol.insertBefore(track.timelineRow, prevInsertBefore.timelineRow);
+      } else {
+        tracks.push(track);
+        controlsScrollCol.appendChild(track.controlRow);
+        timelineCol.appendChild(track.timelineRow);
+      }
+      syncTimelineMinWidth(); syncTimelineOverlay(); syncRecordBtnEnabled(); markDirty();
+    },
+    redo() {
+      tracks.splice(tracks.indexOf(track), 1);
+      trackController.abort(); ro.disconnect();
+      track.controlRow.remove(); track.timelineRow.remove();
+      syncTimelineMinWidth(); syncTimelineOverlay(); syncRecordBtnEnabled(); markDirty();
+    },
+  });
 }
 
 function _executeDuplicateTrack() {
@@ -3323,10 +3496,12 @@ document.addEventListener("keydown", (e) => {
       ? Math.round(0.1 * SAMPLE_RATE)
       : Math.round(0.01 * SAMPLE_RATE);
     const sign = e.key === "ArrowLeft" ? -1 : 1;
+    const oldStarts = new Map();
     selectedClipIds.forEach(clipId => {
       const track = findTrackByClipId(clipId);
       const clip  = track?.clips.find(c => c.id === clipId);
       if (!clip) return;
+      oldStarts.set(clipId, clip.startSample);
       clip.startSample = clip.startSample + sign * deltaSamples;
       const newStartSec = clip.startSample / SAMPLE_RATE;
       const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
@@ -3336,6 +3511,37 @@ document.addEventListener("keydown", (e) => {
       }
     });
     markDirty();
+    const newStarts = new Map([...oldStarts.keys()].map(clipId => {
+      const track = findTrackByClipId(clipId);
+      const clip = track?.clips.find(c => c.id === clipId);
+      return [clipId, clip?.startSample ?? 0];
+    }));
+    pushUndo({
+      undo() {
+        oldStarts.forEach((oldStart, clipId) => {
+          const track = findTrackByClipId(clipId);
+          const clip = track?.clips.find(c => c.id === clipId);
+          if (!clip) return;
+          clip.startSample = oldStart;
+          const sec = oldStart / SAMPLE_RATE;
+          const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+          if (waveform) { waveform.dataset.startSeconds = sec; waveform.style.left = `${secondsToPixels(sec)}px`; }
+        });
+        markDirty();
+      },
+      redo() {
+        newStarts.forEach((newStart, clipId) => {
+          const track = findTrackByClipId(clipId);
+          const clip = track?.clips.find(c => c.id === clipId);
+          if (!clip) return;
+          clip.startSample = newStart;
+          const sec = newStart / SAMPLE_RATE;
+          const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+          if (waveform) { waveform.dataset.startSeconds = sec; waveform.style.left = `${secondsToPixels(sec)}px`; }
+        });
+        markDirty();
+      },
+    });
   }
 
   if (e.key === " " && !editable) {
@@ -3350,6 +3556,17 @@ document.addEventListener("keydown", (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === "s") {
     e.preventDefault();
     saveProject();
+  }
+
+  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === "z") {
+    e.preventDefault();
+    if (!editable) executeUndo();
+    return;
+  }
+  if ((e.metaKey || e.ctrlKey) && (e.key === "y" || (e.shiftKey && e.key === "z"))) {
+    e.preventDefault();
+    if (!editable) executeRedo();
+    return;
   }
 
   if (e.key === "?" && !editable) {
