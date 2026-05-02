@@ -2,173 +2,67 @@
 <head>
 <meta charset="utf-8">
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
-    font-family: serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    font-family: "Georgia", serif;
+    padding: 2rem;
 }
-#modes_21345 table {
-  border-collapse: collapse;
-  table-layout: fixed;
+
+#modes-content table {
+    border-collapse: collapse;
+    width: 100%;
 }
-#modes_21345 td {
-  /* font-family: "Aptos Narrow", sans-serif; */
-  font-size: 12pt;
-  padding: 6px 8px;
-  vertical-align: middle;
-  white-space: nowrap;
+
+#modes-content td {
+    padding: 0.55em 1em;
+    font-size: 1rem;
+    vertical-align: middle;
+    white-space: nowrap;
+    border-bottom: 1px solid #1e2535;
 }
-/* #xmodes_21345 sup {
-  font-family: "Noto Music Regular", sans-serif;
-} */
+
+#modes-content tr:last-child td {
+    border-bottom: none;
+}
+
+/* Mode name column */
+#modes-content td:first-child {
+    font-style: italic;
+    color: #94a3b8;
+    padding-right: 1.5em;
+    min-width: 8em;
+    border-right: 1px solid #1e2535;
+}
+
+/* Alternating row tint */
+#modes-content tr:nth-child(odd) td {
+    background: #161b27;
+}
+
+/* Highlight on hover */
+#modes-content tr:hover td {
+    background: #1e2a3a;
+    color: #f1f5f9;
+}
+
+#modes-content tr:hover td:first-child {
+    color: #7dd3fc;
+}
+
+#modes-content sup {
+    font-size: 0.65em;
+    vertical-align: super;
+    margin-left: 0.2em;
+    letter-spacing: 0.2em;
+    /* color: #7dd3fc; */
+}
 </style>
 </head>
 <body>
-<div id="modes_21345">
-<!-- <table>
- <tr>
-  <td>Ionian</td>
-  <td>I△<sup>7</sup></td>
-  <td>II‑<sup>7</sup></td>
-  <td>III‑<sup>7</sup></td>
-  <td>IV△<sup>7</sup></td>
-  <td>V<sup>7</sup></td>
-  <td>VI‑<sup>7</sup></td>
-  <td>VII‑<sup>7♭5</sup></td>
- </tr>
- <tr>
-  <td>Dorian</td>
-  <td>I‑<sup>7</sup></td>
-  <td>II‑<sup>7</sup></td>
-  <td>♭III△<sup>7</sup></td>
-  <td>IV<sup>7</sup></td>
-  <td>V‑<sup>7</sup></td>
-  <td>VI‑<sup>7♭5</sup></td>
-  <td>♭VII△<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Phrygian</td>
-  <td>I‑<sup>7</sup></td>
-  <td>♭II△<sup>7</sup></td>
-  <td>♭III<sup>7</sup></td>
-  <td>IV‑<sup>7</sup></td>
-  <td>V‑<sup>7♭5</sup></td>
-  <td>♭VI△<sup>7</sup></td>
-  <td>♭VII‑<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Lydian</td>
-  <td>I△<sup>7</sup></td>
-  <td>II<sup>7</sup></td>
-  <td>III‑<sup>7</sup></td>
-  <td>♯IV‑<sup>7♭5</sup></td>
-  <td>V△<sup>7</sup></td>
-  <td>VI‑<sup>7</sup></td>
-  <td>VII‑<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Mixolydian</td>
-  <td>I<sup>7</sup></td>
-  <td>II‑<sup>7</sup></td>
-  <td>III‑<sup>7♭5</sup></td>
-  <td>I△<sup>7</sup></td>
-  <td>V‑<sup>7</sup></td>
-  <td>VI‑<sup>7</sup></td>
-  <td>♭VII△<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Aeolian</td>
-  <td>I‑<sup>7</sup></td>
-  <td>II‑<sup>7♭5</sup></td>
-  <td>♭III△<sup>7</sup></td>
-  <td>IV‑<sup>7</sup></td>
-  <td>V‑<sup>7</sup></td>
-  <td>♭VI△<sup>7</sup></td>
-  <td>♭VII<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Locrian</td>
-  <td>I‑<sup>7♭5</sup></td>
-  <td>♭II△<sup>7</sup></td>
-  <td>♭III‑<sup>7</sup></td>
-  <td>IV‑<sup>7</sup></td>
-  <td>♭V△<sup>7</sup></td>
-  <td>♭VI<sup>7</sup></td>
-  <td>♭VII‑<sup>7</sup></td>
- </tr>
-</table> -->
-
-<table>
- <tr>
-  <td>Ionian</td>
-  <td>I maj<sup>7</sup></td>
-  <td>II﹣<sup>7</sup></td>
-  <td>III﹣<sup>7</sup></td>
-  <td>IV maj<sup>7</sup></td>
-  <td>V<sup>7</sup></td>
-  <td>VI﹣<sup>7</sup></td>
-  <td>VII﹣<sup>7♭5</sup></td>
- </tr>
- <tr>
-  <td>Dorian</td>
-  <td>I﹣<sup>7</sup></td>
-  <td>II﹣<sup>7</sup></td>
-  <td>♭III maj<sup>7</sup></td>
-  <td>IV<sup>7</sup></td>
-  <td>V﹣<sup>7</sup></td>
-  <td>VI﹣<sup>7♭5</sup></td>
-  <td>♭VII maj<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Phrygian</td>
-  <td>I﹣<sup>7</sup></td>
-  <td>♭II maj<sup>7</sup></td>
-  <td>♭III<sup>7</sup></td>
-  <td>IV﹣<sup>7</sup></td>
-  <td>V﹣<sup>7♭5</sup></td>
-  <td>♭VI maj<sup>7</sup></td>
-  <td>♭VII﹣<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Lydian</td>
-  <td>I maj<sup>7</sup></td>
-  <td>II<sup>7</sup></td>
-  <td>III﹣<sup>7</sup></td>
-  <td>♯IV﹣<sup>7♭5</sup></td>
-  <td>V maj<sup>7</sup></td>
-  <td>VI﹣<sup>7</sup></td>
-  <td>VII﹣<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Mixolydian</td>
-  <td>I<sup>7</sup></td>
-  <td>II﹣<sup>7</sup></td>
-  <td>III﹣<sup>7♭5</sup></td>
-  <td>I maj<sup>7</sup></td>
-  <td>V﹣<sup>7</sup></td>
-  <td>VI﹣<sup>7</sup></td>
-  <td>♭VII maj<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Aeolian</td>
-  <td>I﹣<sup>7</sup></td>
-  <td>II﹣<sup>7♭5</sup></td>
-  <td>♭III maj<sup>7</sup></td>
-  <td>IV﹣<sup>7</sup></td>
-  <td>V﹣<sup>7</sup></td>
-  <td>♭VI maj<sup>7</sup></td>
-  <td>♭VII<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Locrian</td>
-  <td>I﹣<sup>7♭5</sup></td>
-  <td>♭II maj<sup>7</sup></td>
-  <td>♭III﹣<sup>7</sup></td>
-  <td>IV﹣<sup>7</sup></td>
-  <td>♭V maj<sup>7</sup></td>
-  <td>♭VI<sup>7</sup></td>
-  <td>♭VII﹣<sup>7</sup></td>
- </tr>
-</table>
-
+<div id="modes-content">
 <table>
  <tr>
   <td>Ionian</td>
@@ -205,7 +99,7 @@ body {
   <td>I maj<sup>7</sup></td>
   <td>II<sup>7</sup></td>
   <td>iii<sup>7</sup></td>
-  <td>♯iv<sup>7♭5</sup></td>
+  <td>♯ iv<sup>7♭5</sup></td>
   <td>V maj<sup>7</sup></td>
   <td>vi<sup>7</sup></td>
   <td>vii<sup>7</sup></td>
@@ -241,81 +135,6 @@ body {
   <td>♭vii<sup>7</sup></td>
  </tr>
 </table>
-
-
-<!-- <table>
- <tr>
-  <td>Ionian</td>
-  <td>I▵<sup>7</sup></td>
-  <td>II‑<sup>7</sup></td>
-  <td>III‑<sup>7</sup></td>
-  <td>IV▵<sup>7</sup></td>
-  <td>V<sup>7</sup></td>
-  <td>VI‑<sup>7</sup></td>
-  <td>VII‑<sup>7♭5</sup></td>
- </tr>
- <tr>
-  <td>Dorian</td>
-  <td>I‑<sup>7</sup></td>
-  <td>II‑<sup>7</sup></td>
-  <td>♭III▵<sup>7</sup></td>
-  <td>IV<sup>7</sup></td>
-  <td>V‑<sup>7</sup></td>
-  <td>VI‑<sup>7♭5</sup></td>
-  <td>♭VII▵<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Phrygian</td>
-  <td>I‑<sup>7</sup></td>
-  <td>♭II▵<sup>7</sup></td>
-  <td>♭III<sup>7</sup></td>
-  <td>IV‑<sup>7</sup></td>
-  <td>V‑<sup>7♭5</sup></td>
-  <td>♭VI▵<sup>7</sup></td>
-  <td>♭VII‑<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Lydian</td>
-  <td>I▵<sup>7</sup></td>
-  <td>II<sup>7</sup></td>
-  <td>III‑<sup>7</sup></td>
-  <td>♯IV‑<sup>7♭5</sup></td>
-  <td>V▵<sup>7</sup></td>
-  <td>VI‑<sup>7</sup></td>
-  <td>VII‑<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Mixolydian</td>
-  <td>I<sup>7</sup></td>
-  <td>II‑<sup>7</sup></td>
-  <td>III‑<sup>7♭5</sup></td>
-  <td>I▵<sup>7</sup></td>
-  <td>V‑<sup>7</sup></td>
-  <td>VI‑<sup>7</sup></td>
-  <td>♭VII▵<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Aeolian</td>
-  <td>I‑<sup>7</sup></td>
-  <td>II‑<sup>7♭5</sup></td>
-  <td>♭III▵<sup>7</sup></td>
-  <td>IV‑<sup>7</sup></td>
-  <td>V‑<sup>7</sup></td>
-  <td>♭VI▵<sup>7</sup></td>
-  <td>♭VII<sup>7</sup></td>
- </tr>
- <tr>
-  <td>Locrian</td>
-  <td>I‑<sup>7♭5</sup></td>
-  <td>♭II▵<sup>7</sup></td>
-  <td>♭III‑<sup>7</sup></td>
-  <td>IV‑<sup>7</sup></td>
-  <td>♭V▵<sup>7</sup></td>
-  <td>♭VI<sup>7</sup></td>
-  <td>♭VII‑<sup>7</sup></td>
- </tr>
-</table> -->
-
 </div>
 </body>
 </html>
