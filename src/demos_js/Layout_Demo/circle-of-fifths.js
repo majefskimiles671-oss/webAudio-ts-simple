@@ -83,14 +83,28 @@ function renderCircleGrid(targetEl) {
   const ro = new ResizeObserver(() => _rebuildOverlay(el));
   ro.observe(el);
 
-  // Infinite scroll — accumulate wheel delta, one column per 40 px
-  let _wheelAcc = 0;
-  el.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    _wheelAcc += e.deltaX !== 0 ? e.deltaX : e.deltaY;
-    while (_wheelAcc >= 40)  { cofOffset = (cofOffset + 1) % 12;      _updateCofGrid(); _wheelAcc -= 40; }
-    while (_wheelAcc <= -40) { cofOffset = (cofOffset - 1 + 12) % 12; _updateCofGrid(); _wheelAcc += 40; }
-  }, { passive: false });
+  // Click on a Maj cell → step it to the center
+  table.addEventListener('click', (e) => {
+    const td = e.target.closest('td');
+    if (!td || td.parentElement !== table.rows[0]) return;
+    const colIdx = Array.from(td.parentElement.cells).indexOf(td) - 1; // -1 for th
+    if (colIdx < 0) return;
+    _stepToCenter(colIdx - COF_CENTER);
+  });
+}
+
+let _centerInterval = null;
+function _stepToCenter(delta) {
+  if (delta === 0) return;
+  if (_centerInterval) clearInterval(_centerInterval);
+  const dir = Math.sign(delta);
+  let remaining = Math.abs(delta);
+  _centerInterval = setInterval(() => {
+    cofOffset = (cofOffset + dir + 12) % 12;
+    _updateCofGrid(dir);
+    remaining--;
+    if (remaining <= 0) { clearInterval(_centerInterval); _centerInterval = null; }
+  }, 140);
 }
 
 function _rebuildOverlay(el) {
@@ -178,7 +192,13 @@ function _buildOverlaySVG(el) {
   return svg;
 }
 
-function _updateCofGrid() {
+function _updateCofGrid(dir) {
+  const table = document.getElementById('cof-table');
+  if (table) {
+    table.classList.remove('cof-anim-right', 'cof-anim-left');
+    void table.offsetWidth;
+    table.classList.add(dir >= 0 ? 'cof-anim-right' : 'cof-anim-left');
+  }
   const arrays = [MAJOR, MINOR, DIMINISHED];
   document.querySelectorAll('#cof-table tr').forEach((tr, rowIdx) => {
     tr.querySelectorAll('td').forEach((td, colIdx) => {

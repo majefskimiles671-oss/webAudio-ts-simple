@@ -203,6 +203,9 @@ Phase 7 (piano roll): Open a MIDI clip. Add note → Ctrl+Z removes it. Delete n
 
 Purge orphaned buffers: Record a clip, delete it, open Debug menu → "Purge Orphan Audio Buffers" → toast reports count. If you then undo the delete, the clip reappears but audio is silent (expected — the buffer was explicitly freed).
 ---
+Hypothesis
+---
+---
 
 ---
 npm run serve
