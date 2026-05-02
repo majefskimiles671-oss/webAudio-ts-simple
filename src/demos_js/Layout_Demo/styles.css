@@ -2132,7 +2132,6 @@
         body.hide-master #bottom-panel-master { display: none; }
         body.hide-effects #master-effects { display: none; }
         body.hide-notes #bottom-panel-content { display: none; }
-        body.hide-bottom-panel-grid #bottom-panel-grid { display: none; }
 
         /* ----- Accessibility ----- */
 
@@ -2986,10 +2985,10 @@
             padding: 8px 12px;
         }
 
-        #bottom-panel-grid {
+        /* CoF widget — same layout rules whether hosted in bottom panel or Theory Charts */
+        #tc-cof-widget {
             flex: 1;
             padding: 8px 10px;
-            border-left: 1px solid var(--border-subtle);
             overflow: hidden;
             position: relative;
             user-select: none;
@@ -3265,6 +3264,171 @@
 
 /* ----- Chord Diagrams ----- */
 
+        /* ---- Theory Charts panel ---- */
+
+        #theory-charts-dialog {
+            position: fixed;
+            top: 80px;
+            left: 200px;
+            /* width: 640px; */
+            height: 400px;
+            min-width: 600px;
+            min-height: 150px;
+            z-index: 499;
+            display: none;
+            user-select: none;
+            overflow: visible;
+        }
+
+        #theory-charts-dialog.cd-visible {
+            display: block;
+        }
+
+        #theory-charts-body {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .tc-content {
+            flex: 1;
+            min-width: 0;
+            min-height: 0;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Image tab needs padding */
+        .tc-content:has(.tc-img-placeholder),
+        .tc-content:has(.tc-img-display) {
+            overflow: auto;
+            padding: 12px 14px;
+        }
+
+        /* Modes table */
+        .tc-modes-table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 2.3cqw;
+        }
+
+        .tc-content:has(.tc-modes-table) {
+            overflow: auto;
+            padding: 8px 12px;
+            container-type: inline-size;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-primary) transparent;
+            /* fade appears only when content extends below the viewport */
+            background:
+                linear-gradient(var(--bg-panel) 30%, transparent) top    / 100% 20px,
+                linear-gradient(transparent, var(--bg-panel) 70%) bottom / 100% 40px,
+                radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,.2), transparent) bottom / 100% 8px;
+            background-repeat: no-repeat;
+            background-attachment: local, local, scroll;
+        }
+
+        .tc-modes-table td {
+            padding: 0.8em 0.35em;
+            vertical-align: middle;
+            white-space: normal;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        .tc-modes-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .tc-modes-table td.tc-mode-name {
+            font-family: inherit;
+            font-style: italic;
+            color: var(--text-muted);
+            border-right: 1px solid var(--border-subtle);
+            padding-right: 1em;
+        }
+
+        .tc-modes-table tr:nth-child(odd) td {
+            background: var(--bg-surface);
+        }
+
+        .tc-content:has(.tc-modes-table)::-webkit-scrollbar { width: 6px; -webkit-appearance: none; }
+        .tc-content:has(.tc-modes-table)::-webkit-scrollbar-track { background: transparent; }
+        .tc-content:has(.tc-modes-table)::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: 2px; opacity: 0.6; }
+        .tc-content:has(.tc-modes-table)::-webkit-scrollbar-thumb:hover { opacity: 1; }
+
+        .tc-modes-table sup {
+            /* font-size: 0.65em; */
+            vertical-align: super;
+            margin-left: 0.15em;
+            /* color: var(--accent-secondary, var(--accent-primary)); */
+            /* opacity: 0.8; */
+        }
+
+        /* Image tab */
+        .tc-img-placeholder {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 2px dashed var(--border-subtle);
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 13px;
+            transition: border-color 0.15s, color 0.15s;
+            min-height: 120px;
+        }
+
+        .tc-img-placeholder:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-main);
+        }
+
+        .tc-img-placeholder-icon {
+            font-size: 2.5em;
+            line-height: 1;
+        }
+
+        .tc-img-placeholder-hint {
+            font-size: 11px;
+            opacity: 0.5;
+        }
+
+        .tc-img-display {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+            border-radius: 4px;
+        }
+
+        .tc-img-replace-btn {
+            margin-top: 8px;
+            align-self: center;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 3px 10px;
+            cursor: pointer;
+        }
+
+        .tc-img-replace-btn:hover {
+            color: var(--text-main);
+            border-color: var(--accent-primary);
+        }
+
+        /* ---- Chord diagrams panel ---- */
+
         #chord-diagrams-dialog {
             position: fixed;
             top: 210px;
@@ -3361,10 +3525,14 @@
             position: absolute;
             z-index: 10;
         }
-        .cd-resize-n { top: 0; left: 6px; right: 6px; height: 6px; cursor: ns-resize; }
-        .cd-resize-s { bottom: 0; left: 6px; right: 6px; height: 6px; cursor: ns-resize; }
-        .cd-resize-e { right: 0; top: 6px; bottom: 6px; width: 6px; cursor: ew-resize; }
-        .cd-resize-w { left: 0; top: 6px; bottom: 6px; width: 6px; cursor: ew-resize; }
+        .cd-resize-n  { top: 0; left: 6px; right: 6px; height: 6px; cursor: ns-resize; }
+        .cd-resize-s  { bottom: 0; left: 6px; right: 6px; height: 6px; cursor: ns-resize; }
+        .cd-resize-e  { right: 0; top: 6px; bottom: 6px; width: 6px; cursor: ew-resize; }
+        .cd-resize-w  { left: 0; top: 6px; bottom: 6px; width: 6px; cursor: ew-resize; }
+        .cd-resize-ne { top: 0; right: 0; width: 6px; height: 6px; cursor: ne-resize; }
+        .cd-resize-nw { top: 0; left: 0;  width: 6px; height: 6px; cursor: nw-resize; }
+        .cd-resize-se { bottom: 0; right: 0; width: 6px; height: 6px; cursor: se-resize; }
+        .cd-resize-sw { bottom: 0; left: 0;  width: 6px; height: 6px; cursor: sw-resize; }
 
         .cd-dialog-titlebar {
             display: flex;

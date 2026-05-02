@@ -362,7 +362,8 @@ function serializeProject() {
         notes:           clip.notes?.map(n => ({ pitch: n.pitch, startSamples: n.startSamples, durationSamples: n.durationSamples, velocity: n.velocity })),
       })),
     })),
-    chordPanel: (typeof cdGetPanelState === "function") ? cdGetPanelState() : undefined,
+    chordPanel:  (typeof cdGetPanelState === "function") ? cdGetPanelState()  : undefined,
+    theoryPanel: (typeof tcGetPanelState === "function") ? tcGetPanelState()  : undefined,
     tuning: (typeof currentTuning !== "undefined") ? [...currentTuning.openMidiNotes] : [64, 59, 55, 50, 45, 40],
     chords: (typeof chords !== "undefined" ? chords : []).map(c => ({
       id:       c.id,
@@ -695,6 +696,7 @@ function deserializeProject(data) {
       });
     }
     if (typeof cdSetPanelState === "function") cdSetPanelState(data.chordPanel);
+    if (typeof tcSetPanelState === "function") tcSetPanelState(data.theoryPanel);
     if (typeof cdRenderDialog === "function") cdRenderDialog();
   }
 

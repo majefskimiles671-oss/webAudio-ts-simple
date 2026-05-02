@@ -351,7 +351,7 @@ const viewState = {
   zoom:                 false,
   solo:                 false,
   chordDiagrams:        false,
-  bottomPanelGrid:      false,
+  theoryCharts:         false,
   markerLookaheadBeats: 1,
   hue:                  0,
   saturation:           100,
@@ -370,7 +370,6 @@ function applyViewState() {
     ["master",          "hide-master",           "toggle-master",           "Hide Master Controls",  "Show Master Controls"],
     ["effects",         "hide-effects",          "toggle-effects",          "Hide Effects",          "Show Effects"],
     ["notes",           "hide-notes",            "toggle-notes",            "Hide Marker Notes",     "Show Marker Notes"],
-    ["bottomPanelGrid", "hide-bottom-panel-grid", "toggle-bottom-panel-grid", "Hide Circle of Fifths", "Show Circle of Fifths"],
   ];
   toggles.forEach(([key, cls, menuId, hideLabel, showLabel]) => {
     document.body.classList.toggle(cls, !viewState[key]);
@@ -382,6 +381,9 @@ function applyViewState() {
 
   const cdDialog = document.getElementById("chord-diagrams-dialog");
   if (cdDialog) cdDialog.classList.toggle("cd-visible", viewState.chordDiagrams);
+
+  const tcDialog = document.getElementById("theory-charts-dialog");
+  if (tcDialog) tcDialog.classList.toggle("cd-visible", viewState.theoryCharts);
 
   const filters = [];
   if (viewState.hue !== 0) {
@@ -3651,6 +3653,11 @@ document.addEventListener("keydown", (e) => {
     applyViewState();
   }
 
+  if (e.key === "v" && !editable) {
+    viewState.theoryCharts = !viewState.theoryCharts;
+    applyViewState();
+  }
+
   if ((e.key === "4" || e.key === "6") && !editable) {
     const sel = document.getElementById("midi-keys-octave");
     const cur = parseInt(sel.value, 10);
@@ -4316,10 +4323,10 @@ makeViewToggle("toggle-notes",           "notes");
 const _viewSettingsOverlay = document.getElementById("view-settings-overlay");
 
 const VS_PRESETS = {
-  minimal:  { scenes: false, markerTransport: false, tempo: true,  metronome: false, zoom: false, solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false, bottomPanelGrid: true  },
-  simple:   { scenes: false, markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false, bottomPanelGrid: true  },
-  standard: { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: false, bottomPanelGrid: true  },
-  compose:  { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: true,  bottomPanelGrid: true  },
+  minimal:  { scenes: false, markerTransport: false, tempo: true,  metronome: false, zoom: false, solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false, theoryCharts: false },
+  simple:   { scenes: false, markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false, theoryCharts: false },
+  standard: { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: false, theoryCharts: false },
+  compose:  { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: true,  theoryCharts: true  },
 };
 
 function syncViewSettingsCheckboxes() {
@@ -5524,7 +5531,7 @@ renderTimeSignature();
 renderMetronomeGrid();
 renderMarkerTransport();
 renderBottomPanel();
-renderCircleGrid();
+tcInit();
 
 // ----- Auto-Open Last Project
 const _autoOpenEl = document.getElementById("toggle-auto-open");

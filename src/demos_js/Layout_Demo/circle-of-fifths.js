@@ -49,8 +49,8 @@ const COF_CENTER = 5;
 
 let cofOffset = 0;
 
-function renderCircleGrid() {
-  const el = document.getElementById('bottom-panel-grid');
+function renderCircleGrid(targetEl) {
+  const el = targetEl || document.getElementById('bottom-panel-grid');
   if (!el) return;
 
   const rows = [
