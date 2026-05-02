@@ -911,13 +911,15 @@ async function saveProject() {
     for (const track of tracks) {
       for (const clip of track.clips) {
         const filename  = `clip-${clip.id}.wav`;
+        const hasAudio  = audioEngineHasBuffer(clip.id);
         const wavHandle = await dataHandle.getFileHandle(filename, { create: true });
         const wavWriter = await wavHandle.createWritable();
-        const payload   = audioEngineHasBuffer(clip.id)
+        const payload   = hasAudio
           ? audioEngineEncodeWav(audioEngineGetBuffer(clip.id))
           : buildPlaceholderWav();
         await wavWriter.write(payload);
         await wavWriter.close();
+        log(`[save] clip ${clip.id} → ${filename} (${hasAudio ? "audio" : "placeholder"}, track "${track.name}")`);
       }
     }
 
@@ -928,6 +930,7 @@ async function saveProject() {
       const m = entry.name.match(/^clip-(.+)\.wav$/);
       if (m && !liveClipIds.has(m[1])) {
         await dataHandle.removeEntry(entry.name);
+        log(`[delete] orphaned clip file removed: ${entry.name}`);
       }
     }
 
@@ -983,12 +986,16 @@ async function reconnectProjectFolder() {
           const wavHandle   = await dataHandle.getFileHandle(`clip-${clip.id}.wav`);
           const wavFile     = await wavHandle.getFile();
           const arrayBuffer = await wavFile.arrayBuffer();
-          if (arrayBuffer.byteLength <= 44) continue;
+          if (arrayBuffer.byteLength <= 44) {
+            log(`[load] clip ${clip.id} — placeholder WAV, skipping`);
+            continue;
+          }
           const audioBuffer = await audioEngineDecodeWav(arrayBuffer);
           audioEngineStoreBuffer(clip.id, audioBuffer);
           updateClipWaveform(clip.id, audioBuffer);
+          log(`[load] clip ${clip.id} — ${(arrayBuffer.byteLength / 1024).toFixed(1)} KB, ${audioBuffer.duration.toFixed(2)}s`);
         } catch {
-          // file missing or undecodable — clip stays silent
+          log(`[load] clip ${clip.id} — file missing or undecodable, clip stays silent`);
         }
       }
     }
