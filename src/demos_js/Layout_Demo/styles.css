@@ -2992,6 +2992,26 @@
             overflow: hidden;
             position: relative;
             user-select: none;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 3D convex overlay — darkens edges, light source from top-center */
+        #tc-cof-widget::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            background:
+                radial-gradient(ellipse 70% 120% at 50% 50%,
+                    transparent 25%,
+                    rgba(0,0,0,0.55) 100%),
+                linear-gradient(to bottom,
+                    rgba(255,255,255,0.04) 0%,
+                    transparent 50%);
         }
 
         .cof-grid {
@@ -3028,6 +3048,7 @@
             height: 100%;
             pointer-events: none;
             overflow: visible;
+            z-index: 2;
         }
 
         .panel-marker-grid {
@@ -3314,7 +3335,7 @@
         .tc-modes-table {
             border-collapse: collapse;
             width: 100%;
-            font-size: 2.3cqw;
+            font-size: 2.0cqw;
         }
 
         .tc-content:has(.tc-modes-table) {
@@ -3335,6 +3356,7 @@
         .tc-modes-table td {
             padding: 0.8em 0.35em;
             vertical-align: middle;
+            text-align: center;
             white-space: normal;
             border-bottom: 1px solid var(--border-subtle);
             color: var(--text-main);
@@ -3348,6 +3370,7 @@
         .tc-modes-table td.tc-mode-name {
             font-family: inherit;
             font-style: italic;
+            text-align: left;
             color: var(--text-muted);
             border-right: 1px solid var(--border-subtle);
             padding-right: 1em;
