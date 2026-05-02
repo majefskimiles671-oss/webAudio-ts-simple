@@ -351,6 +351,7 @@ const viewState = {
   zoom:                 false,
   solo:                 false,
   chordDiagrams:        false,
+  bottomPanelGrid:      false,
   markerLookaheadBeats: 1,
   hue:                  0,
   saturation:           100,
@@ -369,6 +370,7 @@ function applyViewState() {
     ["master",          "hide-master",           "toggle-master",           "Hide Master Controls",  "Show Master Controls"],
     ["effects",         "hide-effects",          "toggle-effects",          "Hide Effects",          "Show Effects"],
     ["notes",           "hide-notes",            "toggle-notes",            "Hide Marker Notes",     "Show Marker Notes"],
+    ["bottomPanelGrid", "hide-bottom-panel-grid", "toggle-bottom-panel-grid", "Hide Circle of Fifths", "Show Circle of Fifths"],
   ];
   toggles.forEach(([key, cls, menuId, hideLabel, showLabel]) => {
     document.body.classList.toggle(cls, !viewState[key]);
@@ -4314,10 +4316,10 @@ makeViewToggle("toggle-notes",           "notes");
 const _viewSettingsOverlay = document.getElementById("view-settings-overlay");
 
 const VS_PRESETS = {
-  minimal:  { scenes: false, markerTransport: false, tempo: true,  metronome: false, zoom: false, solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false },
-  simple:   { scenes: false, markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false },
-  standard: { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: false },
-  compose:  { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: true  },
+  minimal:  { scenes: false, markerTransport: false, tempo: true,  metronome: false, zoom: false, solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false, bottomPanelGrid: true  },
+  simple:   { scenes: false, markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true, master: true, effects: false, notes: false, chordDiagrams: false, bottomPanelGrid: true  },
+  standard: { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: false, bottomPanelGrid: true  },
+  compose:  { scenes: true,  markerTransport: true,  tempo: true,  metronome: true,  zoom: true,  solo: true,  bottomPanel: true,  master: true,  effects: true,  notes: true,  chordDiagrams: true,  bottomPanelGrid: true  },
 };
 
 function syncViewSettingsCheckboxes() {
@@ -5522,6 +5524,7 @@ renderTimeSignature();
 renderMetronomeGrid();
 renderMarkerTransport();
 renderBottomPanel();
+renderCircleGrid();
 
 // ----- Auto-Open Last Project
 const _autoOpenEl = document.getElementById("toggle-auto-open");

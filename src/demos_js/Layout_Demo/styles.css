@@ -2132,6 +2132,7 @@
         body.hide-master #bottom-panel-master { display: none; }
         body.hide-effects #master-effects { display: none; }
         body.hide-notes #bottom-panel-content { display: none; }
+        body.hide-bottom-panel-grid #bottom-panel-grid { display: none; }
 
         /* ----- Accessibility ----- */
 
@@ -2983,6 +2984,51 @@
             flex: 1;
             overflow: auto;
             padding: 8px 12px;
+        }
+
+        #bottom-panel-grid {
+            flex: 1;
+            padding: 8px 10px;
+            border-left: 1px solid var(--border-subtle);
+            overflow: hidden;
+            position: relative;
+            user-select: none;
+        }
+
+        .cof-grid {
+            border-collapse: collapse;
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .cof-grid th, .cof-grid td {
+            /* font-size is set dynamically by JS; all other sizing is em-relative
+               so that row height scales proportionately with width */
+            line-height: 1.4em;
+            padding: 0.55em 0;
+            white-space: nowrap;
+        }
+
+        .cof-grid th {
+            font-weight: bold;
+            color: var(--accent-primary, #888);
+            text-align: right;
+            padding-right: 0.5em;
+        }
+
+        .cof-grid td {
+            text-align: center;
+        }
+
+        /* Stationary SVG overlay — pixel geometry set in JS must match cell sizes above */
+        #cof-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: visible;
         }
 
         .panel-marker-grid {

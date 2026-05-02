@@ -1,0 +1,24 @@
+Ionian	I△7					
+Dorian						
+Phrygian						
+Lydian						
+Mixolydian						
+Aeolian						
+Locrian						
+						
+△	♯	A7				
+‒	♭					
+°						
+I	II	III	IV	V	VI	VII
+i	ii	iii	iv	v	vi	vii
+A	B	C	D	E	F	G
+a	b	c	d	e	f	g
+
+
+Ionian	I△7	II‑7	III‑7	IV△7	V7	VI‑7	VII‑7♭5
+Dorian	I‑7	II‑7	♭III△7	IV7	V‑7	VI‑7♭5	♭VII△7
+Phrygian	I‑7	♭II△7	♭III7	IV‑7	V‑7♭5	♭VI△7	♭VII‑7
+Lydian	I△7	II7	III‑7	♯IV‑7♭5	V△7	VI‑7	VII‑7
+Mixolydian	I7	II‑7	III‑7♭5	I△7	V‑7	VI‑7	♭VII△7
+Aeolian	I‑7	II‑7♭5	♭III△7	IV‑7	V‑7	♭VI△7	♭VII7
+Locrian	I‑7♭5	♭II△7	♭III‑7	IV‑7	♭V△7	♭VI7	♭VII‑7
