@@ -747,7 +747,12 @@ function cdInit() {
   dialog.style.left = (window.innerWidth - dialog.offsetWidth - 50) + "px";
   dialog.style.setProperty("--cd-zoom", _cdZoom);
   window.addEventListener("resize", () => {
-    dialog.style.left = (window.innerWidth - dialog.offsetWidth - 50) + "px";
+    const w = dialog.offsetWidth  || parseInt(dialog.style.width)  || 320;
+    const h = dialog.offsetHeight || parseInt(dialog.style.height) || 400;
+    const left = Math.min(Math.max(0, parseInt(dialog.style.left) || 0), window.innerWidth  - w);
+    const top  = Math.min(Math.max(0, parseInt(dialog.style.top)  || 0), window.innerHeight - h);
+    dialog.style.left = left + "px";
+    dialog.style.top  = top  + "px";
   });
   cdInitDrag();
   cdInitResize();
