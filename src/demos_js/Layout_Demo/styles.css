@@ -3028,22 +3028,10 @@
                     transparent 50%); */
         }
 
-        .cof-grid th, .cof-grid td {
-            /* font-size is set dynamically by JS; all other sizing is em-relative
-               so that row height scales proportionately with width */
+        .cof-grid td {
             line-height: 1.4em;
             padding: 0.55em 0;
             white-space: nowrap;
-        }
-
-        .cof-grid th {
-            font-weight: bold;
-            color: var(--accent-primary, #888);
-            text-align: right;
-            padding-right: 0.5em;
-        }
-
-        .cof-grid td {
             text-align: center;
         }
 

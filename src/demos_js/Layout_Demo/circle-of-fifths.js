@@ -63,11 +63,8 @@ function renderCircleGrid(targetEl) {
   table.className = 'cof-grid';
   table.id = 'cof-table';
 
-  rows.forEach(({ label, keys }) => {
+  rows.forEach(({ keys }) => {
     const tr = document.createElement('tr');
-    const th = document.createElement('th');
-    th.textContent = label;
-    tr.appendChild(th);
     for (let i = 0; i < 12; i++) {
       const td = document.createElement('td');
       td.textContent = keys[(cofOffset + i) % 12];
@@ -87,8 +84,7 @@ function renderCircleGrid(targetEl) {
   table.addEventListener('click', (e) => {
     const td = e.target.closest('td');
     if (!td || td.parentElement !== table.rows[0]) return;
-    const colIdx = Array.from(td.parentElement.cells).indexOf(td) - 1; // -1 for th
-    if (colIdx < 0) return;
+    const colIdx = Array.from(td.parentElement.cells).indexOf(td);
     _stepToCenter(colIdx - COF_CENTER);
   });
 }
@@ -125,6 +121,7 @@ function _stepToCenter(rawDelta) {
   // Append or prepend the incoming cells
   for (let r = 0; r < table.rows.length; r++) {
     const tr = table.rows[r];
+    const firstCell = tr.cells[0]; // capture before loop mutates the live collection
     for (let i = 0; i < steps; i++) {
       const td = document.createElement('td');
       if (dir > 0) {
@@ -132,7 +129,7 @@ function _stepToCenter(rawDelta) {
         tr.appendChild(td);
       } else {
         td.textContent = arrays[r][(cofOffset - steps + i + 12) % 12];
-        tr.insertBefore(td, tr.cells[1]);
+        tr.insertBefore(td, firstCell);
       }
     }
   }
@@ -153,7 +150,7 @@ function _stepToCenter(rawDelta) {
       const tr = table.rows[r];
       for (let i = 0; i < steps; i++) {
         if (dir > 0) tr.removeChild(tr.lastElementChild);
-        else         tr.removeChild(tr.cells[1]);
+        else         tr.removeChild(tr.cells[0]);
       }
     }
 
@@ -179,7 +176,7 @@ function _rebuildOverlay(el) {
 
   // Scale font-size so cells grow/shrink with available width.
   // 13 equal columns (1 th + 12 td); padding 10px each side.
-  const colWidth = (el.clientWidth - 20) / 13;
+  const colWidth = (el.clientWidth - 20) / 12;
   const fontSize = Math.max(10, Math.min(22, colWidth / 3));
   table.style.fontSize = fontSize + 'px';
 
@@ -202,7 +199,7 @@ function _buildOverlaySVG(el) {
   // Measure a cell's position relative to the grid container
   const measure = (rowIdx, tdOffset) => {
     // cells[0] is the th; td index = 1 + COF_CENTER + tdOffset
-    const cellEl = table.rows[rowIdx].cells[1 + COF_CENTER + tdOffset];
+    const cellEl = table.rows[rowIdx].cells[COF_CENTER + tdOffset];
     if (!cellEl) return null;
     const r = cellEl.getBoundingClientRect();
     return { l: r.left - cr.left, t: r.top - cr.top, r: r.right - cr.left, b: r.bottom - cr.top };
