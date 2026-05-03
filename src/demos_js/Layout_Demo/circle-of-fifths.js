@@ -93,18 +93,84 @@ function renderCircleGrid(targetEl) {
   });
 }
 
-let _centerInterval = null;
-function _stepToCenter(delta) {
+let _centerAnimating = false;
+
+function _stepToCenter(rawDelta) {
+  // Take the shortest path around the circle
+  let delta = rawDelta;
+  if (delta > 6) delta -= 12;
+  else if (delta < -6) delta += 12;
   if (delta === 0) return;
-  if (_centerInterval) clearInterval(_centerInterval);
-  const dir = Math.sign(delta);
-  let remaining = Math.abs(delta);
-  _centerInterval = setInterval(() => {
-    cofOffset = (cofOffset + dir + 12) % 12;
-    _updateCofGrid(dir);
-    remaining--;
-    if (remaining <= 0) { clearInterval(_centerInterval); _centerInterval = null; }
-  }, 140);
+  if (_centerAnimating) return;
+
+  const table = document.getElementById('cof-table');
+  if (!table || !table.rows.length) return;
+
+  table.classList.remove('cof-anim-right', 'cof-anim-left');
+
+  const arrays  = [MAJOR, MINOR, DIMINISHED];
+  const steps   = Math.abs(delta);
+  const dir     = Math.sign(delta);
+  const tableW  = table.getBoundingClientRect().width;
+  const cellW   = tableW / 12;
+  const totalPx = steps * cellW;
+  const dur     = Math.min(700, 200 + steps * 70);
+
+  _centerAnimating = true;
+
+  // Fix layout so adding extra cells doesn't compress existing ones
+  table.style.tableLayout = 'fixed';
+  table.style.width = ((12 + steps) * cellW) + 'px';
+
+  // Append or prepend the incoming cells
+  for (let r = 0; r < table.rows.length; r++) {
+    const tr = table.rows[r];
+    for (let i = 0; i < steps; i++) {
+      const td = document.createElement('td');
+      if (dir > 0) {
+        td.textContent = arrays[r][(cofOffset + 12 + i) % 12];
+        tr.appendChild(td);
+      } else {
+        td.textContent = arrays[r][(cofOffset - steps + i + 12) % 12];
+        tr.insertBefore(td, tr.cells[1]);
+      }
+    }
+  }
+
+  // Start position (no transition) then animate to final
+  table.style.transition = 'none';
+  table.style.transform = dir < 0 ? `translateX(-${totalPx}px)` : 'translateX(0)';
+  table.getBoundingClientRect(); // force reflow
+
+  table.style.transition = `transform ${dur}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+  table.style.transform   = dir > 0 ? `translateX(-${totalPx}px)` : 'translateX(0)';
+
+  table.addEventListener('transitionend', () => {
+    cofOffset = (cofOffset + delta + 12) % 12;
+
+    // Remove the extra cells
+    for (let r = 0; r < table.rows.length; r++) {
+      const tr = table.rows[r];
+      for (let i = 0; i < steps; i++) {
+        if (dir > 0) tr.removeChild(tr.lastElementChild);
+        else         tr.removeChild(tr.cells[1]);
+      }
+    }
+
+    // Reset layout and redraw text at new offset
+    table.style.transition  = 'none';
+    table.style.transform   = '';
+    table.style.tableLayout = '';
+    table.style.width       = '';
+
+    document.querySelectorAll('#cof-table tr').forEach((tr, rowIdx) => {
+      tr.querySelectorAll('td').forEach((td, colIdx) => {
+        td.textContent = arrays[rowIdx][(cofOffset + colIdx) % 12];
+      });
+    });
+
+    _centerAnimating = false;
+  }, { once: true });
 }
 
 function _rebuildOverlay(el) {
