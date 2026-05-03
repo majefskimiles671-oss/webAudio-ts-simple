@@ -383,7 +383,8 @@ function applyViewState() {
   if (cdDialog) cdDialog.classList.toggle("cd-visible", viewState.chordDiagrams);
 
   const tcDialog = document.getElementById("theory-charts-dialog");
-  if (tcDialog) tcDialog.classList.toggle("cd-visible", viewState.theoryCharts);
+  if (tcDialog) tcTogglePanel();
+  // if (tcDialog) tcDialog.classList.toggle("cd-visible", viewState.theoryCharts);
 
   const filters = [];
   if (viewState.hue !== 0) {

@@ -62,10 +62,13 @@ function tcSetPanelState(state) {
   if (state.activeTab != null) tcActiveTab = state.activeTab;
   if (state.visible) dialog.classList.add('cd-visible');
   tcRenderDialog();
+  log("tcSetPanelState");
 }
 
 function tcTogglePanel() {
   tcGetDialog().classList.toggle('cd-visible');
+  tcRenderDialog();
+  log("tcTogglePanel");
 }
 
 
@@ -79,7 +82,10 @@ function tcRenderDialog() {
   content.className = 'tc-content';
 
   if (activeTab.type === 'cof') {
-    if (_tcCofWidget) content.appendChild(_tcCofWidget);
+    if (_tcCofWidget) {
+      content.appendChild(_tcCofWidget);
+      setTimeout(() => _rebuildOverlay(_tcCofWidget), 500);
+    }
   } else if (activeTab.type === 'modes') {
     _tcRenderModes(content);
   } else if (activeTab.type === 'image') {
@@ -88,6 +94,7 @@ function tcRenderDialog() {
 
   body.appendChild(content);
   _tcRenderTabStrip();
+  log("tcRenderDialog");
 }
 
 function _tcRenderTabStrip() {
@@ -174,6 +181,7 @@ function _tcRenderModes(el) {
   });
 
   el.appendChild(table);
+  log("_tcRenderModes");
 }
 
 function _tcRenderImage(el, tab) {
@@ -321,8 +329,6 @@ function tcInit() {
   dialog.appendChild(inner);
   document.body.appendChild(dialog);
 
-  dialog.style.top  = '80px';
-  dialog.style.left = Math.max(20, (window.innerWidth - 640) / 2) + 'px';
 
   // Create persistent CoF widget — ResizeObserver + wheel handler live here forever
   _tcCofWidget = document.createElement('div');
@@ -332,4 +338,5 @@ function tcInit() {
   _tcInitDrag();
   _tcInitResize();
   tcRenderDialog();
+  log("tcInit");
 }
