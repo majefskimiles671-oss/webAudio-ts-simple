@@ -96,10 +96,11 @@ async function midiEnginePlay(tracks, playheadSeconds, startT = null) {
       for (const n of (clip.notes ?? [])) {
         const evAbsTime = clipStart + n.startSamples / SAMPLE_RATE;
         if (evAbsTime < playheadSeconds || evAbsTime >= clipEnd) continue;
+        const maxDurSec = clipEnd - evAbsTime;
         _pendingNoteQueue.push({
           audioTime:   now + (evAbsTime - playheadSeconds),
           pitch:       n.pitch,
-          durationSec: n.durationSamples / SAMPLE_RATE,
+          durationSec: Math.min(n.durationSamples / SAMPLE_RATE, maxDurSec),
           velocity:    n.velocity ?? 100,
           instrument:  isGm ? 'gm' : isSfz ? 'sfz' : (track.instrument ?? 'pluck'),
           program,
