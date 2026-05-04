@@ -33,12 +33,40 @@ function sfGetPercussionName(pitch) {
   return srcPitch !== null ? (noteMap.get(srcPitch)?.name ?? null) : null;
 }
 
+function sfLogInfo(data, label, arrayBuffer) {
+  const melodic      = [...data.keys()].filter(p => p !== SF_PERCUSSION).sort((a, b) => a - b);
+  const percMap      = data.get(SF_PERCUSSION);
+  const percNotes    = percMap ? percMap.size : 0;
+  const totalSamples = [...data.values()].reduce((sum, m) => sum + m.size, 0);
+  const tuning       = arrayBuffer ? sf2AnalyzeTuning(arrayBuffer) : null;
+
+  console.group(`[sf2] ${label}`);
+  console.log(`Programs (melodic): ${melodic.length}  |  Percussion pitches: ${percNotes}  |  Total samples: ${totalSamples}`);
+  if (tuning) {
+    const { label: tLabel, totalCents, pitchCorrectionCents, fineTuneCents, coarseTuneSemitones } = tuning;
+    const details = [
+      `pitchCorrection: ${pitchCorrectionCents > 0 ? '+' : ''}${pitchCorrectionCents}¢`,
+      fineTuneCents       !== 0 ? `fineTune: ${fineTuneCents > 0 ? '+' : ''}${fineTuneCents}¢`                         : null,
+      coarseTuneSemitones !== 0 ? `coarseTune: ${coarseTuneSemitones > 0 ? '+' : ''}${coarseTuneSemitones} st (not in estimate)` : null,
+    ].filter(Boolean).join('  |  ');
+    console.log(`Tuning: ${tLabel}  (${totalCents > 0 ? '+' : ''}${totalCents.toFixed(1)}¢ total)  —  ${details}`);
+  }
+  console.log(`Melodic programs:`, melodic);
+  if (percMap?.size) {
+    const percNames = [...percMap.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([pitch, e]) => `${pitch}:${e.name ?? '?'}`);
+    console.log(`Percussion notes:`, percNames.join('  '));
+  }
+  console.groupEnd();
+}
+
 async function sfLoadDefault(arrayBuffer, name) {
   const data = await sf2Parse(arrayBuffer, getAudioContext());
   _sf2DefaultData = data;
   _sf2DefaultName = name ?? null;
   if (!_sf2GlobalData && !_sf2ProjectData) await _sfPopulateCache(data);
-  // log(`[soundfont] ${name ?? 'default'} loaded: ${data.size} programs`);
+  sfLogInfo(data, name ?? 'default', arrayBuffer);
 }
 
 async function sfLoadGlobal(file) {
@@ -47,7 +75,7 @@ async function sfLoadGlobal(file) {
   _sf2GlobalData = data;
   _sf2GlobalName = file.name;
   if (!_sf2ProjectData) await _sfPopulateCache(data);
-  // log(`[soundfont] global SF2 loaded: ${file.name}, ${data.size} programs`);
+  sfLogInfo(data, `global: ${file.name}`, ab);
 }
 
 async function sfLoadFromFile(file, nameOverride) {
@@ -57,7 +85,7 @@ async function sfLoadFromFile(file, nameOverride) {
   _sf2ProjectName = nameOverride ?? file.name;
   _sf2ProjectData = data;
   await _sfPopulateCache(data);
-  // log(`[soundfont] project SF2 loaded: ${_sf2ProjectName}, ${data.size} programs`);
+  sfLogInfo(data, `project: ${_sf2ProjectName}`, ab);
 }
 
 function sfClearProjectFont() {

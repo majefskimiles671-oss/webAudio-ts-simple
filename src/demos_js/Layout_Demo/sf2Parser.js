@@ -183,3 +183,81 @@ async function sf2Parse(arrayBuffer, audioCtx) {
 
   return result;
 }
+
+// Analyzes tuning of an SF2 file without fully decoding audio.
+// Returns { pitchCorrectionCents, fineTuneCents, coarseTuneSemitones, totalCents, estimatedA4Hz, label }
+function sf2AnalyzeTuning(arrayBuffer) {
+  const dv = new DataView(arrayBuffer);
+  const u8 = new Uint8Array(arrayBuffer);
+  const cc4 = o => String.fromCharCode(u8[o], u8[o+1], u8[o+2], u8[o+3]);
+
+  function walkChunks(start, end) {
+    const m = {};
+    for (let p = start; p + 8 <= end;) {
+      const id = cc4(p), size = dv.getUint32(p + 4, true);
+      if (id === 'LIST') m['LIST:' + cc4(p + 8)] = { start: p + 12, end: p + 8 + size };
+      else m[id] = { start: p + 8, end: p + 8 + size };
+      p += 8 + size + (size & 1);
+    }
+    return m;
+  }
+
+  if (cc4(0) !== 'RIFF' || cc4(8) !== 'sfbk') return null;
+  const top  = walkChunks(12, 8 + dv.getUint32(4, true));
+  const pdta = top['LIST:pdta'] ? walkChunks(top['LIST:pdta'].start, top['LIST:pdta'].end) : {};
+  if (!pdta.shdr || !pdta.pgen || !pdta.igen) return null;
+
+  function records(chunk, recSize, parse) {
+    const a = [];
+    for (let o = chunk.start; o + recSize <= chunk.end; o += recSize) a.push(parse(o));
+    return a;
+  }
+
+  const shdr = records(pdta.shdr, 46, o => ({
+    pitchCorrection: dv.getInt8(o + 41),
+    sampleType:      dv.getUint16(o + 44, true),
+  }));
+
+  // median helper
+  const median = arr => {
+    if (!arr.length) return 0;
+    const s = [...arr].sort((a, b) => a - b);
+    const m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  };
+
+  const corrections = shdr
+    .filter(h => !(h.sampleType & 0x8000))   // skip ROM samples
+    .map(h => h.pitchCorrection);
+  const medPitchCorrection = median(corrections);
+
+  // Scan preset and instrument generators for fineTune (52) and coarseTune (51)
+  const GEN_FINE_TUNE   = 52;
+  const GEN_COARSE_TUNE = 51;
+  const pgen = records(pdta.pgen, 4, o => ({ oper: dv.getUint16(o, true), amount: dv.getInt16(o + 2, true) }));
+  const igen = records(pdta.igen, 4, o => ({ oper: dv.getUint16(o, true), amount: dv.getInt16(o + 2, true) }));
+  const allGens = [...pgen, ...igen];
+  const fineTunes   = allGens.filter(g => g.oper === GEN_FINE_TUNE).map(g => g.amount);
+  const coarseTunes = allGens.filter(g => g.oper === GEN_COARSE_TUNE).map(g => g.amount);
+
+  const medFineTune   = median(fineTunes);
+  const medCoarseTune = median(coarseTunes);
+  // coarseTune is NOT included — it compensates for sample recording pitch, not global A4 retuning
+  const totalCents    = medPitchCorrection + medFineTune;
+  const estimatedA4Hz = 440 * Math.pow(2, totalCents / 1200);
+
+  // Snap to known tuning standards (within ±5 cents)
+  const known = [
+    { hz: 415.305, label: '415 Hz (baroque)' },
+    { hz: 432,     label: '432 Hz'            },
+    { hz: 440,     label: '440 Hz (standard)' },
+    { hz: 442,     label: '442 Hz'            },
+    { hz: 443,     label: '443 Hz'            },
+    { hz: 444,     label: '444 Hz'            },
+  ];
+  const SNAP_CENTS = 5;
+  const match = known.find(k => Math.abs(1200 * Math.log2(estimatedA4Hz / k.hz)) <= SNAP_CENTS);
+  const label = match ? match.label : `~${estimatedA4Hz.toFixed(1)} Hz`;
+
+  return { pitchCorrectionCents: medPitchCorrection, fineTuneCents: medFineTune, coarseTuneSemitones: medCoarseTune, totalCents, estimatedA4Hz, label };
+}

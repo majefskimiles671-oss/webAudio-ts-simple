@@ -205,6 +205,10 @@ Purge orphaned buffers: Record a clip, delete it, open Debug menu → "Purge Orp
 ---
 Hypothesis
 ---
+Logic of count in is broken for play vs rec
+Need to add # and flats to midi keys inline
+midi notes that extnd beyond the end of the clip don't sound(good) but appear in the main track (bad)
+When there's a note on top of another note in the midi editor velocity lane, only one note is accessible.  The selected note should be the accessible one(can do up and down, but still some are not visible so you don't know what the velocity is).
 ---
 
 ---

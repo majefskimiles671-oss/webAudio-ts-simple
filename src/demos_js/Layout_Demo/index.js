@@ -3625,7 +3625,7 @@ document.addEventListener("keydown", (e) => {
 
   if (e.key === "r" && !editable) recordBtn.click();
 
-  if ((e.key === "." || e.key === "Home") && !editable) returnToBeginning();
+  if ((e.key === "." || e.key === "Home" || e.key === "b") && !editable) returnToBeginning();
 
   if ((e.metaKey || e.ctrlKey) && e.key === "s") {
     e.preventDefault();

@@ -139,7 +139,7 @@ function _scheduleBeat(when) {
   src.connect(_metGain);
   src.start(t);
   const aheadMs = ((t - ctx.currentTime) * 1000).toFixed(1);
-  log(`[metronome] beat scheduled: when=${t.toFixed(3)} currentTime=${ctx.currentTime.toFixed(3)} ahead=${aheadMs}ms beat=${_beatIndex}`);
+  // log(`[metronome] beat scheduled: when=${t.toFixed(3)} currentTime=${ctx.currentTime.toFixed(3)} ahead=${aheadMs}ms beat=${_beatIndex}`);
 }
 
 function _schedule() {
