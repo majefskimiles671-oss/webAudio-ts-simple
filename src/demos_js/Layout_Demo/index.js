@@ -3938,8 +3938,9 @@ async function onTransportStart() {
   await audioEnginePlay(
     tracks.map(t => ({
       id: t.id,
+      pan: t.pan / 100,
       deviceId: t.outputDeviceId,
-      clips: t.clips.map(clip => ({ ...clip, gain: t.gain / 100, pan: t.pan / 100 })),
+      clips: t.clips.map(clip => ({ ...clip, gain: t.gain / 100 })),
     })),
     playheadSeconds,
     startT
