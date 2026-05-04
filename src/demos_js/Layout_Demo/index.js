@@ -2155,7 +2155,8 @@ function _renderMidiNotesMiniature(clip, el) {
   ctx2.fillStyle = getComputedStyle(document.body).getPropertyValue("--accent-primary").trim() || "#7ec8e3";
   for (const n of clip.notes) {
     const x = Math.round((n.startSamples / clip.durationSamples) * w);
-    const nw = Math.max(2, Math.round((n.durationSamples / clip.durationSamples) * w));
+    if (x >= w) continue;
+    const nw = Math.min(Math.max(2, Math.round((n.durationSamples / clip.durationSamples) * w)), w - x);
     const y  = Math.round(((maxP - n.pitch) / range) * (h - 4)) + 2;
     ctx2.fillRect(x, y, nw, 3);
   }
