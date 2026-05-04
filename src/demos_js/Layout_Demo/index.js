@@ -185,7 +185,7 @@ const KEY_NOTE_MAP = {
   'g': 67, 'y': 68, 'h': 69, 'u': 70, 'j': 71, 'k': 72, 'o': 73, 'l': 74, 'p': 75,
 };
 const _MIDI_KEYS_ROW       = ['a','s','d','f','g','h','j','k','l'];
-const _MIDI_KEYS_CHROMATIC = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+const _MIDI_KEYS_CHROMATIC = { C:0, "C#":1, D:2, "D#":3, E:4, F:5, "F#":6, G:7, "G#":8, A:9, "A#":10, B:11 };
 const _MIDI_KEYS_INTERVALS = {
   major:         [0, 2, 4,  5, 7, 9, 11, 12, 14],
   dorian:        [0, 2, 3,  5, 7, 9, 10, 12, 14],
