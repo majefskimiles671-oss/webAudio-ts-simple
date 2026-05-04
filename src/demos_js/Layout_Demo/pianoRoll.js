@@ -357,6 +357,13 @@ function _prVelHitTest(x) {
   if (!_prClip?.notes) return -1;
   const pps = _prPixelsPerSample();
   for (let i = _prClip.notes.length - 1; i >= 0; i--) {
+    if (!_prSelected.has(i)) continue;
+    const n = _prClip.notes[i];
+    const nx = _prSamplesToX(n.startSamples);
+    const nw = Math.max(4, n.durationSamples * pps);
+    if (x >= nx && x < nx + nw) return i;
+  }
+  for (let i = _prClip.notes.length - 1; i >= 0; i--) {
     const n = _prClip.notes[i];
     const nx = _prSamplesToX(n.startSamples);
     const nw = Math.max(4, n.durationSamples * pps);
@@ -388,19 +395,23 @@ function _prDrawVelocity() {
 
   if (!_prClip.notes) return;
   const pps = _prPixelsPerSample();
-  for (let i = 0; i < _prClip.notes.length; i++) {
-    const n  = _prClip.notes[i];
-    const x  = _prSamplesToX(n.startSamples);
-    const nw = Math.max(4, n.durationSamples * pps);
-    if (x + nw < 0 || x > W) continue;
-    const vel  = n.velocity ?? 100;
-    const barH = Math.round((vel / 127) * (H - 2));
-    const barY = H - barH;
-    const sel  = _prSelected.has(i);
-    ctx.fillStyle = sel ? "#d08030" : "#2e6e82";
-    ctx.fillRect(x, barY, nw - 1, barH);
-    ctx.fillStyle = sel ? "#f0a040" : "#4ab0d0";
-    ctx.fillRect(x, barY, nw - 1, 2);
+  for (let pass = 0; pass < 2; pass++) {
+    for (let i = 0; i < _prClip.notes.length; i++) {
+      const sel = _prSelected.has(i);
+      if (pass === 0 && sel) continue;
+      if (pass === 1 && !sel) continue;
+      const n  = _prClip.notes[i];
+      const x  = _prSamplesToX(n.startSamples);
+      const nw = Math.max(4, n.durationSamples * pps);
+      if (x + nw < 0 || x > W) continue;
+      const vel  = n.velocity ?? 100;
+      const barH = Math.round((vel / 127) * (H - 2));
+      const barY = H - barH;
+      ctx.fillStyle = sel ? "#d08030" : "#2e6e82";
+      ctx.fillRect(x, barY, nw - 1, barH);
+      ctx.fillStyle = sel ? "#f0a040" : "#4ab0d0";
+      ctx.fillRect(x, barY, nw - 1, 2);
+    }
   }
 }
 
