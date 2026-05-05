@@ -8,7 +8,7 @@ let _tanpuraGain         = null;
 let _tanpuraActive       = false;
 let _tanpuraStrings      = [67, 60, 60, 48]; // default Pa·Sa·Sa·Sa̎ around C4
 let _tanpuraRate         = 50;    // 0–100
-let _tanpuraMode         = "pluck"; // "pluck" | "synth"
+let _tanpuraMode         = "pluck"; // "pluck" | "synth" | "sine"
 let _tanpuraSynthMult    = 1;       // envelope length multiplier for synth mode
 let _tanpuraTimerId      = null;
 let _tanpuraStrIdx       = 0;
@@ -98,6 +98,30 @@ function _tanpuraSynthNote(freq, gain, mult = 1, startTime = null) {
   });
 }
 
+function _tanpuraSineNote(freq, gain, mult = 1, startTime = null) {
+  const ctx = _tanpuraCtx;
+  const env = ctx.createGain();
+  const osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+
+  osc.connect(env);
+  env.connect(_tanpuraGain);
+
+  const now = startTime !== null ? startTime : ctx.currentTime;
+  const dur = 3.5 * mult, A = 0.3 * mult, R = 1.0 * mult;
+  const peak = 0.8 * gain;
+  env.gain.setValueAtTime(0, now);
+  env.gain.linearRampToValueAtTime(peak, now + A);
+  env.gain.setValueAtTime(peak, now + dur);
+  env.gain.linearRampToValueAtTime(0, now + dur + R);
+
+  const stopTime = now + dur + R + 0.05;
+  osc.start(now);
+  osc.stop(stopTime);
+  osc.addEventListener("ended", () => { try { osc.disconnect(); env.disconnect(); } catch {} });
+}
+
 function _tanpuraPluckNext() {
   if (!_tanpuraActive) return;
 
@@ -117,6 +141,8 @@ function _tanpuraPluckNext() {
 
   if (_tanpuraMode === "synth") {
     _tanpuraSynthNote(freq, strGain, _tanpuraSynthMult, _nextPluckTime);
+  } else if (_tanpuraMode === "sine") {
+    _tanpuraSineNote(freq, strGain, _tanpuraSynthMult, _nextPluckTime);
   } else {
     const samples = _tanpuraKsGenerate(freq, _tanpuraCtx.sampleRate, _tanpuraSynthMult * 10);
     for (let i = 0; i < samples.length; i++) samples[i] *= strGain;

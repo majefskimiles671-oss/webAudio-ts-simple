@@ -559,6 +559,7 @@ Rule - Add comments before code snippets in this format:
                             <select class="master-preset-select" id="tanpura-mode">
                                 <option value="pluck" selected>Pluck</option>
                                 <option value="synth">Synth</option>
+                                <option value="sine">Sine</option>
                             </select>
                         </div>
                     </div>
@@ -641,12 +642,6 @@ Rule - Add comments before code snippets in this format:
                             </select>
                         </div>
                         <div class="master-gain-row">
-                            <span class="master-gain-label"></span>
-                            <label class="metronome-count-in-only-label">
-                                <input type="checkbox" id="midi-keys-inline-scale"> Inline scale
-                            </label>
-                        </div>
-                        <div class="master-gain-row">
                             <span class="master-gain-label">Root</span>
                             <select id="midi-keys-root" class="master-preset-select">
                                 <option value="C" selected>C</option>
@@ -662,6 +657,12 @@ Rule - Add comments before code snippets in this format:
                                 <option value="A#">A#</option>
                                 <option value="B">B</option>
                             </select>
+                        </div>
+                        <div class="master-gain-row">
+                            <span class="master-gain-label"></span>
+                            <label class="metronome-count-in-only-label">
+                                <input type="checkbox" id="midi-keys-inline-scale"> Inline scale
+                            </label>
                         </div>
                         <div class="master-gain-row">
                             <span class="master-gain-label">Scale</span>

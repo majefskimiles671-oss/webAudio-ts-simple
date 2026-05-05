@@ -2,7 +2,7 @@
 // Karplus-Strong plucked-string synthesis for chord diagram playback.
 // Algorithm runs in JS (pre-computed buffer), avoiding WebAudio feedback graph instability.
 
-let _synthMode         = "pluck"; // "pluck" | "synth"
+let _synthMode         = "pluck"; // "pluck" | "synth" | "sine"
 let _synthNoteMult     = 1;       // global length multiplier for all synth note playback
 let _synthVolume       = 1.0;
 let _synthGainNode     = null;
@@ -10,6 +10,8 @@ let _activeVoices      = [];      // { oscs, env } — released on re-trigger
 let _pluckDurationMult = 0.9;
 let _pluckVolume       = 1.2;
 let _pluckGainNode     = null;
+let _sineVolume        = 1.0;
+let _sineGainNode      = null;
 let _pluckAttack       = 0.008;
 let _pluckDecay        = 0.15;
 let _pluckSustain      = 0.8;
@@ -31,6 +33,15 @@ function _getPluckGainNode(ctx) {
     _pluckGainNode.connect(getMasterGainNode());
   }
   return _pluckGainNode;
+}
+
+function _getSineGainNode(ctx) {
+  if (!_sineGainNode || _sineGainNode.context !== ctx) {
+    _sineGainNode = ctx.createGain();
+    _sineGainNode.gain.value = _sineVolume;
+    _sineGainNode.connect(getMasterGainNode());
+  }
+  return _sineGainNode;
 }
 
 function _midiToFreq(midi) {
@@ -185,6 +196,29 @@ function _synthPlayNote(ctx, freq, startTime, durationSec, gainMult = 1, destina
   return { oscs: [osc1, osc2, osc3], env };
 }
 
+function _sinePlayNote(ctx, freq, startTime, durationSec, gainMult = 1, destination = null) {
+  const env = ctx.createGain();
+  const osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+
+  osc.connect(env);
+  env.connect(destination ?? _getSineGainNode(ctx));
+
+  const A = 0.35 * _synthNoteMult, D = 0.15 * _synthNoteMult, S = 0.65 * gainMult, R = 1.2 * _synthNoteMult;
+  env.gain.setValueAtTime(0,        startTime);
+  env.gain.linearRampToValueAtTime(gainMult, startTime + A);
+  env.gain.linearRampToValueAtTime(S,        startTime + A + D);
+  env.gain.setValueAtTime(S,                 startTime + durationSec);
+  env.gain.linearRampToValueAtTime(0,        startTime + durationSec + R);
+
+  const stopTime = startTime + durationSec + R + 0.05;
+  osc.start(startTime);
+  osc.stop(stopTime);
+  osc.addEventListener("ended", () => { try { osc.disconnect(); env.disconnect(); } catch {} });
+  return { oscs: [osc], env };
+}
+
 function _synthReleaseAll(ctx) {
   const now = ctx.currentTime;
   for (const v of _activeVoices) {
@@ -202,6 +236,10 @@ function cpSetSynthMult(m) { _synthNoteMult = m; }
 function cpSetSynthVolume(v) {
   _synthVolume = v;
   if (_synthGainNode) _synthGainNode.gain.value = v;
+}
+function cpSetSineVolume(v) {
+  _sineVolume = v;
+  if (_sineGainNode) _sineGainNode.gain.value = v;
 }
 function cpSetPluckMult(m)    { _pluckDurationMult = m; }
 function cpSetPluckVolume(v) {
@@ -326,6 +364,10 @@ function cpScheduleNoteAt(freq, ctx, audioTime, durationSec, velocity = 100, mod
     const src = _clickPlayNote(ctx, freq, audioTime, gainMult, destination);
     return src ? [src] : [];
   }
+  if (mode === "sine") {
+    const voice = _sinePlayNote(ctx, freq, audioTime, durationSec * _synthNoteMult, gainMult, destination);
+    return voice?.oscs ?? [];
+  }
   const voice = _synthPlayNote(ctx, freq, audioTime, durationSec * _synthNoteMult, gainMult, destination);
   return voice?.oscs ?? [];
 }
@@ -342,6 +384,9 @@ function cpScheduleChordAt(chord, ctx, audioTime, mode = "pluck", destination = 
     } else if (mode === "click") {
       const src = _clickPlayNote(ctx, freq, t, 1, destination);
       if (src) nodes.push(src);
+    } else if (mode === "sine") {
+      const voice = _sinePlayNote(ctx, freq, t, 2.0 * _synthNoteMult, 1, destination);
+      if (voice?.oscs) nodes.push(...voice.oscs);
     } else {
       const voice = _synthPlayNote(ctx, freq, t, 2.0 * _synthNoteMult, 1, destination);
       if (voice?.oscs) nodes.push(...voice.oscs);

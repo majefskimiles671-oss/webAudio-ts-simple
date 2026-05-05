@@ -226,18 +226,19 @@ function updateMidiKeyMap() {
     showToast(`Octave ${_prevOctave} → ${octave}`);
     _prevOctave = octave;
   }
-  const base = (octave + 1) * 12;
+  const base       = (octave + 1) * 12;
+  const root       = document.getElementById('midi-keys-root').value;
+  const rootOffset = _MIDI_KEYS_CHROMATIC[root];
   if (inlineScale) {
-    const root  = document.getElementById('midi-keys-root').value;
     const scale = document.getElementById('midi-keys-scale').value;
     _MIDI_KEYS_ROW.forEach((key, i) => {
       const interval = _MIDI_KEYS_INTERVALS[scale][i];
-      KEY_NOTE_MAP[key] = interval == null ? undefined : base + _MIDI_KEYS_CHROMATIC[root] + interval;
+      KEY_NOTE_MAP[key] = interval == null ? undefined : base + rootOffset + interval;
     });
     _MIDI_KEYS_BLACK.forEach(key => { KEY_NOTE_MAP[key] = undefined; });
   } else {
     Object.entries(_MIDI_KEYS_CHROMATIC_OFFSETS).forEach(([key, offset]) => {
-      KEY_NOTE_MAP[key] = base + offset;
+      KEY_NOTE_MAP[key] = base + rootOffset + offset;
     });
   }
 }
@@ -1208,8 +1209,8 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
       if (track.instrument === "sfz") _sfzRefreshSelect();
     }, { signal });
 
-    const _instrCycle = ["pluck", "click", "synth", "gm", "sfz"];
-    const _instrLabels = { pluck: "Pluck", click: "Click", synth: "Synth", gm: "GM", sfz: "SFZ" };
+    const _instrCycle = ["pluck", "click", "synth", "sine", "gm", "sfz"];
+    const _instrLabels = { pluck: "Pluck", click: "Click", synth: "Synth", sine: "Sine", gm: "GM", sfz: "SFZ" };
     instrBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       const idx = _instrCycle.indexOf(track.instrument ?? "pluck");
@@ -3319,7 +3320,7 @@ function _executeDuplicateTrack() {
     newTrack.instrument = track.instrument;
     newTrack.gmProgram  = track.gmProgram;
     newTrack.sfzName    = track.sfzName;
-    const _labels = { pluck: "Pluck", click: "Click", synth: "Synth", gm: "GM", sfz: "SFZ" };
+    const _labels = { pluck: "Pluck", click: "Click", synth: "Synth", sine: "Sine", gm: "GM", sfz: "SFZ" };
     const instrBtn  = newTrack.controlRow.querySelector(".instrument-toggle");
     const gmSelect  = newTrack.controlRow.querySelector(".gm-program-select");
     const sfzSelect = newTrack.controlRow.querySelector(".sfz-instrument-select");
