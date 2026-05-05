@@ -59,12 +59,23 @@ function renderCircleGrid(targetEl) {
     { label: 'Dim', keys: DIMINISHED },
   ];
 
+  const legend = document.createElement('div');
+  legend.className = 'cof-legend';
+  legend.innerHTML =
+    '<span class="cof-legend-item cof-legend-major"><span class="cof-legend-swatch"></span>Major</span>' +
+    '<span class="cof-legend-item cof-legend-minor"><span class="cof-legend-swatch"></span>Minor</span>' +
+    '<span class="cof-legend-item cof-legend-dim"><span class="cof-legend-swatch"></span>Dim</span>';
+  el.appendChild(legend);
+
   const table = document.createElement('table');
   table.className = 'cof-grid';
   table.id = 'cof-table';
 
-  rows.forEach(({ keys }) => {
+  rows.forEach(({ keys }, rowIdx) => {
     const tr = document.createElement('tr');
+    if (rowIdx === 0) tr.className = 'cof-row-major';
+    if (rowIdx === 1) tr.className = 'cof-row-minor';
+    if (rowIdx === 2) tr.className = 'cof-row-dim';
     for (let i = 0; i < 12; i++) {
       const td = document.createElement('td');
       td.textContent = keys[(cofOffset + i) % 12];

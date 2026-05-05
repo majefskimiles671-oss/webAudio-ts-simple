@@ -3014,6 +3014,33 @@
                     transparent 50%); */
         }
 
+        .cof-legend {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 4px;
+            font-size: 0.75em;
+            opacity: 0.75;
+        }
+        .cof-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .cof-legend-swatch {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+        .cof-legend-major .cof-legend-swatch { background: rgba(251,191,36,0.65); }
+        .cof-legend-minor .cof-legend-swatch { background: rgba(96,165,250,0.65); }
+        .cof-legend-dim   .cof-legend-swatch { background: rgba(168,85,247,0.65); }
+
+        .cof-row-major td { background: rgba(251,191,36,0.10); }
+        .cof-row-minor td { background: rgba(96,165,250,0.10); }
+        .cof-row-dim   td { background: rgba(168,85,247,0.10); }
+
         .cof-grid {
             border-collapse: collapse;
             table-layout: fixed;
