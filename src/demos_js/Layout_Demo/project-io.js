@@ -114,7 +114,6 @@ async function setWorkspace() {
     await _saveWorkspaceHandle(dirHandle);
     updateWorkspaceDisplay();
     _updateProjectMenuItems(true);
-    await showProjectPicker();
   } catch (err) {
     if (err.name !== 'AbortError') console.error('setWorkspace failed:', err);
   }
