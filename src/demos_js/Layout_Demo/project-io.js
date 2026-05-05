@@ -442,6 +442,12 @@ function serializeProject() {
         }
       : null,
     calibratedLatencyMs: audioEngineGetCalibratedLatency(),
+    midiKeys: {
+      root:        document.getElementById("midi-keys-root").value,
+      octave:      parseInt(document.getElementById("midi-keys-octave").value),
+      scale:       document.getElementById("midi-keys-scale").value,
+      inlineScale: document.getElementById("midi-keys-inline-scale").checked,
+    },
   };
 }
 
@@ -642,6 +648,15 @@ function deserializeProject(data) {
     const recMs = parseInt(localStorage.getItem("recOffsetMs") ?? "0") || 0;
     document.getElementById("rec-offset").value = recMs;
     document.getElementById("rec-offset-display").textContent = `${recMs} ms`;
+  }
+
+  const mk = data.midiKeys;
+  if (mk) {
+    document.getElementById("midi-keys-root").value         = mk.root        ?? "C";
+    document.getElementById("midi-keys-octave").value       = mk.octave      ?? 4;
+    document.getElementById("midi-keys-scale").value        = mk.scale       ?? "major";
+    document.getElementById("midi-keys-inline-scale").checked = mk.inlineScale ?? false;
+    if (typeof updateMidiKeyMap === "function") updateMidiKeyMap();
   }
 
   if (data.theme) setTheme(data.theme, { silent: true });
