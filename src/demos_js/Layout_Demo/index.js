@@ -5515,6 +5515,14 @@ document.getElementById("tanpura-synth-len-preset").addEventListener("change", (
 });
 updateMidiKeyMap();
 
+// Auto-blur buttons/selects after interaction so global hotkeys are never blocked
+document.addEventListener('click', (e) => {
+  if (e.target.tagName === 'BUTTON') requestAnimationFrame(() => e.target.blur());
+});
+document.addEventListener('change', (e) => {
+  if (e.target.tagName === 'SELECT') requestAnimationFrame(() => e.target.blur());
+});
+
 // DOM Sync - Video Backdrop - Synchronization Layer -----
 // Keep video sized to the visible area of #timeline-area so it doesn't scroll.
 (function () {
