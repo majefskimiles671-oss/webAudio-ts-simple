@@ -752,7 +752,7 @@ function selectMarkerByIndex(index) {
 //  -----------Apply Transport Change
 function _metronomeCheckStart() {
   if (!metronomeIsEnabled()) { metronomeStop(); return; }
-  if (recording && metronomeWhileRecording()) { metronomeStart(currentTimeSeconds); return; }
+  if (playing && recording && metronomeWhileRecording()) { metronomeStart(currentTimeSeconds); return; }
   if (playing && !recording && metronomeWhilePlaying()) { metronomeStart(currentTimeSeconds); return; }
   metronomeStop();
 }
@@ -3033,7 +3033,9 @@ returnToBeginningBtn.onclick = () => {
 
 playBtn.onclick = () => {
   recordInteraction("transport");
-  if (!playing && metronomeIsEnabled() && metronomeGetCountIn() > 0 && metronomeCountInBeforePlaying()) {
+  const _willRecord = !playing && recording;
+  const _countInFlag = _willRecord ? metronomeCountInBeforeRecording() : metronomeCountInBeforePlaying();
+  if (!playing && metronomeIsEnabled() && metronomeGetCountIn() > 0 && _countInFlag) {
     if (_countInCancel) { _countInCancel(); _countInCancel = null; }
     _countInCancel = metronomeRunCountIn(() => {
       _countInCancel = null;
