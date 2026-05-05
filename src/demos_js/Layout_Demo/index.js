@@ -1153,10 +1153,9 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
 
   // Instrument toggle + add-MIDI button (MIDI tracks only)
   if (type === 'midi') {
-    const instrBtn = document.createElement("button");
+    const instrBtn = document.createElement("select");
     instrBtn.className = "instrument-toggle";
-    instrBtn.textContent = "Pluck";
-    instrBtn.title = "Switch instrument (Pluck / Synth / GM)";
+    instrBtn.title = "Switch instrument";
 
     const gmSelect = document.createElement("select");
     gmSelect.className = "gm-program-select";
@@ -1209,13 +1208,15 @@ function createTrack(label, { prepend = false, type = 'audio' } = {}) {
       if (track.instrument === "sfz") _sfzRefreshSelect();
     }, { signal });
 
-    const _instrCycle = ["pluck", "click", "synth", "sine", "gm", "sfz"];
-    const _instrLabels = { pluck: "Pluck", click: "Click", synth: "Synth", sine: "Sine", gm: "GM", sfz: "SFZ" };
-    instrBtn.addEventListener("click", (e) => {
+    [["pluck","Pluck"],["click","Click"],["synth","Synth"],["sine","Sine"],["gm","GM"],["sfz","SFZ"]].forEach(([v, label]) => {
+      const opt = document.createElement("option");
+      opt.value = v; opt.textContent = label;
+      instrBtn.appendChild(opt);
+    });
+    instrBtn.value = track.instrument ?? "pluck";
+    instrBtn.addEventListener("change", (e) => {
       e.stopPropagation();
-      const idx = _instrCycle.indexOf(track.instrument ?? "pluck");
-      track.instrument = _instrCycle[(idx + 1) % _instrCycle.length];
-      instrBtn.textContent = _instrLabels[track.instrument] ?? "Pluck";
+      track.instrument = instrBtn.value;
       gmSelect.style.display  = track.instrument === "gm"  ? "" : "none";
       sfzSelect.style.display = track.instrument === "sfz" ? "" : "none";
       if (track.instrument === "gm") {
@@ -3320,11 +3321,10 @@ function _executeDuplicateTrack() {
     newTrack.instrument = track.instrument;
     newTrack.gmProgram  = track.gmProgram;
     newTrack.sfzName    = track.sfzName;
-    const _labels = { pluck: "Pluck", click: "Click", synth: "Synth", sine: "Sine", gm: "GM", sfz: "SFZ" };
     const instrBtn  = newTrack.controlRow.querySelector(".instrument-toggle");
     const gmSelect  = newTrack.controlRow.querySelector(".gm-program-select");
     const sfzSelect = newTrack.controlRow.querySelector(".sfz-instrument-select");
-    if (instrBtn)  instrBtn.textContent        = _labels[track.instrument] ?? "Pluck";
+    if (instrBtn)  instrBtn.value              = track.instrument ?? "pluck";
     if (gmSelect)  { gmSelect.value            = track.gmProgram ?? 0;
                      gmSelect.style.display    = track.instrument === "gm"  ? "" : "none"; }
     if (sfzSelect) { sfzSelect._refresh?.();
@@ -4250,7 +4250,7 @@ document.getElementById("menu-import-midi").addEventListener("click", () => {
       track.instrument = 'gm';
       track.gmProgram  = program ?? 0;
       const _ib = track.controlRow?.querySelector(".instrument-toggle");
-      if (_ib) _ib.textContent = "GM";
+      if (_ib) _ib.value = "gm";
       const maxEnd = Math.max(...notes.map(n => n.startSamples + n.durationSamples));
       const clip = {
         id:              crypto.randomUUID(),

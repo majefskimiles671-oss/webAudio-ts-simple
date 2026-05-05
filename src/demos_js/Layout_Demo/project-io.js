@@ -749,7 +749,7 @@ function deserializeProject(data) {
     track.gmProgram  = saved.gmProgram  ?? 0;
     track.sfzName    = saved.sfzName    ?? null;
     const instrBtn = track.controlRow.querySelector(".instrument-toggle");
-    if (instrBtn) instrBtn.textContent = { pluck: "Pluck", synth: "Synth", sine: "Sine", gm: "GM", sfz: "SFZ" }[track.instrument] ?? "Pluck";
+    if (instrBtn) instrBtn.value = track.instrument ?? "pluck";
     const gmSel = track.controlRow.querySelector(".gm-program-select");
     if (gmSel) {
       gmSel.value = track.gmProgram ?? 0;
