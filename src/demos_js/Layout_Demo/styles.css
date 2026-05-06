@@ -3381,8 +3381,8 @@
 
         /* Image tab needs padding */
         .tc-content:has(.tc-img-placeholder),
-        .tc-content:has(.tc-img-display) {
-            overflow: auto;
+        .tc-content:has(.tc-img-viewport) {
+            overflow: hidden;
             padding: 12px 14px;
         }
 
@@ -3449,6 +3449,19 @@
         }
 
         /* Image tab */
+        .tc-img-viewport {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            border-radius: 4px;
+            min-height: 80px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
         .tc-img-placeholder {
             flex: 1;
             display: flex;
@@ -3486,6 +3499,9 @@
             object-fit: contain;
             display: block;
             border-radius: 4px;
+            transform-origin: center center;
+            will-change: transform;
+            pointer-events: none;
         }
 
         .tc-img-replace-btn {

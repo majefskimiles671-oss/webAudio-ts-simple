@@ -186,10 +186,16 @@ function _tcRenderModes(el) {
 
 function _tcRenderImage(el, tab) {
   if (tab.dataUrl) {
+    const viewport = document.createElement('div');
+    viewport.className = 'tc-img-viewport';
+
     const img = document.createElement('img');
     img.className = 'tc-img-display';
     img.src = tab.dataUrl;
-    el.appendChild(img);
+    viewport.appendChild(img);
+    el.appendChild(viewport);
+
+    _tcInitImgZoomPan(viewport, img);
 
     const replace = document.createElement('button');
     replace.className = 'tc-img-replace-btn';
@@ -217,6 +223,108 @@ function _tcRenderImage(el, tab) {
     placeholder.addEventListener('click', () => _tcPickImage(tab));
     el.appendChild(placeholder);
   }
+}
+
+function _tcInitImgZoomPan(viewport, img) {
+  let scale = 1, tx = 0, ty = 0;
+  let panning = false, startX = 0, startY = 0, startTx = 0, startTy = 0;
+
+  function applyTransform() {
+    img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+  }
+
+  function clampTranslation() {
+    const vw = viewport.clientWidth,  vh = viewport.clientHeight;
+    const iw = img.naturalWidth  * scale, ih = img.naturalHeight * scale;
+    const maxTx = Math.max(0, (iw - vw) / 2);
+    const maxTy = Math.max(0, (ih - vh) / 2);
+    tx = Math.max(-maxTx, Math.min(maxTx, tx));
+    ty = Math.max(-maxTy, Math.min(maxTy, ty));
+  }
+
+  function zoomAt(cx, cy, factor) {
+    const rect  = viewport.getBoundingClientRect();
+    const ox = cx - rect.left - rect.width  / 2;
+    const oy = cy - rect.top  - rect.height / 2;
+    const newScale = Math.max(0.5, Math.min(8, scale * factor));
+    const ratio = newScale / scale;
+    tx = ox + (tx - ox) * ratio;
+    ty = oy + (ty - oy) * ratio;
+    scale = newScale;
+    clampTranslation();
+    applyTransform();
+  }
+
+  // wheel zoom
+  viewport.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.12 : 1 / 1.12);
+  }, { passive: false });
+
+  // double-click reset
+  viewport.addEventListener('dblclick', () => {
+    scale = 1; tx = 0; ty = 0;
+    applyTransform();
+  });
+
+  // mouse pan
+  viewport.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    panning = true;
+    startX = e.clientX; startY = e.clientY;
+    startTx = tx; startTy = ty;
+    viewport.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!panning) return;
+    tx = startTx + (e.clientX - startX);
+    ty = startTy + (e.clientY - startY);
+    clampTranslation();
+    applyTransform();
+  });
+  document.addEventListener('mouseup', () => {
+    if (!panning) return;
+    panning = false;
+    viewport.style.cursor = 'grab';
+  });
+
+  // touch: pinch zoom + pan
+  let lastTouches = null;
+  viewport.addEventListener('touchstart', (e) => {
+    lastTouches = e.touches;
+    if (e.touches.length === 1) {
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+      startTx = tx; startTy = ty;
+    }
+    e.preventDefault();
+  }, { passive: false });
+  viewport.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (e.touches.length === 2 && lastTouches && lastTouches.length === 2) {
+      const prev = lastTouches, curr = e.touches;
+      const prevDist = Math.hypot(prev[0].clientX - prev[1].clientX, prev[0].clientY - prev[1].clientY);
+      const currDist = Math.hypot(curr[0].clientX - curr[1].clientX, curr[0].clientY - curr[1].clientY);
+      const midX = (curr[0].clientX + curr[1].clientX) / 2;
+      const midY = (curr[0].clientY + curr[1].clientY) / 2;
+      if (prevDist > 0) zoomAt(midX, midY, currDist / prevDist);
+    } else if (e.touches.length === 1) {
+      tx = startTx + (e.touches[0].clientX - startX);
+      ty = startTy + (e.touches[0].clientY - startY);
+      clampTranslation();
+      applyTransform();
+    }
+    lastTouches = e.touches;
+  }, { passive: false });
+  viewport.addEventListener('touchend', (e) => {
+    lastTouches = e.touches;
+    if (e.touches.length === 1) {
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+      startTx = tx; startTy = ty;
+    }
+  });
+
+  viewport.style.cursor = 'grab';
 }
 
 function _tcPickImage(tab) {
