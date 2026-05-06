@@ -2991,7 +2991,7 @@
             padding: 8px 10px;
             overflow: hidden;
             position: relative;
-            user-select: none;
+            /* user-select: none; */
 
             display: flex;
             flex-direction: column;
@@ -3016,8 +3016,9 @@
 
         .cof-legend {
             display: flex;
-            gap: 16px;
-            justify-content: center;
+            flex-direction: column;
+            gap: 2px;
+            align-items: flex-start;
             margin-bottom: 4px;
             font-size: 0.75em;
             opacity: 0.75;
@@ -3350,7 +3351,7 @@
             min-height: 250px;
             z-index: 499;
             display: none;
-            user-select: none;
+            /* user-select: none; */
             overflow: visible;
         }
 
@@ -3365,6 +3366,7 @@
             flex-direction: row;
             overflow: hidden;
             position: relative;
+            user-select: text;
         }
 
         .tc-content {

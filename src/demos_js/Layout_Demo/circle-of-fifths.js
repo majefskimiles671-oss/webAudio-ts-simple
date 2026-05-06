@@ -59,13 +59,6 @@ function renderCircleGrid(targetEl) {
     { label: 'Dim', keys: DIMINISHED },
   ];
 
-  const legend = document.createElement('div');
-  legend.className = 'cof-legend';
-  legend.innerHTML =
-    '<span class="cof-legend-item cof-legend-major"><span class="cof-legend-swatch"></span>Major</span>' +
-    '<span class="cof-legend-item cof-legend-minor"><span class="cof-legend-swatch"></span>Minor</span>' +
-    '<span class="cof-legend-item cof-legend-dim"><span class="cof-legend-swatch"></span>Dim</span>';
-  el.appendChild(legend);
 
   const table = document.createElement('table');
   table.className = 'cof-grid';
@@ -224,7 +217,8 @@ function _buildOverlaySVG(el) {
   const cg1  = measure(0, -3); // row0 col center-3 (green mid)
   const cg2  = measure(0, -2); // row0 col center-2 (green right)
   const cg2b = measure(2, -3); // row2 col center-3 (green bottom)
-  if (!c0m || !c05 || !c0p || !c2c || !cg0 || !cg1 || !cg2 || !cg2b) return null;
+  const cgr  = measure(1, -3); // row1 col center-3 (green rect)
+  if (!c0m || !c05 || !c0p || !c2c || !cg0 || !cg1 || !cg2 || !cg2b || !cgr) return null;
 
   const t0 = c0m.t, t2 = c2c.t, t3 = c2c.b;
 
@@ -240,13 +234,14 @@ function _buildOverlaySVG(el) {
   const svg = document.createElementNS(NS, 'svg');
   svg.id = 'cof-overlay';
 
-  const mkPoly = (pts, color) => {
+  const mkPoly = (pts, color, { fill = 'none', dash = null } = {}) => {
     const p = document.createElementNS(NS, 'polygon');
     p.setAttribute('points', pts);
-    p.setAttribute('fill', 'none');
+    p.setAttribute('fill', fill);
     p.setAttribute('stroke', color);
     p.setAttribute('stroke-width', '2');
     p.setAttribute('stroke-linejoin', 'miter');
+    if (dash) p.setAttribute('stroke-dasharray', dash);
     return p;
   };
 
@@ -257,12 +252,42 @@ function _buildOverlaySVG(el) {
   rect.setAttribute('width', c05.r - c05.l);
   rect.setAttribute('height', c05.b - c05.t);
   rect.setAttribute('fill', 'none');
-  rect.setAttribute('stroke', '#ef4444');
+  rect.setAttribute('stroke', '#d97706');
   rect.setAttribute('stroke-width', '2');
 
-  svg.appendChild(mkPoly(greenPts,  '#22c55e'));
-  svg.appendChild(mkPoly(orangePts, '#d97706'));
+  // Green rect — row1 col center-3
+  const greenRect = document.createElementNS(NS, 'rect');
+  greenRect.setAttribute('x', cgr.l);
+  greenRect.setAttribute('y', cgr.t);
+  greenRect.setAttribute('width',  cgr.r - cgr.l);
+  greenRect.setAttribute('height', cgr.b - cgr.t);
+  greenRect.setAttribute('fill', 'none');
+  greenRect.setAttribute('stroke', '#22c55e');
+  greenRect.setAttribute('stroke-width', '2');
+
+  const mkLabel = (text, cx, y, color) => {
+    const t = document.createElementNS(NS, 'text');
+    t.textContent = text;
+    t.setAttribute('x', cx);
+    t.setAttribute('y', y);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('fill', color);
+    t.setAttribute('font-size', '27');
+    t.setAttribute('font-family', 'sans-serif');
+    t.setAttribute('pointer-events', 'none');
+    return t;
+  };
+
+  const labelY = t0 - 6;
+  const majorCx = (c05.l + c05.r) / 2;
+  const minorCx = (cgr.l  + cgr.r)  / 2;
+
+  svg.appendChild(mkPoly(greenPts,  '#22c55e', { dash: '4 3' }));
+  svg.appendChild(mkPoly(orangePts, '#d97706', { dash: '4 3' }));
+  svg.appendChild(greenRect);
   svg.appendChild(rect);
+  svg.appendChild(mkLabel('Major Key',       majorCx, labelY, '#d97706'));
+  svg.appendChild(mkLabel('Parallel Minor',  minorCx, labelY, '#22c55e'));
   return svg;
 }
 

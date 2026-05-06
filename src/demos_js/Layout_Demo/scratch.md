@@ -205,6 +205,50 @@ Purge orphaned buffers: Record a clip, delete it, open Debug menu → "Purge Orp
 ---
 Hypothesis
 ---
+I	iii	IV	V
+I	IV	V
+I	IV	vi	V
+I	IV	I	V
+I	IV	ii	V
+I	V	vi	IV
+I 	vi	IV	V
+I	vi	ii	V
+ii	V	I
+
+Pop-Rock Progression     I–V–vi–IV
+The "50s" Progression    I–vi–IV–V
+Major/Blues Progression  I–IV–V
+Minor Sequence           i–vii°–vi–V
+Pop/Rock Alternative     vi–IV–I-V
+
+---
+In the key of D Major, the primary chords are D (I), G (IV), and A (V), while the secondary chords are Em (ii), F#m (iii), and Bm (vi). [1, 2] 
+Here are 10 of the most popular chord progressions in D Major, ranging from simple pop sequences to jazz turnarounds:
+
+   1. I – V – vi – IV (D – A – Bm – G)
+   The "Pop-Punk" or "Four Chords" progression used in hundreds of hits.
+   2. I – IV – V – I (D – G – A – D)
+   The standard "Three-Chord" rock and folk progression.
+   3. I – vi – IV – V (D – Bm – G – A)
+   Commonly known as the "50s Progression".
+   4. ii – V – I (Em – A – D)
+   The most fundamental progression in jazz and blues.
+   5. vi – IV – I – V (Bm – G – D – A)
+   A "sensitive" modern pop progression used in emotional hits.
+   6. I – vi – ii – V (D – Bm – Em – A)
+   A smoother variation of the 50s progression often used in jazz standards.
+   7. I – IV – vi – V (D – G – Bm – A)
+   A contemporary variation that swaps the major IV chord for the minor vi.
+   8. I – iii – IV – V (D – F#m – G – A)
+   A standard progression that creates a bright, uplifting sound.
+   9. V – vi – IV – I (A – Bm – G – D)
+   Often used for choruses to create a sense of arrival.
+   10. I – IV – I – V (D – G – D – A)
+   A circular progression popular in country and classic rock. 
+
+Jazz
+ii V I
+---
 Logic of count in is broken for play vs rec
 
 
