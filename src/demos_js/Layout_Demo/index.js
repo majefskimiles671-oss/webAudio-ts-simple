@@ -3956,7 +3956,11 @@ async function onTransportStart() {
   _metronomeCheckStart();
   if (recording && recordingTrackRow) audioEngineStartRecording(playbackStartT);
   if (_tanpuraEnabled) {
-    const cur = markers.find(m => m.id === selectedMarkerId);
+    let cur = null;
+    for (const m of markers) {
+      if (m.time <= playheadSeconds) cur = m;
+      else break;
+    }
     if (cur) _applyTanpuraMarker(cur);
   }
 }
@@ -3988,8 +3992,7 @@ function updatePlayhead() {
   renderTimelineLayer();
   renderMetronomeScan();
 
-  // Select the last marker whose time falls within one beat of the playhead
-  const _lookahead = currentTimeSeconds + (rulerMode === 'bars' ? secondsPerBeat() * viewState.markerLookaheadBeats : 0);
+  const _lookahead = currentTimeSeconds + 0.1;
   let _nextMarker = null;
   for (const m of markers) {
     if (m.time <= _lookahead) _nextMarker = m;
@@ -5398,7 +5401,7 @@ function _applyTanpuraMarker(marker) {
     log("notes:" + notes);
     if (!notes.length) return;
     tanpuraSetStrings(notes);
-    if (!tanpuraIsActive()) tanpuraStart();
+    if (!tanpuraIsActive()) tanpuraStart(getPlayheadTime());
   }
 }
 
