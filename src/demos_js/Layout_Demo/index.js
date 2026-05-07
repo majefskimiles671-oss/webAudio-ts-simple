@@ -802,6 +802,7 @@ function returnToBeginning() {
   setPlayheadPositionPx(0);
   timelineArea.scrollLeft = 0;
   if (videoEl) videoEl.currentTime = 0;
+  selectMarkerByIndex(0);
   if (playing) { audioEngineStop(); onTransportStart(); }
 }
 
@@ -3988,7 +3989,7 @@ function updatePlayhead() {
   renderMetronomeScan();
 
   // Select the last marker whose time falls within one beat of the playhead
-  const _lookahead = currentTimeSeconds + secondsPerBeat() * viewState.markerLookaheadBeats;
+  const _lookahead = currentTimeSeconds + (rulerMode === 'bars' ? secondsPerBeat() * viewState.markerLookaheadBeats : 0);
   let _nextMarker = null;
   for (const m of markers) {
     if (m.time <= _lookahead) _nextMarker = m;
@@ -4913,12 +4914,12 @@ function buildChordPicker(marker) {
   const trigger = document.createElement("button");
   trigger.className = "chord-picker-trigger";
   const current = chordList.find(c => c.id === marker.chordId);
-  trigger.textContent = current ? (current.name || "(unnamed)") : "— no chord —";
+  trigger.textContent = marker.chordId === "__stop__" ? "Stop" : current ? (current.name || "(unnamed)") : "—";
 
   const dropdown = document.createElement("div");
   dropdown.className = "chord-picker-dropdown";
 
-  const allOptions = [{ id: "", name: "— no chord —" }, ...chordList];
+  const allOptions = [{ id: "", name: "—" }, { id: "__stop__", name: "Stop" }, ...chordList];
   for (const c of allOptions) {
     const opt = document.createElement("div");
     opt.className = "chord-picker-option";
@@ -4929,7 +4930,7 @@ function buildChordPicker(marker) {
       e.stopPropagation();
       marker.chordId = c.id || null;
       markDirty();
-      trigger.textContent = c.id ? (c.name || "(unnamed)") : "— no chord —";
+      trigger.textContent = c.id === "__stop__" ? "Stop" : c.id ? (c.name || "(unnamed)") : "—";
       dropdown.querySelectorAll(".chord-picker-option").forEach(el =>
         el.classList.toggle("active", el.dataset.value === (c.id || ""))
       );
@@ -4975,7 +4976,7 @@ function renderBottomPanel() {
 
     const textarea = document.createElement("textarea");
     textarea.className = "panel-marker-note";
-    textarea.placeholder = "Add notes…";
+    textarea.placeholder = "Add text…";
     textarea.value = marker.note ?? "";
     textarea.rows = 1;
     textarea.spellcheck = false;
@@ -4994,7 +4995,7 @@ function renderBottomPanel() {
 
     const chordPicker = buildChordPicker(marker);
 
-    row.append(timeEl, textarea, chordPicker);
+    row.append(timeEl, chordPicker, textarea);
     grid.appendChild(row);
   }
 
@@ -5386,7 +5387,7 @@ function _chordToMidiNotes(chord) {
 }
 
 function _applyTanpuraMarker(marker) {
-  if (marker.note && /tanpura\s*off/i.test(marker.note)) {
+  if (marker.chordId === "__stop__") {
     tanpuraStop();
     return;
   }

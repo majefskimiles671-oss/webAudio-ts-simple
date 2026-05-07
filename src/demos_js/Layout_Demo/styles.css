@@ -3113,9 +3113,9 @@
 
         .panel-marker-row {
             display: grid;
-            grid-template-columns: 76px 1fr;
-            gap: 6px 12px;
-            align-items: start;
+            grid-template-columns: auto auto 1fr;
+            gap: 6px 8px;
+            align-items: center;
             padding: 4px 6px;
             border-radius: 5px;
             border-left: 3px solid transparent;
@@ -3131,7 +3131,7 @@
             font-size: 12px;
             font-variant-numeric: tabular-nums;
             color: var(--accent-primary);
-            padding-top: 5px;
+            white-space: nowrap;
         }
 
         .panel-marker-row {
@@ -3177,13 +3177,12 @@
         }
 
         .chord-picker {
-            grid-column: 1 / -1;
             position: relative;
-            margin-top: 2px;
         }
 
         .chord-picker-trigger {
             width: 100%;
+            min-width: 100px;
             background: var(--bg-surface);
             color: var(--text-muted);
             border: 1px solid var(--border-subtle);
