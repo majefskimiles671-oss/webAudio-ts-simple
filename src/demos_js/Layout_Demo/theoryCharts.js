@@ -193,15 +193,21 @@ function _tcRenderImage(el, tab) {
     img.className = 'tc-img-display';
     img.src = tab.dataUrl;
     viewport.appendChild(img);
-    el.appendChild(viewport);
-
-    _tcInitImgZoomPan(viewport, img);
 
     const replace = document.createElement('button');
     replace.className = 'tc-img-replace-btn';
     replace.textContent = 'Replace image';
     replace.addEventListener('click', () => _tcPickImage(tab));
-    el.appendChild(replace);
+    viewport.appendChild(replace);
+
+    const fitWidth = document.createElement('button');
+    fitWidth.className = 'tc-img-fit-width-btn';
+    fitWidth.title = 'Fit to width';
+    fitWidth.textContent = '↔';
+    viewport.appendChild(fitWidth);
+
+    el.appendChild(viewport);
+    _tcInitImgZoomPan(viewport, img, fitWidth);
   } else {
     const placeholder = document.createElement('div');
     placeholder.className = 'tc-img-placeholder';
@@ -225,7 +231,7 @@ function _tcRenderImage(el, tab) {
   }
 }
 
-function _tcInitImgZoomPan(viewport, img) {
+function _tcInitImgZoomPan(viewport, img, fitWidthBtn) {
   let scale = 1, tx = 0, ty = 0;
   let panning = false, startX = 0, startY = 0, startTx = 0, startTy = 0;
 
@@ -267,9 +273,26 @@ function _tcInitImgZoomPan(viewport, img) {
     applyTransform();
   });
 
+  // fit to width
+  function fitToWidth() {
+    const vw = viewport.clientWidth;
+    scale = vw / img.offsetWidth;
+    tx = 0;
+    ty = 0;
+    clampTranslation();
+    applyTransform();
+  }
+  if (fitWidthBtn) {
+    fitWidthBtn.addEventListener('click', fitToWidth);
+    img.addEventListener('load', () => {
+      if (scale === 1 && tx === 0 && ty === 0) fitToWidth();
+    });
+  }
+
   // mouse pan
   viewport.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
+    if (e.target.closest('.tc-img-replace-btn,.tc-img-fit-width-btn')) return;
     panning = true;
     startX = e.clientX; startY = e.clientY;
     startTx = tx; startTy = ty;

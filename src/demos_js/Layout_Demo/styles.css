@@ -3452,6 +3452,7 @@
         .tc-img-viewport {
             flex: 1;
             overflow: hidden;
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -3504,16 +3505,53 @@
             pointer-events: none;
         }
 
+        .tc-img-fit-width-btn {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1;
+            padding: 2px 7px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        .tc-img-viewport:hover .tc-img-fit-width-btn {
+            opacity: 1;
+        }
+
+        .tc-img-fit-width-btn:hover {
+            color: var(--text-main);
+            border-color: var(--accent-primary);
+        }
+
         .tc-img-replace-btn {
-            margin-top: 8px;
-            align-self: center;
-            background: transparent;
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-panel);
             border: 1px solid var(--border-subtle);
             border-radius: 4px;
             color: var(--text-muted);
             font-size: 11px;
             padding: 3px 10px;
             cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        .tc-img-viewport:hover .tc-img-replace-btn {
+            opacity: 1;
         }
 
         .tc-img-replace-btn:hover {
