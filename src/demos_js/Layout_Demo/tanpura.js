@@ -269,6 +269,18 @@ function tanpuraIsActive() {
   return _tanpuraActive;
 }
 
+function tanpuraGetState() {
+  return {
+    strings:     _tanpuraStrings.slice(),
+    rate:        _tanpuraRate,
+    mode:        _tanpuraMode,
+    synthMult:   _tanpuraSynthMult,
+    stringGains: _tanpuraStringGains.slice(),
+    bpm:         _tanpuraBpm,
+    syncBeats:   _tanpuraSyncBeats,
+  };
+}
+
 function tanpuraSetBPM(bpm) {
   _tanpuraBpm = bpm;
 }

@@ -17,6 +17,14 @@ function getSceneTrackMap() {
   return map;
 }
 
+function _trackHasContent(track) {
+  if (track.clips?.length) return true;
+  for (const clip of (track.midiClips ?? [])) {
+    if (clip.notes?.length) return true;
+  }
+  return false;
+}
+
 function sanitizeFilename(name) {
   return name.replace(/[/\\:*?"<>|]/g, '_').trim() || 'track';
 }
@@ -75,6 +83,143 @@ async function _renderMidiTrackToBuffer(track, totalSamples) {
       }
     }
   }
+  return offCtx.startRendering();
+}
+
+async function _renderChordsToBuffer(totalSamples) {
+  const sr = SAMPLE_RATE;
+  const offCtx = new OfflineAudioContext(2, totalSamples, sr);
+  for (const track of tracks) {
+    const mode = track.instrument ?? 'pluck';
+    const gainNode = offCtx.createGain();
+    gainNode.gain.value = track.gain / 100;
+    gainNode.connect(offCtx.destination);
+    for (const clip of (track.midiClips ?? [])) {
+      const clipStartSec = clip.startSample / sr;
+      for (const ev of (clip.events ?? [])) {
+        const t = clipStartSec + ev.offsetSamples / sr;
+        if (t >= totalSamples / sr) continue;
+        const chord = chords.find(c => c.id === ev.chordId);
+        if (!chord) continue;
+        cpScheduleChordAt(chord, offCtx, t, mode, gainNode);
+      }
+    }
+  }
+  return offCtx.startRendering();
+}
+
+async function _renderDroneToBuffer(totalSamples) {
+  const sr = SAMPLE_RATE;
+  const offCtx = new OfflineAudioContext(2, totalSamples, sr);
+  const state = tanpuraGetState();
+  const totalSec = totalSamples / sr;
+
+  // Build segments: each marker that sets strings starts a new segment
+  const segments = [];
+  let currentStrings = state.strings;
+  for (let i = 0; i < markers.length; i++) {
+    const m = markers[i];
+    const nextTime = (i + 1 < markers.length) ? markers[i + 1].time : totalSec;
+    if (m.chordId === '__stop__') {
+      // gap — no drone
+      continue;
+    }
+    if (m.chordId) {
+      const chord = chords.find(c => c.id === m.chordId);
+      if (chord) {
+        const notes = chord.dots.flatMap((dotRow, s) => {
+          if (chord.tops[s] === 'x') return [];
+          const hits = [];
+          if (chord.tops[s] === 'o') hits.push(currentTuning.midiAt(s + 1, 0));
+          dotRow.forEach((dot, r) => { if (dot) hits.push(currentTuning.midiAt(s + 1, chord.baseFret + r)); });
+          return hits;
+        }).sort((a, b) => a - b);
+        const arr = notes.slice(0, TANPURA_STRING_COUNT);
+        while (arr.length < TANPURA_STRING_COUNT) arr.unshift(arr[0] - TANPURA_OCTAVE_SEMITONES);
+        currentStrings = arr;
+      }
+    }
+    segments.push({ startTime: m.time, endTime: nextTime, strings: currentStrings });
+  }
+
+  const intervalSec = state.syncBeats !== null
+    ? (60 / state.bpm) * state.syncBeats
+    : TANPURA_RATE_INTERVAL_MAX - (state.rate / 100) * TANPURA_RATE_INTERVAL_RANGE;
+
+  const gainNode = offCtx.createGain();
+  gainNode.gain.value = TANPURA_MASTER_GAIN;
+  gainNode.connect(offCtx.destination);
+
+  for (const seg of segments) {
+    let t = seg.startTime;
+    let idx = 0;
+    while (t < seg.endTime && t < totalSec) {
+      const midi = seg.strings[idx % TANPURA_STRING_COUNT];
+      const freq = 440 * Math.pow(2, (midi - 69) / 12);
+      const strGain = state.stringGains[idx % TANPURA_STRING_COUNT] * TANPURA_MASTER_GAIN;
+
+      if (state.mode === 'synth') {
+        const env = offCtx.createGain();
+        const filter = offCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = TANPURA_SYNTH_FILTER_FREQ;
+        filter.Q.value = TANPURA_SYNTH_FILTER_Q;
+        const osc1 = offCtx.createOscillator();
+        const osc2 = offCtx.createOscillator();
+        const osc3 = offCtx.createOscillator();
+        osc1.type = 'sawtooth'; osc1.frequency.value = freq; osc1.detune.value = +TANPURA_SYNTH_DETUNE_CENTS;
+        osc2.type = 'sawtooth'; osc2.frequency.value = freq; osc2.detune.value = -TANPURA_SYNTH_DETUNE_CENTS;
+        osc3.type = 'sine';     osc3.frequency.value = freq / 2;
+        const g1 = offCtx.createGain(); g1.gain.value = TANPURA_SYNTH_OSC1_GAIN * strGain;
+        const g2 = offCtx.createGain(); g2.gain.value = TANPURA_SYNTH_OSC2_GAIN * strGain;
+        const g3 = offCtx.createGain(); g3.gain.value = TANPURA_SYNTH_OSC3_GAIN * strGain;
+        osc1.connect(g1).connect(filter);
+        osc2.connect(g2).connect(filter);
+        osc3.connect(g3).connect(filter);
+        filter.connect(env);
+        env.connect(offCtx.destination);
+        const dur = TANPURA_NOTE_DURATION * state.synthMult, A = TANPURA_NOTE_ATTACK * state.synthMult, R = TANPURA_NOTE_RELEASE * state.synthMult;
+        const peak = TANPURA_NOTE_PEAK_GAIN;
+        env.gain.setValueAtTime(0, t);
+        env.gain.linearRampToValueAtTime(peak, t + A);
+        env.gain.setValueAtTime(peak, t + dur);
+        env.gain.linearRampToValueAtTime(0, t + dur + R);
+        const stopT = t + dur + R + TANPURA_NOTE_STOP_BUFFER;
+        [osc1, osc2, osc3].forEach(o => { o.start(t); o.stop(stopT); });
+
+      } else if (state.mode === 'sine') {
+        const env = offCtx.createGain();
+        const osc = offCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        osc.connect(env);
+        env.connect(offCtx.destination);
+        const dur = TANPURA_NOTE_DURATION * state.synthMult, A = TANPURA_NOTE_ATTACK * state.synthMult, R = TANPURA_NOTE_RELEASE * state.synthMult;
+        const peak = TANPURA_NOTE_PEAK_GAIN * strGain;
+        env.gain.setValueAtTime(0, t);
+        env.gain.linearRampToValueAtTime(peak, t + A);
+        env.gain.setValueAtTime(peak, t + dur);
+        env.gain.linearRampToValueAtTime(0, t + dur + R);
+        const stopT = t + dur + R + TANPURA_NOTE_STOP_BUFFER;
+        osc.start(t);
+        osc.stop(stopT);
+
+      } else {
+        // pluck (default)
+        const samples = _tanpuraKsGenerate(freq, sr, state.synthMult * 10);
+        const buf = offCtx.createBuffer(1, samples.length, sr);
+        buf.copyToChannel(samples.map(s => s * strGain), 0);
+        const src = offCtx.createBufferSource();
+        src.buffer = buf;
+        src.connect(gainNode);
+        src.start(t);
+      }
+
+      idx++;
+      t += intervalSec;
+    }
+  }
+
   return offCtx.startRendering();
 }
 
@@ -142,18 +287,48 @@ async function renderTrackGroupToStereo(trackList, raw = false) {
   return out;
 }
 
-async function exportMixdown({ scenes, modes, folderHandle }) {
+function _mixBufferInto(out, src) {
+  const outL = out.getChannelData(0), outR = out.getChannelData(1);
+  const srcL = src.getChannelData(0), srcR = src.numberOfChannels > 1 ? src.getChannelData(1) : srcL;
+  const len = Math.min(out.length, src.length);
+  for (let i = 0; i < len; i++) { outL[i] += srcL[i]; outR[i] += srcR[i]; }
+}
+
+async function _renderExtras(extras, totalSamples) {
+  const results = {};
+  if (extras.includes('chords')) results.chords = await _renderChordsToBuffer(totalSamples);
+  if (extras.includes('drone'))  results.drone  = await _renderDroneToBuffer(totalSamples);
+  return results;
+}
+
+async function exportMixdown({ scenes, modes, folderHandle, extras = [] }) {
   const sceneMap = getSceneTrackMap();
   const writtenFiles = [];
   const manifest = {};
 
+  // Calculate total samples across all selected scenes for extras rendering
+  let extraTotalSamples = 0;
+  for (const letter of scenes) {
+    for (const track of sceneMap[letter]) {
+      for (const clip of [...track.clips, ...(track.midiClips ?? [])]) {
+        const end = clip.startSample + clip.durationSamples;
+        if (end > extraTotalSamples) extraTotalSamples = end;
+      }
+    }
+  }
+
+  // Render extras once (shared across scenes)
+  const extraBuffers = extras.length && extraTotalSamples > 0
+    ? await _renderExtras(extras, extraTotalSamples)
+    : {};
+
   // Assign each unique track a filename once, across all selected scenes
-  const trackFilenames = new Map(); // track.id → filename
+  const trackFilenames = new Map();
   if (modes.includes('stems')) {
     const usedNames = new Set();
     for (const letter of scenes) {
       for (const track of sceneMap[letter]) {
-        if (!trackFilenames.has(track.id)) {
+        if (!trackFilenames.has(track.id) && _trackHasContent(track)) {
           trackFilenames.set(track.id, uniqueFilename(sanitizeFilename(track.name), usedNames));
         }
       }
@@ -168,6 +343,16 @@ async function exportMixdown({ scenes, modes, folderHandle }) {
       await w.close();
       writtenFiles.push(filename);
     }
+    // Extra stems
+    for (const [key, buf] of Object.entries(extraBuffers)) {
+      const filename = key === 'chords' ? 'Chords.wav' : 'Drone.wav';
+      const wav = audioEngineEncodeWav(buf);
+      const fh = await folderHandle.getFileHandle(filename, { create: true });
+      const w = await fh.createWritable();
+      await w.write(wav);
+      await w.close();
+      if (!writtenFiles.includes(filename)) writtenFiles.push(filename);
+    }
   }
 
   for (const letter of scenes) {
@@ -177,6 +362,9 @@ async function exportMixdown({ scenes, modes, folderHandle }) {
     if (modes.includes('stereo')) {
       const filename = `Scene-${letter}.wav`;
       const rendered = await renderTrackGroupToStereo(sceneTracks);
+      if (rendered) {
+        for (const buf of Object.values(extraBuffers)) _mixBufferInto(rendered, buf);
+      }
       const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
       const fh = await folderHandle.getFileHandle(filename, { create: true });
       const w = await fh.createWritable();
@@ -187,7 +375,10 @@ async function exportMixdown({ scenes, modes, folderHandle }) {
     }
 
     if (modes.includes('stems')) {
-      entry.stems = sceneTracks.map(t => trackFilenames.get(t.id));
+      entry.stems = [
+        ...sceneTracks.map(t => trackFilenames.get(t.id)),
+        ...Object.keys(extraBuffers).map(k => k === 'chords' ? 'Chords.wav' : 'Drone.wav'),
+      ];
     }
 
     manifest[`Scene ${letter}`] = entry;
@@ -202,13 +393,28 @@ async function exportMixdown({ scenes, modes, folderHandle }) {
   return writtenFiles;
 }
 
-async function exportAllTracks({ modes, folderHandle }) {
+async function exportAllTracks({ modes, folderHandle, extras = [] }) {
   const writtenFiles = [];
   const entry = {};
+
+  let extraTotalSamples = 0;
+  for (const track of tracks) {
+    for (const clip of [...track.clips, ...(track.midiClips ?? [])]) {
+      const end = clip.startSample + clip.durationSamples;
+      if (end > extraTotalSamples) extraTotalSamples = end;
+    }
+  }
+
+  const extraBuffers = extras.length && extraTotalSamples > 0
+    ? await _renderExtras(extras, extraTotalSamples)
+    : {};
 
   if (modes.includes('stereo')) {
     const filename = 'All Tracks.wav';
     const rendered = await renderTrackGroupToStereo(tracks);
+    if (rendered) {
+      for (const buf of Object.values(extraBuffers)) _mixBufferInto(rendered, buf);
+    }
     const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
     const fh = await folderHandle.getFileHandle(filename, { create: true });
     const w = await fh.createWritable();
@@ -222,9 +428,20 @@ async function exportAllTracks({ modes, folderHandle }) {
     const usedNames = new Set();
     const stemFiles = [];
     for (const track of tracks) {
+      if (!_trackHasContent(track)) continue;
       const filename = uniqueFilename(sanitizeFilename(track.name), usedNames);
       const rendered = await renderTrackGroupToStereo([track]);
       const wav = rendered ? audioEngineEncodeWav(rendered) : buildPlaceholderWav();
+      const fh = await folderHandle.getFileHandle(filename, { create: true });
+      const w = await fh.createWritable();
+      await w.write(wav);
+      await w.close();
+      writtenFiles.push(filename);
+      stemFiles.push(filename);
+    }
+    for (const [key, buf] of Object.entries(extraBuffers)) {
+      const filename = key === 'chords' ? 'Chords.wav' : 'Drone.wav';
+      const wav = audioEngineEncodeWav(buf);
       const fh = await folderHandle.getFileHandle(filename, { create: true });
       const w = await fh.createWritable();
       await w.write(wav);
@@ -380,6 +597,11 @@ function showMixdownDialog() {
           <label><input type="checkbox" name="mx-mode" value="stereo" checked> Stereo mix</label>
           <label><input type="checkbox" name="mx-mode" value="stems"> Individual stems</label>
         </div>
+        <p class="mixdown-section-label">Extra tracks</p>
+        <div class="mixdown-mode-group">
+          <label><input type="checkbox" name="mx-extra" value="chords"> MIDI chords</label>
+          <label><input type="checkbox" name="mx-extra" value="drone"> Tanpura drone</label>
+        </div>
         <div class="mixdown-actions">
           <button class="mixdown-cancel">Cancel</button>
           <button class="mixdown-primary">${projectFolderHandle ? "Export" : "Choose Folder…"}</button>
@@ -399,10 +621,12 @@ function showMixdownDialog() {
     exportBtnFallback.addEventListener('click', async () => {
       const modes = Array.from(overlay.querySelectorAll('input[name="mx-mode"]:checked'))
         .map(cb => cb.value);
+      const extras = Array.from(overlay.querySelectorAll('input[name="mx-extra"]:checked'))
+        .map(cb => cb.value);
       try {
         const { handle: folderHandle, displayPath } = await getExportFolder();
         overlay.remove();
-        const files = await exportAllTracks({ modes, folderHandle });
+        const files = await exportAllTracks({ modes, folderHandle, extras });
         showMixdownDone(files, displayPath);
       } catch (err) {
         if (err.name !== 'AbortError') { console.error('Export failed:', err); alert('Export failed. See console for details.'); }
@@ -444,6 +668,11 @@ function showMixdownDialog() {
         <label><input type="checkbox" name="mx-mode" value="stereo" checked> Stereo mix</label>
         <label><input type="checkbox" name="mx-mode" value="stems"> Individual stems</label>
       </div>
+      <p class="mixdown-section-label">Extra tracks</p>
+      <div class="mixdown-mode-group">
+        <label><input type="checkbox" name="mx-extra" value="chords"> MIDI chords</label>
+        <label><input type="checkbox" name="mx-extra" value="drone"> Tanpura drone</label>
+      </div>
       <div class="mixdown-actions">
         <button class="mixdown-cancel">Cancel</button>
         <button class="mixdown-primary">${projectFolderHandle ? "Export" : "Choose Folder…"}</button>
@@ -479,10 +708,12 @@ function showMixdownDialog() {
       .map(cb => cb.value);
     const modes = Array.from(overlay.querySelectorAll('input[name="mx-mode"]:checked'))
       .map(cb => cb.value);
+    const extras = Array.from(overlay.querySelectorAll('input[name="mx-extra"]:checked'))
+      .map(cb => cb.value);
     try {
       const { handle: folderHandle, displayPath } = await getExportFolder();
       overlay.remove();
-      const files = await exportMixdown({ scenes, modes, folderHandle });
+      const files = await exportMixdown({ scenes, modes, folderHandle, extras });
       showMixdownDone(files, displayPath);
     } catch (err) {
       if (err.name !== 'AbortError') { console.error('Export failed:', err); alert('Export failed. See console for details.'); }
