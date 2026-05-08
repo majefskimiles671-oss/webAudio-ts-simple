@@ -5374,14 +5374,12 @@ function _chordToMidiNotes(chord) {
   const midi = [];
   for (let s = 0; s < 6; s++) {
     if (chord.tops[s] === "x") continue;
-    const hasDots = chord.dots[s].some(Boolean);
-    if (hasDots) {
-      chord.dots[s].forEach((dot, r) => {
-        if (dot) midi.push(currentTuning.midiAt(s + 1, chord.baseFret + r));
-      });
-    } else if (chord.tops[s] === "o") {
+    if (chord.tops[s] === "o") {
       midi.push(currentTuning.midiAt(s + 1, 0));
     }
+    chord.dots[s].forEach((dot, r) => {
+      if (dot) midi.push(currentTuning.midiAt(s + 1, chord.baseFret + r));
+    });
   }
   const output = midi.sort((a, b) => a - b);
   log("_chordToMidiNotes output:");
