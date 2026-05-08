@@ -2326,6 +2326,7 @@ function rerenderWaveforms() {
 const returnToBeginningBtn = document.getElementById("returnToBeginningBtn");
 const playBtn = document.getElementById("playBtn");
 const recordBtn = document.getElementById("recordBtn");
+const captureBtn = document.getElementById("captureBtn");
 const playhead = document.getElementById("playhead");
 const rulerPlayhead = document.getElementById("ruler-playhead");
 const timer = document.getElementById("timer");
@@ -2366,6 +2367,10 @@ function syncTransportUI() {
     state === "PLAY" || state === "PLAY_RECORD",
   );
   recordBtn.classList.toggle(
+    "recording",
+    state === "RECORD" || state === "PLAY_RECORD",
+  );
+  captureBtn.classList.toggle(
     "recording",
     state === "RECORD" || state === "PLAY_RECORD",
   );
@@ -3047,6 +3052,21 @@ playBtn.onclick = () => {
   } else {
     applyTransportChange({ play: !playing, record: playing ? false : recording });
   }
+};
+
+captureBtn.onclick = async () => {
+  if (recording) {
+    applyTransportChange({ play: false, record: false });
+    return;
+  }
+  addAudioTrack();
+  try {
+    await audioEngineEnsureMicStream();
+  } catch {
+    alert("Microphone access denied — cannot record.");
+    return;
+  }
+  applyTransportChange({ play: true, record: true });
 };
 
 recordBtn.onclick = async () => {

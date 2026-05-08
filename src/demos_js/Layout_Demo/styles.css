@@ -252,6 +252,23 @@
             color: var(--text-main);
         }
 
+        .capture-btn {
+            font-size: 15px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 1px 8px;
+            line-height: 1.4;
+        }
+        .capture-btn:hover { color: var(--text-main); }
+        .capture-btn.recording {
+            background: var(--accent-danger);
+            color: var(--text-main);
+            border-color: var(--accent-danger);
+        }
+
 
         #playBtn.active {
             background: var(--accent-primary);
