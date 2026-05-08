@@ -1471,7 +1471,7 @@ async function onRecordStop() {
     const rawClipStart = (firstChunkT != null && playbackStartT != null)
       ? playbackStartSeconds + (firstChunkT - playbackStartT)
       : startTime;
-    const recOffsetSec = Math.round(document.getElementById("rec-offset").value) / 1000;
+    const recOffsetSec = parseFloat(document.getElementById("rec-offset").value) / 1000;
     const clipStart = rawClipStart - recOffsetSec;
 
     console.log('[rec] placement — playbackStartSeconds:', playbackStartSeconds, 'playbackStartT:', playbackStartT, 'firstChunkT:', firstChunkT, 'rawClipStart:', rawClipStart, 'recOffsetSec:', recOffsetSec, 'clipStart:', clipStart);
@@ -3429,34 +3429,46 @@ function _syncDialogTotalMs(deltaMs) {
   return Math.round(_syncDialogPrimaryOriginalSamples / SAMPLE_RATE * 1000) + deltaMs;
 }
 
-document.getElementById("sync-dialog-slider").addEventListener("input", (e) => {
-  const deltaMs = parseInt(e.target.value) || 0;
-  document.getElementById("sync-dialog-number").value = deltaMs;
+let _syncDialogRestartTimer = null;
+
+function _syncDialogPreview(deltaMs) {
   document.getElementById("sync-dialog-total").textContent = `${_syncDialogTotalMs(deltaMs)} ms`;
   if (!_syncDialogOriginalStartSamples) return;
   _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
+    const newStartSample = origStart + Math.round(deltaMs * SAMPLE_RATE / 1000);
+    const newStartSec = newStartSample / SAMPLE_RATE;
+    const t = findTrackByClipId(clipId);
+    const c = t?.clips.find(cl => cl.id === clipId);
+    if (c) c.startSample = newStartSample;
     const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
-    if (waveform) waveform.style.left = `${secondsToPixels(origStart / SAMPLE_RATE + deltaMs / 1000)}px`;
+    if (waveform) waveform.style.left = `${secondsToPixels(newStartSec)}px`;
   });
+  if (playing) {
+    clearTimeout(_syncDialogRestartTimer);
+    audioEngineStop();
+    _syncDialogRestartTimer = setTimeout(() => onTransportStart(), 150);
+  }
+}
+
+document.getElementById("sync-dialog-slider").addEventListener("pointerup", (e) => e.target.blur());
+document.getElementById("sync-dialog-slider").addEventListener("input", (e) => {
+  const deltaMs = parseFloat(e.target.value) || 0;
+  document.getElementById("sync-dialog-number").value = deltaMs;
+  _syncDialogPreview(deltaMs);
 });
 
 document.getElementById("sync-dialog-number").addEventListener("input", (e) => {
-  const clamped = Math.max(-200, Math.min(200, parseInt(e.target.value) || 0));
+  const clamped = Math.max(-200, Math.min(200, parseFloat(e.target.value) || 0));
   document.getElementById("sync-dialog-slider").value = clamped;
-  document.getElementById("sync-dialog-total").textContent = `${_syncDialogTotalMs(clamped)} ms`;
+  _syncDialogPreview(clamped);
 });
 
 function _syncDialogStep(delta) {
   const slider = document.getElementById("sync-dialog-slider");
-  const clamped = Math.max(-200, Math.min(200, (parseInt(slider.value) || 0) + delta));
+  const clamped = Math.max(-200, Math.min(200, (parseFloat(slider.value) || 0) + delta));
   slider.value = clamped;
   document.getElementById("sync-dialog-number").value = clamped;
-  document.getElementById("sync-dialog-total").textContent = `${_syncDialogTotalMs(clamped)} ms`;
-  if (!_syncDialogOriginalStartSamples) return;
-  _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
-    const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
-    if (waveform) waveform.style.left = `${secondsToPixels(origStart / SAMPLE_RATE + clamped / 1000)}px`;
-  });
+  _syncDialogPreview(clamped);
 }
 
 document.getElementById("sync-dialog-up").addEventListener("click", () => _syncDialogStep(1));
@@ -3477,7 +3489,7 @@ function _applySyncDialog() {
   document.getElementById("sync-dialog").hidden = true;
   if (!_syncDialogOriginalStartSamples) return;
   const deltaMs = Math.max(-200, Math.min(200,
-    parseInt(document.getElementById("sync-dialog-number").value) || 0));
+    parseFloat(document.getElementById("sync-dialog-number").value) || 0));
   _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
     const t = findTrackByClipId(clipId);
     const c = t?.clips.find(cl => cl.id === clipId);
@@ -3507,9 +3519,13 @@ document.getElementById("sync-dialog-cancel").addEventListener("click", () => {
   document.getElementById("sync-dialog").hidden = true;
   if (_syncDialogOriginalStartSamples) {
     _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
+      const t = findTrackByClipId(clipId);
+      const c = t?.clips.find(cl => cl.id === clipId);
+      if (c) c.startSample = origStart;
       const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
       if (waveform) waveform.style.left = `${secondsToPixels(origStart / SAMPLE_RATE)}px`;
     });
+    if (playing) { audioEngineStop(); onTransportStart(); }
   }
   _syncDialogOriginalStartSamples = null;
 });
@@ -5090,9 +5106,9 @@ tanpuraSetSynthMult(1.0);         // Long
   document.getElementById("bus-latency-display").textContent = `${busMs} ms`;
   metronomeSetLatencyMs(busMs);
 
-  const recMs = parseInt(localStorage.getItem("recOffsetMs") ?? "0") || 0;
+  const recMs = parseFloat(localStorage.getItem("recOffsetMs") ?? "0") || 0;
   document.getElementById("rec-offset").value = recMs;
-  document.getElementById("rec-offset-display").textContent = `${recMs} ms`;
+  document.getElementById("rec-offset-display").textContent = `${recMs.toFixed(1)} ms`;
 }
 
 // Reverb default: Room
@@ -5273,8 +5289,8 @@ document.getElementById("bus-latency").addEventListener("input", (e) => {
 });
 
 document.getElementById("rec-offset").addEventListener("input", (e) => {
-  const ms = Math.round(e.target.value);
-  document.getElementById("rec-offset-display").textContent = `${ms} ms`;
+  const ms = parseFloat(parseFloat(e.target.value).toFixed(1));
+  document.getElementById("rec-offset-display").textContent = `${ms.toFixed(1)} ms`;
   localStorage.setItem("recOffsetMs", ms);
 });
 
