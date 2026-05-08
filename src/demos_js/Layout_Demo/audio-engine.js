@@ -433,16 +433,20 @@ function audioEngineStopRecording() {
     if (!chunks.length) { resolve(null); return; }
 
     const numChannels = chunks[0].channels.length;
-    const totalSamples = chunks.reduce((sum, c) => sum + c.channels[0].length, 0);
+    const firstT = chunks[0].t;
+    const lastChunk = chunks[chunks.length - 1];
+    const lastT = lastChunk.t + lastChunk.channels[0].length / _audioCtx.sampleRate;
+    const totalSamples = Math.round((lastT - firstT) * _audioCtx.sampleRate);
     const buf = _audioCtx.createBuffer(numChannels, totalSamples, _audioCtx.sampleRate);
 
-    for (let ch = 0; ch < numChannels; ch++) {
-      const out = buf.getChannelData(ch);
-      let offset = 0;
-      for (const chunk of chunks) {
-        const src = chunk.channels[ch] ?? chunk.channels[0]; // fall back to ch0 if mono
-        out.set(src, offset);
-        offset += src.length;
+    // Place each chunk at its sample-accurate timestamp offset so gaps become silence
+    // rather than causing the buffer to run short and drift against the timeline.
+    const channelData = Array.from({ length: numChannels }, (_, ch) => buf.getChannelData(ch));
+    for (const chunk of chunks) {
+      const sampleOffset = Math.round((chunk.t - firstT) * _audioCtx.sampleRate);
+      for (let ch = 0; ch < numChannels; ch++) {
+        const src = chunk.channels[ch] ?? chunk.channels[0];
+        channelData[ch].set(src, sampleOffset);
       }
     }
 

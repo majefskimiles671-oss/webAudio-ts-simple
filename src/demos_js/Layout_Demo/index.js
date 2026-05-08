@@ -3441,10 +3441,26 @@ document.getElementById("sync-dialog-slider").addEventListener("input", (e) => {
 });
 
 document.getElementById("sync-dialog-number").addEventListener("input", (e) => {
-  const clamped = Math.max(-300, Math.min(0, parseInt(e.target.value) || 0));
+  const clamped = Math.max(-200, Math.min(200, parseInt(e.target.value) || 0));
   document.getElementById("sync-dialog-slider").value = clamped;
   document.getElementById("sync-dialog-total").textContent = `${_syncDialogTotalMs(clamped)} ms`;
 });
+
+function _syncDialogStep(delta) {
+  const slider = document.getElementById("sync-dialog-slider");
+  const clamped = Math.max(-200, Math.min(200, (parseInt(slider.value) || 0) + delta));
+  slider.value = clamped;
+  document.getElementById("sync-dialog-number").value = clamped;
+  document.getElementById("sync-dialog-total").textContent = `${_syncDialogTotalMs(clamped)} ms`;
+  if (!_syncDialogOriginalStartSamples) return;
+  _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
+    const waveform = document.querySelector(`.waveform[data-clip-id="${clipId}"]`);
+    if (waveform) waveform.style.left = `${secondsToPixels(origStart / SAMPLE_RATE + clamped / 1000)}px`;
+  });
+}
+
+document.getElementById("sync-dialog-up").addEventListener("click", () => _syncDialogStep(1));
+document.getElementById("sync-dialog-down").addEventListener("click", () => _syncDialogStep(-1));
 
 document.getElementById("sync-dialog-reset").addEventListener("click", () => {
   document.getElementById("sync-dialog-slider").value = 0;
@@ -3460,7 +3476,7 @@ document.getElementById("sync-dialog-reset").addEventListener("click", () => {
 function _applySyncDialog() {
   document.getElementById("sync-dialog").hidden = true;
   if (!_syncDialogOriginalStartSamples) return;
-  const deltaMs = Math.max(-300, Math.min(0,
+  const deltaMs = Math.max(-200, Math.min(200,
     parseInt(document.getElementById("sync-dialog-number").value) || 0));
   _syncDialogOriginalStartSamples.forEach((origStart, clipId) => {
     const t = findTrackByClipId(clipId);

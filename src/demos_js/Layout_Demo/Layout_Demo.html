@@ -931,10 +931,14 @@ Rule - Add comments before code snippets in this format:
   <div id="sync-dialog-card">
     <p id="sync-dialog-title">Clip Sync</p>
     <label id="sync-dialog-label">
-      Offset
+      <div id="sync-dialog-label-header">
+        Offset
+        <button id="sync-dialog-up" type="button">▲</button>
+        <button id="sync-dialog-down" type="button">▼</button>
+      </div>
       <div id="sync-dialog-row">
-        <input id="sync-dialog-slider" type="range" min="-300" max="0" value="0">
-        <input id="sync-dialog-number" type="number" min="-300" max="0" value="0"> ms
+        <input id="sync-dialog-slider" type="range" min="-200" max="200" value="0">
+        <input id="sync-dialog-number" type="number" min="-200" max="200" value="0"> ms
         <button id="sync-dialog-reset" type="button">↺</button>
       </div>
     </label>
