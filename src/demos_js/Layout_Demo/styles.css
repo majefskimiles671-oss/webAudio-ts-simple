@@ -5788,10 +5788,9 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  min-width: 24px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   font-size: 9px;
   font-weight: 600;
   border-right: 1px solid color-mix(in srgb, var(--accent-primary) 60%, transparent);
@@ -5802,8 +5801,19 @@
   pointer-events: auto;
   cursor: grab;
   background: color-mix(in srgb, var(--accent-primary) 30%, transparent);
+  box-sizing: border-box;
 }
 .midi-event:active { cursor: grabbing; }
+.midi-event-resize {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  background: color-mix(in srgb, var(--accent-primary) 50%, transparent);
+  flex-shrink: 0;
+}
 
 /* Floating chord picker popup in editor */
 .midi-chord-picker-popup {

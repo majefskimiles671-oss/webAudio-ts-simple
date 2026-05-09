@@ -101,7 +101,8 @@ async function _renderChordsToBuffer(totalSamples) {
         if (t >= totalSamples / sr) continue;
         const chord = chords.find(c => c.id === ev.chordId);
         if (!chord) continue;
-        cpScheduleChordAt(chord, offCtx, t, mode, gainNode);
+        const evDurSec = (ev.durationSamples ?? Math.round(sr * 2)) / sr;
+        cpScheduleChordAt(chord, offCtx, t, mode, gainNode, evDurSec);
       }
     }
   }

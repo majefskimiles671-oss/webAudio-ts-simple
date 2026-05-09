@@ -2017,7 +2017,7 @@ function renderMidiClip(track, clip) {
             label: "Add chord",
             action: () => {
               const picker = buildMidiChordPicker((chord) => {
-                clip.events.push({ offsetSamples, chordId: chord.id });
+                clip.events.push({ offsetSamples, chordId: chord.id, durationSamples: Math.round(SAMPLE_RATE * 2) });
                 clip.events.sort((a, b) => a.offsetSamples - b.offsetSamples);
                 rerenderMidiClipEvents(clip, el);
                 markDirty();
@@ -2125,7 +2125,8 @@ function renderMidiClip(track, clip) {
     el.style.left  = secondsToPixels(clip.startSample / SAMPLE_RATE) + "px";
     el.style.width = computeWaveformWidth(clip.durationSamples / SAMPLE_RATE) + "px";
     el.querySelectorAll(".midi-event").forEach((evEl, i) => {
-      evEl.style.left = secondsToPixels(clip.events[i].offsetSamples / SAMPLE_RATE) + "px";
+      evEl.style.left  = secondsToPixels(clip.events[i].offsetSamples / SAMPLE_RATE) + "px";
+      evEl.style.width = secondsToPixels((clip.events[i].durationSamples ?? Math.round(SAMPLE_RATE * 2)) / SAMPLE_RATE) + "px";
     });
   });
   leftHandle.addEventListener("pointerup", (e) => {
@@ -2173,16 +2174,54 @@ function rerenderMidiClipEvents(clip, el) {
   }
   for (const ev of clip.events) {
     const chord = (typeof chords !== "undefined") && chords.find(c => c.id === ev.chordId);
+    const durSamples = ev.durationSamples ?? Math.round(SAMPLE_RATE * 2);
+    ev.durationSamples = durSamples;
+
     const evEl = document.createElement("div");
     evEl.className = "midi-event";
     evEl.textContent = chord ? (chord.name || "?") : "?";
-    evEl.style.left = secondsToPixels(ev.offsetSamples / SAMPLE_RATE) + "px";
+    evEl.style.left  = secondsToPixels(ev.offsetSamples / SAMPLE_RATE) + "px";
+    evEl.style.width = secondsToPixels(ev.durationSamples / SAMPLE_RATE) + "px";
+
+    const resizeHandle = document.createElement("div");
+    resizeHandle.className = "midi-event-resize";
+    evEl.appendChild(resizeHandle);
 
     const DRAG_THRESHOLD = 3;
-    let evDragStartX = 0, evDragStartSamples = 0, evIsDragging = false;
+    let evDragStartX = 0, evDragStartSamples = 0, evDragStartDur = 0, evIsDragging = false, evIsResizing = false;
+
+    resizeHandle.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      evDragStartX = e.clientX;
+      evDragStartDur = ev.durationSamples;
+      evIsResizing = true;
+      evIsDragging = false;
+      resizeHandle.setPointerCapture(e.pointerId);
+    });
+
+    resizeHandle.addEventListener("pointermove", (e) => {
+      if (!resizeHandle.hasPointerCapture(e.pointerId)) return;
+      const deltaX = e.clientX - evDragStartX;
+      if (!evIsDragging && Math.abs(deltaX) > DRAG_THRESHOLD) evIsDragging = true;
+      if (evIsDragging) {
+        let newDurSec = evDragStartDur / SAMPLE_RATE + pixelsToSeconds(deltaX);
+        if (rulerMode === "bars") newDurSec = snapToHalfBeat(newDurSec);
+        ev.durationSamples = Math.max(Math.round(SAMPLE_RATE * 0.1), Math.round(newDurSec * SAMPLE_RATE));
+        evEl.style.width = secondsToPixels(ev.durationSamples / SAMPLE_RATE) + "px";
+      }
+    });
+
+    resizeHandle.addEventListener("pointerup", (e) => {
+      if (!resizeHandle.hasPointerCapture(e.pointerId)) return;
+      resizeHandle.releasePointerCapture(e.pointerId);
+      if (evIsDragging) markDirty();
+      evIsDragging = false;
+      evIsResizing = false;
+    });
 
     evEl.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0) return;
+      if (e.button !== 0 || evIsResizing) return;
       e.stopPropagation();
       evDragStartX = e.clientX;
       evDragStartSamples = ev.offsetSamples;

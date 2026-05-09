@@ -357,7 +357,7 @@ function serializeProject() {
         id:              clip.id,
         startSample:     clip.startSample,
         durationSamples: clip.durationSamples,
-        events:          clip.events.map(e => ({ offsetSamples: e.offsetSamples, chordId: e.chordId })),
+        events:          clip.events.map(e => ({ offsetSamples: e.offsetSamples, chordId: e.chordId, durationSamples: e.durationSamples ?? Math.round(48000 * 2) })),
         notes:           clip.notes?.map(n => ({ pitch: n.pitch, startSamples: n.startSamples, durationSamples: n.durationSamples, velocity: n.velocity })),
       })),
     })),
@@ -790,7 +790,7 @@ function deserializeProject(data) {
         id:              savedClip.id,
         startSample:     savedClip.startSample,
         durationSamples: savedClip.durationSamples,
-        events:          (savedClip.events ?? []).map(e => ({ offsetSamples: e.offsetSamples, chordId: e.chordId })),
+        events:          (savedClip.events ?? []).map(e => ({ offsetSamples: e.offsetSamples, chordId: e.chordId, durationSamples: e.durationSamples ?? Math.round(48000 * 2) })),
         notes:           savedClip.notes ? savedClip.notes.map(n => ({ pitch: n.pitch, startSamples: n.startSamples, durationSamples: n.durationSamples, velocity: n.velocity ?? 100 })) : undefined,
       };
       track.midiClips.push(clip);

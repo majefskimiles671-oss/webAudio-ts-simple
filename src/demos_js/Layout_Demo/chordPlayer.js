@@ -375,22 +375,25 @@ function cpScheduleNoteAt(freq, ctx, audioTime, durationSec, velocity = 100, mod
 }
 
 // Schedules a strum at an exact WebAudio time. Returns stoppable nodes for cancellation.
-function cpScheduleChordAt(chord, ctx, audioTime, mode = "pluck", destination = null) {
+function cpScheduleChordAt(chord, ctx, audioTime, mode = "pluck", destination = null, durationSec = null) {
   const freqs = _chordToFreqs(chord);
   const nodes = [];
   freqs.forEach((freq, i) => {
     const t = audioTime + i * 0.022;
     if (mode === "pluck") {
-      const src = _ksPluck(ctx, freq, t, 3.5 * _pluckDurationMult, 1, destination);
+      const dur = durationSec !== null ? durationSec * _pluckDurationMult : 3.5 * _pluckDurationMult;
+      const src = _ksPluck(ctx, freq, t, dur, 1, destination);
       if (src) nodes.push(src);
     } else if (mode === "click") {
       const src = _clickPlayNote(ctx, freq, t, 1, destination);
       if (src) nodes.push(src);
     } else if (mode === "sine") {
-      const voice = _sinePlayNote(ctx, freq, t, 2.0 * _synthNoteMult, 1, destination);
+      const dur = durationSec !== null ? durationSec * _synthNoteMult : 2.0 * _synthNoteMult;
+      const voice = _sinePlayNote(ctx, freq, t, dur, 1, destination);
       if (voice?.oscs) nodes.push(...voice.oscs);
     } else {
-      const voice = _synthPlayNote(ctx, freq, t, 2.0 * _synthNoteMult, 1, destination);
+      const dur = durationSec !== null ? durationSec * _synthNoteMult : 2.0 * _synthNoteMult;
+      const voice = _synthPlayNote(ctx, freq, t, dur, 1, destination);
       if (voice?.oscs) nodes.push(...voice.oscs);
     }
   });

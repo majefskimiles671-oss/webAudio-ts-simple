@@ -76,18 +76,19 @@ async function midiEnginePlay(tracks, playheadSeconds, startT = null) {
         const chord = (typeof chords !== "undefined") && chords.find(c => c.id === ev.chordId);
         if (!chord) continue;
 
+        const durSec = (ev.durationSamples ?? Math.round(SAMPLE_RATE * 2)) / SAMPLE_RATE;
         if (isGm) {
           _chordToMidiNotes(chord).forEach((pitch, i) => {
-            const nodes = sfScheduleNote(dest, program, pitch, 100, audioTime + i * 0.022, 2.0);
+            const nodes = sfScheduleNote(dest, program, pitch, 100, audioTime + i * 0.022, durSec);
             _scheduledMidiNodes.push(...nodes);
           });
         } else if (isSfz) {
           _chordToMidiNotes(chord).forEach((pitch, i) => {
-            const nodes = sfzScheduleNote(dest, sfzName, pitch, 100, audioTime + i * 0.022, 2.0);
+            const nodes = sfzScheduleNote(dest, sfzName, pitch, 100, audioTime + i * 0.022, durSec);
             _scheduledMidiNodes.push(...nodes);
           });
         } else {
-          const nodes = cpScheduleChordAt(chord, ctx, audioTime, track.instrument ?? "pluck", dest);
+          const nodes = cpScheduleChordAt(chord, ctx, audioTime, track.instrument ?? "pluck", dest, durSec);
           _scheduledMidiNodes.push(...nodes);
         }
       }
