@@ -364,11 +364,14 @@ function serializeProject() {
     chordPanel:  (typeof cdGetPanelState === "function") ? cdGetPanelState()  : undefined,
     theoryPanel: (typeof tcGetPanelState === "function") ? tcGetPanelState()  : undefined,
     tuning: (typeof currentTuning !== "undefined") ? [...currentTuning.openMidiNotes] : [64, 59, 55, 50, 45, 40],
+    customTunings: (typeof tunings !== "undefined") ? tunings.filter(t => !t.builtin).map(t => ({ id: t.id, name: t.name, strings: [...t.strings] })) : [],
     chords: (typeof chords !== "undefined" ? chords : []).map(c => ({
       id:       c.id,
       name:     c.name,
       baseFret: c.baseFret,
       frets:    c.frets ?? 5,
+      strings:  c.strings ?? 6,
+      tuningId: c.tuningId ?? null,
       tops:     [...c.tops],
       dots:     c.dots.map(row => [...row]),
       tab:      c.tab ?? null,
@@ -695,17 +698,27 @@ function deserializeProject(data) {
     currentTuning = tuning(data.tuning);
   }
 
+  if (typeof tunings !== "undefined" && Array.isArray(data.customTunings)) {
+    tunings = tunings.filter(t => t.builtin);
+    for (const t of data.customTunings) {
+      tunings.push({ id: t.id, name: t.name, strings: t.strings, builtin: false });
+    }
+  }
+
   if (typeof chords !== "undefined") {
     chords.length = 0;
     for (const c of (data.chords ?? [])) {
       const f = c.frets ?? 5;
+      const ns = c.strings ?? (c.tops?.length ?? 6);
       chords.push({
         id:       c.id,
         name:     c.name ?? "",
         baseFret: c.baseFret ?? 1,
         frets:    f,
-        tops:     c.tops ?? Array(6).fill(null),
-        dots:     c.dots ?? Array.from({ length: 6 }, () => Array(f).fill(false)),
+        strings:  ns,
+        tuningId: c.tuningId ?? null,
+        tops:     c.tops ?? Array(ns).fill(null),
+        dots:     c.dots ?? Array.from({ length: ns }, () => Array(f).fill(false)),
         tab:      c.tab ?? null,
       });
     }

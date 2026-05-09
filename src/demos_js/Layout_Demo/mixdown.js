@@ -127,11 +127,12 @@ async function _renderDroneToBuffer(totalSamples) {
     if (m.chordId) {
       const chord = chords.find(c => c.id === m.chordId);
       if (chord) {
+        const ct = getTuningForChord(chord);
         const notes = chord.dots.flatMap((dotRow, s) => {
           if (chord.tops[s] === 'x') return [];
           const hits = [];
-          if (chord.tops[s] === 'o') hits.push(currentTuning.midiAt(s + 1, 0));
-          dotRow.forEach((dot, r) => { if (dot) hits.push(currentTuning.midiAt(s + 1, chord.baseFret + r)); });
+          if (chord.tops[s] === 'o') hits.push(ct.midiAt(s + 1, 0));
+          dotRow.forEach((dot, r) => { if (dot) hits.push(ct.midiAt(s + 1, chord.baseFret + r)); });
           return hits;
         }).sort((a, b) => a - b);
         const arr = notes.slice(0, TANPURA_STRING_COUNT);

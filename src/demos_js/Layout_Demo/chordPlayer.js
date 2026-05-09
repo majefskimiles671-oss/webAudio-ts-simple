@@ -50,14 +50,15 @@ function _midiToFreq(midi) {
 
 // Returns one freq per string (first dot, or open string). Used for normal chords.
 function _chordToFreqs(chord) {
+  const t = getTuningForChord(chord);
   const freqs = [];
-  for (let s = 0; s < 6; s++) {
+  for (let s = 0; s < chord.tops.length; s++) {
     if (chord.tops[s] === "x") continue;
     const r = chord.dots[s].indexOf(true);
     if (r === -1 && chord.tops[s] !== "o") continue;
     const midi = r === -1
-      ? currentTuning.openMidi(s + 1)
-      : currentTuning.openMidi(s + 1) + chord.baseFret + r;
+      ? t.openMidi(s + 1)
+      : t.openMidi(s + 1) + chord.baseFret + r;
     freqs.push(_midiToFreq(midi));
   }
   return freqs.reverse();
@@ -66,19 +67,20 @@ function _chordToFreqs(chord) {
 // Returns every note in the diagram sorted ascending by pitch.
 // Open strings (no dots, not muted) count as fret 0 on that string.
 function _scaleToFreqs(chord) {
+  const t = getTuningForChord(chord);
   const freqs = [];
-  for (let s = 0; s < 6; s++) {
+  for (let s = 0; s < chord.tops.length; s++) {
     if (chord.tops[s] === "x") continue;
     if (chord.tops[s] == null && !chord.dots[s].some(Boolean)) continue;
     let stringHasDot = false;
     for (let r = 0; r < chord.dots[s].length; r++) {
       if (chord.dots[s][r]) {
-        freqs.push(_midiToFreq(currentTuning.openMidi(s + 1) + (chord.baseFret - 1) + (r + 1)));
+        freqs.push(_midiToFreq(t.openMidi(s + 1) + (chord.baseFret - 1) + (r + 1)));
         stringHasDot = true;
       }
     }
     if (!stringHasDot || chord.tops[s] === "o") {
-      freqs.push(_midiToFreq(currentTuning.openMidi(s + 1)));
+      freqs.push(_midiToFreq(t.openMidi(s + 1)));
     }
   }
   return freqs.sort((a, b) => a - b);

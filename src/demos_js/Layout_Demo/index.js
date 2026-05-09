@@ -5423,14 +5423,15 @@ document.getElementById("tanpura-toggle").addEventListener("click", (e) => {
 //   tops: ["o",null,"o",null,null,"x"]  dots: [[F,F,F,F],[T,F,F,F],[F,F,F,F],[F,T,F,F],[F,F,T,F],[F,F,F,F]]
 //   → [48, 52, 55, 60, 64]  (C E G C E, low-E string skipped)
 function _chordToMidiNotes(chord) {
+  const t = getTuningForChord(chord);
   const midi = [];
-  for (let s = 0; s < 6; s++) {
+  for (let s = 0; s < chord.tops.length; s++) {
     if (chord.tops[s] === "x") continue;
     if (chord.tops[s] === "o") {
-      midi.push(currentTuning.midiAt(s + 1, 0));
+      midi.push(t.midiAt(s + 1, 0));
     }
     chord.dots[s].forEach((dot, r) => {
-      if (dot) midi.push(currentTuning.midiAt(s + 1, chord.baseFret + r));
+      if (dot) midi.push(t.midiAt(s + 1, chord.baseFret + r));
     });
   }
   const output = midi.sort((a, b) => a - b);

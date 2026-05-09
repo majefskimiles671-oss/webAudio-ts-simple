@@ -4043,6 +4043,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .cd-name-row {
@@ -4117,6 +4118,51 @@
         .cd-rows-btn:not(.active):hover {
             color: var(--text-main);
         }
+
+        .cd-tuning-row {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;
+        }
+        .cd-tuning-select {
+            flex: 1; background: var(--bg-surface); border: 1px solid var(--border-subtle);
+            border-radius: 4px; color: var(--text-main); font-size: 12px; padding: 3px 6px;
+        }
+        .cd-tuning-manager-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.4);
+        }
+        .cd-tuning-manager-card {
+            background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
+            padding: 16px; min-width: 420px; max-width: 90vw; max-height: 80vh;
+            overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+        }
+        .cd-tuning-manager-header {
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;
+        }
+        .cd-tuning-manager-title {
+            font-size: 14px; font-weight: 700; color: var(--text-main);
+        }
+        .cd-tuning-row-item {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 0; border-bottom: 1px solid var(--border-subtle);
+        }
+        .cd-tuning-name-input {
+            width: 140px; background: var(--bg-surface); border: 1px solid var(--border-subtle);
+            border-radius: 4px; color: var(--text-main); font-size: 12px; padding: 3px 6px;
+        }
+        .cd-tuning-strings-wrap {
+            display: flex; gap: 4px; flex: 1;
+        }
+        .cd-tuning-note-input {
+            width: 38px; background: var(--bg-surface); border: 1px solid var(--border-subtle);
+            border-radius: 4px; color: var(--text-main); font-size: 11px; padding: 2px 4px;
+            text-align: center;
+        }
+        .cd-tuning-del-btn {
+            background: none; border: 1px solid var(--border-subtle); border-radius: 4px;
+            color: var(--text-secondary); cursor: pointer; padding: 2px 6px; font-size: 11px;
+        }
+        .cd-tuning-del-btn:hover { color: var(--text-main); }
 
         .cd-sound-seg {
             display: flex;
@@ -4201,7 +4247,7 @@
             position: fixed;
             left: -9999px;
             top: -9999px;
-            width: 240px;
+            width: 280px;
             background: var(--bg-panel);
             border: 1px solid var(--border-subtle);
             border-radius: 8px;

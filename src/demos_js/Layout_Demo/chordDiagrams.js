@@ -63,6 +63,34 @@ let cdTabs = [
 ];
 let cdActiveTab = "all";
 let currentTuning = tuning([64, 59, 55, 50, 45, 40]);
+
+let tunings = [
+  { id: "builtin-standard-guitar", name: "Standard Guitar", strings: [64, 59, 55, 50, 45, 40], builtin: true },
+  { id: "builtin-open-g",          name: "Open G",          strings: [62, 59, 55, 50, 47, 38], builtin: true },
+  { id: "builtin-drop-d",          name: "Drop D",          strings: [64, 59, 55, 50, 45, 38], builtin: true },
+  { id: "builtin-ukulele",         name: "Ukulele",         strings: [69, 64, 60, 67],         builtin: true },
+  { id: "builtin-violin",          name: "Violin",          strings: [76, 69, 62, 55],         builtin: true },
+];
+
+function getTuningForChord(chord) {
+  const t = tunings.find(t => t.id === chord.tuningId);
+  return t ? tuning(t.strings) : currentTuning;
+}
+
+function cdMidiToNoteName(midi) {
+  const names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+  return names[midi % 12] + Math.floor(midi / 12 - 1);
+}
+
+function cdNoteNameToMidi(str) {
+  const m = str.trim().toUpperCase().match(/^([A-G]#?)(-?\d+)$/);
+  if (!m) return null;
+  const names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+  const pc = names.indexOf(m[1]);
+  if (pc === -1) return null;
+  const midi = (parseInt(m[2]) + 1) * 12 + pc;
+  return midi >= 21 && midi <= 108 ? midi : null;
+}
 let _editingChord = null;
 let _cdDragging = false;
 let _cdDragOffX = 0;
@@ -104,13 +132,17 @@ function cdDecodeChords(str) {
 // ============================================================
 
 function cdMakeBlankChord() {
+  const defaultTuning = tunings[0];
+  const strings = defaultTuning.strings.length, frets = 4;
   return {
     id: crypto.randomUUID(),
     name: "",
     baseFret: 1,
-    frets: 4,
-    tops: Array(6).fill(null),
-    dots: Array.from({ length: 6 }, () => Array(4).fill(false)),
+    frets,
+    strings,
+    tuningId: defaultTuning.id,
+    tops: Array(strings).fill(null),
+    dots: Array.from({ length: strings }, () => Array(frets).fill(false)),
     tab: cdActiveTab !== "all" ? cdActiveTab : (cdTabs[0]?.id ?? null),
   };
 }
@@ -121,6 +153,8 @@ function cdCloneChord(c) {
     name: c.name,
     baseFret: c.baseFret,
     frets: c.frets ?? 5,
+    strings: c.strings ?? 6,
+    tuningId: c.tuningId ?? null,
     tops: [...c.tops],
     dots: c.dots.map(row => [...row]),
     tab: c.tab ?? null,
@@ -313,13 +347,15 @@ function cdBuildGridEl(chord, interactive) {
   wrap.appendChild(label);
 
   const frets = chord.frets ?? 5;
+  const nStrings = chord.strings ?? 6;
   const grid = document.createElement("div");
   grid.className = "cd-grid" + (interactive ? "" : " cd-view") + (frets === 4 ? " cd-4frets" : frets === 6 ? " cd-6frets" : "");
+  grid.style.gridTemplateColumns = `repeat(${nStrings}, 1fr)`;
 
-  // Top row — above-nut indicators (render s=5..0 so low E appears left, high E right)
-  for (let s = 5; s >= 0; s--) {
+  // Top row — above-nut indicators (render s=nStrings-1..0 so low string appears left)
+  for (let s = nStrings - 1; s >= 0; s--) {
     const cell = document.createElement("div");
-    cell.className = "cd-top-cell" + (s === 5 ? " cd-s-first" : s === 0 ? " cd-s-last" : "");
+    cell.className = "cd-top-cell" + (s === nStrings - 1 ? " cd-s-first" : s === 0 ? " cd-s-last" : "");
     cell.textContent = chord.tops[s] ?? "";
     if (interactive) {
       cell.addEventListener("click", () => cdCycleTop(s));
@@ -329,10 +365,10 @@ function cdBuildGridEl(chord, interactive) {
 
   // Fret rows (same reverse order)
   for (let r = 0; r < frets; r++) {
-    for (let s = 5; s >= 0; s--) {
+    for (let s = nStrings - 1; s >= 0; s--) {
       const cell = document.createElement("div");
-      cell.className = "cd-fret-cell" + (s === 5 ? " cd-s-first" : s === 0 ? " cd-s-last" : "");
-      if (chord.dots[s][r]) {
+      cell.className = "cd-fret-cell" + (s === nStrings - 1 ? " cd-s-first" : s === 0 ? " cd-s-last" : "");
+      if (chord.dots[s]?.[r]) {
         const dot = document.createElement("div");
         dot.className = "cd-dot";
         cell.appendChild(dot);
@@ -564,7 +600,7 @@ function cdRenderEditorInto(container) {
     btn.addEventListener("click", () => {
       const prev = _editingChord.frets;
       _editingChord.frets = n;
-      for (let s = 0; s < 6; s++) {
+      for (let s = 0; s < _editingChord.strings; s++) {
         while (_editingChord.dots[s].length > n) _editingChord.dots[s].pop();
         while (_editingChord.dots[s].length < n) _editingChord.dots[s].push(false);
       }
@@ -573,11 +609,71 @@ function cdRenderEditorInto(container) {
     rowsSeg.appendChild(btn);
   });
 
+  const stringsLabel = document.createElement("span");
+  stringsLabel.className = "cd-basefret-label";
+  stringsLabel.textContent = "Strings";
+
+  const stringsSeg = document.createElement("div");
+  stringsSeg.className = "cd-rows-seg";
+  [4, 5, 6].forEach(n => {
+    const btn = document.createElement("button");
+    btn.className = "cd-rows-btn" + ((_editingChord.strings ?? 6) === n ? " active" : "");
+    btn.textContent = n;
+    btn.addEventListener("click", () => {
+      const prev = _editingChord.strings ?? 6;
+      _editingChord.strings = n;
+      while (_editingChord.tops.length > n) _editingChord.tops.pop();
+      while (_editingChord.tops.length < n) _editingChord.tops.push(null);
+      while (_editingChord.dots.length > n) _editingChord.dots.pop();
+      while (_editingChord.dots.length < n) _editingChord.dots.push(Array(_editingChord.frets).fill(false));
+      if (prev !== n) cdRenderEditPopover();
+    });
+    stringsSeg.appendChild(btn);
+  });
+
   controls.appendChild(fretLabel);
   controls.appendChild(fretInput);
   controls.appendChild(rowsLabel);
   controls.appendChild(rowsSeg);
+  controls.appendChild(stringsLabel);
+  controls.appendChild(stringsSeg);
   container.appendChild(controls);
+
+  // Tuning selector
+  const tuningRow = document.createElement("div");
+  tuningRow.className = "cd-tuning-row";
+  const tuningLabel = document.createElement("span");
+  tuningLabel.className = "cd-basefret-label";
+  tuningLabel.textContent = "Tuning";
+  const tuningSelect = document.createElement("select");
+  tuningSelect.className = "cd-tuning-select";
+  for (const t of tunings) {
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = t.name + " (" + t.strings.length + " str)";
+    if (t.id === _editingChord.tuningId) opt.selected = true;
+    tuningSelect.appendChild(opt);
+  }
+  const manageTuningsBtn = document.createElement("button");
+  manageTuningsBtn.className = "cd-btn-cancel";
+  manageTuningsBtn.textContent = "Manage…";
+  manageTuningsBtn.addEventListener("click", () => cdShowTuningManager());
+  tuningSelect.addEventListener("change", () => {
+    const t = tunings.find(t => t.id === tuningSelect.value);
+    if (!t) return;
+    _editingChord.tuningId = t.id;
+    const n = t.strings.length;
+    _editingChord.strings = n;
+    while (_editingChord.tops.length > n) _editingChord.tops.pop();
+    while (_editingChord.tops.length < n) _editingChord.tops.push(null);
+    while (_editingChord.dots.length > n) _editingChord.dots.pop();
+    while (_editingChord.dots.length < n) _editingChord.dots.push(Array(_editingChord.frets).fill(false));
+    cdRenderEditPopover();
+  });
+  tuningRow.appendChild(tuningLabel);
+  tuningRow.appendChild(tuningSelect);
+  tuningRow.appendChild(manageTuningsBtn);
+  container.appendChild(tuningRow);
 
   // Diagram grid
   const editorWrap = cdBuildGridEl(_editingChord, true);
@@ -694,6 +790,110 @@ function cdInitResize() {
 }
 
 // ============================================================
+// Tuning Manager -----
+// ============================================================
+
+function cdShowTuningManager() {
+  const existing = document.getElementById("cd-tuning-manager");
+  if (existing) { existing.remove(); return; }
+
+  const overlay = document.createElement("div");
+  overlay.id = "cd-tuning-manager";
+  overlay.className = "cd-tuning-manager-overlay";
+
+  const card = document.createElement("div");
+  card.className = "cd-tuning-manager-card";
+
+  function renderCard() {
+    card.innerHTML = "";
+
+    const header = document.createElement("div");
+    header.className = "cd-tuning-manager-header";
+    const title = document.createElement("span");
+    title.textContent = "Tuning Manager";
+    title.className = "cd-tuning-manager-title";
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "✕";
+    closeBtn.className = "cd-dialog-close";
+    closeBtn.addEventListener("click", () => overlay.remove());
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    card.appendChild(header);
+
+    for (const t of tunings) {
+      const row = document.createElement("div");
+      row.className = "cd-tuning-row-item";
+
+      const nameInput = document.createElement("input");
+      nameInput.className = "cd-tuning-name-input";
+      nameInput.value = t.name;
+      nameInput.disabled = t.builtin;
+      nameInput.addEventListener("input", () => { t.name = nameInput.value; });
+      row.appendChild(nameInput);
+
+      const stringsWrap = document.createElement("div");
+      stringsWrap.className = "cd-tuning-strings-wrap";
+      [...t.strings].reverse().forEach((midi, ri) => {
+        const i = t.strings.length - 1 - ri;
+        const noteInput = document.createElement("input");
+        noteInput.className = "cd-tuning-note-input";
+        noteInput.type = "text";
+        noteInput.value = cdMidiToNoteName(midi);
+        noteInput.disabled = t.builtin;
+        noteInput.addEventListener("change", () => {
+          const v = cdNoteNameToMidi(noteInput.value);
+          if (v !== null) {
+            t.strings[i] = v;
+            noteInput.value = cdMidiToNoteName(v);
+            noteInput.style.borderColor = "";
+          } else {
+            noteInput.style.borderColor = "var(--accent-danger, #e53)";
+          }
+        });
+        stringsWrap.appendChild(noteInput);
+      });
+      row.appendChild(stringsWrap);
+
+      if (!t.builtin) {
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "✕";
+        delBtn.className = "cd-tuning-del-btn";
+        delBtn.addEventListener("click", () => {
+          tunings = tunings.filter(x => x.id !== t.id);
+          renderCard();
+        });
+        row.appendChild(delBtn);
+      }
+
+      const dupBtn = document.createElement("button");
+      dupBtn.textContent = "⧉";
+      dupBtn.title = "Duplicate";
+      dupBtn.className = "cd-tuning-del-btn";
+      dupBtn.addEventListener("click", () => {
+        tunings.push({ id: crypto.randomUUID(), name: t.name + " (copy)", strings: [...t.strings], builtin: false });
+        renderCard();
+      });
+      row.appendChild(dupBtn);
+
+      card.appendChild(row);
+    }
+
+    const addBtn = document.createElement("button");
+    addBtn.className = "cd-add-btn";
+    addBtn.style.marginTop = "8px";
+    addBtn.textContent = "+ Add Tuning";
+    addBtn.addEventListener("click", () => {
+      tunings.push({ id: crypto.randomUUID(), name: "New Tuning", strings: [64, 59, 55, 50, 45, 40], builtin: false });
+      renderCard();
+    });
+    card.appendChild(addBtn);
+  }
+
+  renderCard();
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+}
+
 // Initialization -----
 // ============================================================
 
@@ -764,14 +964,15 @@ function cdInit() {
   if (_hashChords) {
     chords.length = 0;
     for (const c of _hashChords) {
-      const f = c.frets ?? 4;
+      const f = c.frets ?? 4, ns = c.strings ?? 6;
       chords.push({
         id:       crypto.randomUUID(),
         name:     c.name ?? "",
         baseFret: c.baseFret ?? 1,
         frets:    f,
-        tops:     c.tops ?? Array(6).fill(null),
-        dots:     Array.isArray(c.dots) ? c.dots : Array.from({ length: 6 }, () => Array(f).fill(false)),
+        strings:  ns,
+        tops:     c.tops ?? Array(ns).fill(null),
+        dots:     Array.isArray(c.dots) ? c.dots : Array.from({ length: ns }, () => Array(f).fill(false)),
         tab:      c.tab ?? null,
       });
     }
