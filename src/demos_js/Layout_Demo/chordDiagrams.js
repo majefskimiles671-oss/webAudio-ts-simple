@@ -42,24 +42,24 @@ let chords = [
     dots: [[false,true,false,false],[true,false,false,false],[false,true,false,false],[true,false,false,false],[false,false,false,false],[false,false,false,false]],
   },
   {
-    id: crypto.randomUUID(), name: "C tanpura", baseFret: 1, frets: 6, tab: "tanpura",
+    id: crypto.randomUUID(), name: "C drone", baseFret: 1, frets: 6, tab: "drone",
     tops: ["x", null, "o", null, "x", null],
     dots: [[false,false,false,false,false,false],[true,false,false,false,false,false],[false,false,false,false,false,false],[false,false,false,false,true,false],[false,false,false,false,false,false],[false,false,true,false,false,false]],
   },
   {
-    id: crypto.randomUUID(), name: "F tanpura", baseFret: 1, frets: 6, tab: "tanpura",
+    id: crypto.randomUUID(), name: "F drone", baseFret: 1, frets: 6, tab: "drone",
     tops: [null, null, null, "x", null, "x"],
     dots: [[true,false,false,false,false,false],[true,false,false,false,false,false],[false,false,false,false,true,false],[false,false,false,false,false,false],[false,false,true,false,false,false],[false,false,false,false,false,false]],
   },
   {
-    id: crypto.randomUUID(), name: "G tanpura", baseFret: 1, frets: 6, tab: "tanpura",
+    id: crypto.randomUUID(), name: "G drone", baseFret: 1, frets: 6, tab: "drone",
     tops: [null, null, null, "o", null, "x"],
     dots: [[false,false,true,false,false,false],[false,false,true,false,false,false],[false,false,false,false,false,false],[false,false,false,false,false,false],[false,false,false,false,true,false],[false,false,false,false,false,false]],
   },
 ];
 let cdTabs = [
   { id: "chords",  name: "Chords"  },
-  { id: "tanpura", name: "Tanpura" },
+  { id: "drone", name: "Drone" },
 ];
 let cdActiveTab = "all";
 let currentTuning = tuning([64, 59, 55, 50, 45, 40]);
@@ -905,7 +905,7 @@ function cdInit() {
   titlebar.className = "cd-dialog-titlebar";
 
   const title = document.createElement("span");
-  title.textContent = "Chord Diagrams";
+  title.textContent = "Chord / Scale Diagrams";
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "cd-dialog-close";

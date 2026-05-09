@@ -403,17 +403,17 @@ function serializeProject() {
       pluckSustain:        parseInt(document.getElementById("pluck-sustain").value),
       pluckRelease:        parseInt(document.getElementById("pluck-release").value),
       pluckPreset:         document.getElementById("pluck-preset").value,
-      tanpuraOn:           document.getElementById("tanpura-toggle").classList.contains("active"),
-      tanpuraMode:         document.getElementById("tanpura-mode").value,
-      tanpuraVol:          parseInt(document.getElementById("tanpura-volume").value),
-      tanpuraRate:         parseInt(document.getElementById("tanpura-rate").value),
-      tanpuraRateSync:     document.getElementById("tanpura-rate-sync").value,
-      tanpuraSynthLen:     parseInt(document.getElementById("tanpura-synth-length").value),
-      tanpuraSynthLenPreset: document.getElementById("tanpura-synth-len-preset").value,
-      tanpuraS1:           parseInt(document.getElementById("tanpura-s1-vol").value),
-      tanpuraS2:           parseInt(document.getElementById("tanpura-s2-vol").value),
-      tanpuraS3:           parseInt(document.getElementById("tanpura-s3-vol").value),
-      tanpuraS4:           parseInt(document.getElementById("tanpura-s4-vol").value),
+      droneOn:           document.getElementById("drone-toggle").classList.contains("active"),
+      droneMode:         document.getElementById("drone-mode").value,
+      droneVol:          parseInt(document.getElementById("drone-volume").value),
+      droneRate:         parseInt(document.getElementById("drone-rate").value),
+      droneRateSync:     document.getElementById("drone-rate-sync").value,
+      droneSynthLen:     parseInt(document.getElementById("drone-synth-length").value),
+      droneSynthLenPreset: document.getElementById("drone-synth-len-preset").value,
+      droneS1:           parseInt(document.getElementById("drone-s1-vol").value),
+      droneS2:           parseInt(document.getElementById("drone-s2-vol").value),
+      droneS3:           parseInt(document.getElementById("drone-s3-vol").value),
+      droneS4:           parseInt(document.getElementById("drone-s4-vol").value),
       sectionCollapsed:    Object.fromEntries(
         [...document.querySelectorAll('.master-section')].map(s => [
           s.querySelector('.master-heading').textContent.trim().toLowerCase(),
@@ -572,29 +572,29 @@ function deserializeProject(data) {
     cpSetPluckSustain(pSus / 100);
     cpSetPluckRelease(pRel * 0.02);
 
-    _tanpuraEnabled = mx.tanpuraOn ?? true;
-    document.getElementById("tanpura-toggle").classList.toggle("active", _tanpuraEnabled);
-    document.getElementById("tanpura-toggle").textContent = _tanpuraEnabled ? "ON" : "OFF";
-    const tMode = mx.tanpuraMode ?? "pluck";
-    tanpuraSetMode(tMode);
-    document.getElementById("tanpura-mode").value = tMode;
-    const tVol = mx.tanpuraVol ?? 50;
-    tanpuraSetVolume(tVol / 100);
-    document.getElementById("tanpura-volume").value = tVol;
-    const tRate = mx.tanpuraRate ?? 50;
-    tanpuraSetRate(tRate);
-    document.getElementById("tanpura-rate").value = tRate;
-    const tRateSync = mx.tanpuraRateSync ?? "free";
-    tanpuraSetRateSync(tRateSync === "free" ? null : parseInt(tRateSync));
-    document.getElementById("tanpura-rate-sync").value = tRateSync;
-    const tsLen = mx.tanpuraSynthLen ?? 100;
-    tanpuraSetSynthMult(tsLen / 100);
-    document.getElementById("tanpura-synth-length").value     = tsLen;
-    document.getElementById("tanpura-synth-len-preset").value = mx.tanpuraSynthLenPreset ?? "";
+    _droneEnabled = mx.droneOn ?? true;
+    document.getElementById("drone-toggle").classList.toggle("active", _droneEnabled);
+    document.getElementById("drone-toggle").textContent = _droneEnabled ? "ON" : "OFF";
+    const tMode = mx.droneMode ?? "pluck";
+    droneSetMode(tMode);
+    document.getElementById("drone-mode").value = tMode;
+    const tVol = mx.droneVol ?? 50;
+    droneSetVolume(tVol / 100);
+    document.getElementById("drone-volume").value = tVol;
+    const tRate = mx.droneRate ?? 50;
+    droneSetRate(tRate);
+    document.getElementById("drone-rate").value = tRate;
+    const tRateSync = mx.droneRateSync ?? "free";
+    droneSetRateSync(tRateSync === "free" ? null : parseInt(tRateSync));
+    document.getElementById("drone-rate-sync").value = tRateSync;
+    const tsLen = mx.droneSynthLen ?? 100;
+    droneSetSynthMult(tsLen / 100);
+    document.getElementById("drone-synth-length").value     = tsLen;
+    document.getElementById("drone-synth-len-preset").value = mx.droneSynthLenPreset ?? "";
     [1, 2, 3, 4].forEach(n => {
-      const val = mx[`tanpuraS${n}`] ?? 50;
-      tanpuraSetStringGain(n - 1, val / 100);
-      document.getElementById(`tanpura-s${n}-vol`).value = val;
+      const val = mx[`droneS${n}`] ?? 50;
+      droneSetStringGain(n - 1, val / 100);
+      document.getElementById(`drone-s${n}-vol`).value = val;
     });
 
     const sc = mx.sectionCollapsed ?? {};

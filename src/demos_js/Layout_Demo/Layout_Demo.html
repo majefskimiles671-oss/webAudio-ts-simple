@@ -554,10 +554,10 @@ Rule - Add comments before code snippets in this format:
                 </div>
                 <div class="master-section collapsed">
                     <div class="master-section-header">
-                        <p class="master-heading">Tanpura</p>
+                        <p class="master-heading">Drone</p>
                         <div class="master-fx-controls">
-                            <button class="master-fx-toggle active" id="tanpura-toggle">ON</button>
-                            <select class="master-preset-select" id="tanpura-mode">
+                            <button class="master-fx-toggle active" id="drone-toggle">ON</button>
+                            <select class="master-preset-select" id="drone-mode">
                                 <option value="pluck" selected>Pluck</option>
                                 <option value="synth">Synth</option>
                                 <option value="sine">Sine</option>
@@ -567,12 +567,12 @@ Rule - Add comments before code snippets in this format:
                     <div class="master-section-body">
                         <div class="master-gain-row">
                             <span class="master-gain-label">Vol</span>
-                            <gain-slider id="tanpura-volume" min="0" max="100" value="50"></gain-slider>
+                            <gain-slider id="drone-volume" min="0" max="100" value="50"></gain-slider>
                         </div>
                         <div class="master-gain-row">
                             <span class="master-gain-label">Rate</span>
-                            <gain-slider id="tanpura-rate" min="0" max="100" value="50"></gain-slider>
-                            <select class="master-preset-select" id="tanpura-rate-sync">
+                            <gain-slider id="drone-rate" min="0" max="100" value="50"></gain-slider>
+                            <select class="master-preset-select" id="drone-rate-sync">
                                 <option value="free" selected>Free</option>
                                 <option value="8">2W</option>
                                 <option value="4">W</option>
@@ -582,8 +582,8 @@ Rule - Add comments before code snippets in this format:
                         </div>
                         <div class="master-gain-row">
                             <span class="master-gain-label">Len</span>
-                            <gain-slider id="tanpura-synth-length" min="10" max="100" value="100"></gain-slider>
-                            <select class="master-preset-select" id="tanpura-synth-len-preset">
+                            <gain-slider id="drone-synth-length" min="10" max="100" value="100"></gain-slider>
+                            <select class="master-preset-select" id="drone-synth-len-preset">
                                 <option value="100" selected>Long</option>
                                 <option value="50">Med</option>
                                 <option value="25">Short</option>
@@ -591,19 +591,19 @@ Rule - Add comments before code snippets in this format:
                         </div>
                         <div class="master-gain-row">
                             <span class="master-gain-label">S1</span>
-                            <gain-slider id="tanpura-s1-vol" min="0" max="100" value="50"></gain-slider>
+                            <gain-slider id="drone-s1-vol" min="0" max="100" value="50"></gain-slider>
                         </div>
                         <div class="master-gain-row">
                             <span class="master-gain-label">S2</span>
-                            <gain-slider id="tanpura-s2-vol" min="0" max="100" value="50"></gain-slider>
+                            <gain-slider id="drone-s2-vol" min="0" max="100" value="50"></gain-slider>
                         </div>
                         <div class="master-gain-row">
                             <span class="master-gain-label">S3</span>
-                            <gain-slider id="tanpura-s3-vol" min="0" max="100" value="50"></gain-slider>
+                            <gain-slider id="drone-s3-vol" min="0" max="100" value="50"></gain-slider>
                         </div>
                         <div class="master-gain-row">
                             <span class="master-gain-label">S4</span>
-                            <gain-slider id="tanpura-s4-vol" min="0" max="100" value="50"></gain-slider>
+                            <gain-slider id="drone-s4-vol" min="0" max="100" value="50"></gain-slider>
                         </div>
                     </div>
                 </div>
@@ -1045,7 +1045,7 @@ Rule - Add comments before code snippets in this format:
 <script src="./mixdown.js"></script>
 <script src="./tuning.js"></script>
 <script src="./chordPlayer.js"></script>
-<script src="./tanpura.js"></script>
+<script src="./drone.js"></script>
 <script src="./chordDiagrams.js"></script>
 <script src="./midiParser.js"></script>
 <script src="./midiExport.js"></script>

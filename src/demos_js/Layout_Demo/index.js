@@ -783,7 +783,7 @@ function applyTransportChange({ play, record }) {
     audioEngineStop();
     midiEngineStop();
     if (videoEl) { videoEl.pause(); videoEl.currentTime = currentTimeSeconds; }
-    tanpuraStop();
+    droneStop();
     metronomeStop();
     if (_countInCancel) { _countInCancel(); _countInCancel = null; }
   }
@@ -2675,7 +2675,7 @@ tempoEl.addEventListener("blur", () => {
   }
 
   bpm = tempoBPM;
-  tanpuraSetBPM(bpm);
+  droneSetBPM(bpm);
   renderTempo();
   syncTimelineMinWidth();
   renderTimelineLayer();
@@ -2683,8 +2683,8 @@ tempoEl.addEventListener("blur", () => {
   if (!Number.isNaN(next) && tempoBPM !== prevBPM) {
     const newBPM = tempoBPM;
     pushUndo({
-      undo() { tempoBPM = prevBPM; bpm = prevBPM; tanpuraSetBPM(bpm); renderTempo(); syncTimelineMinWidth(); renderTimelineLayer(); markDirty(); },
-      redo() { tempoBPM = newBPM;  bpm = newBPM;  tanpuraSetBPM(bpm); renderTempo(); syncTimelineMinWidth(); renderTimelineLayer(); markDirty(); },
+      undo() { tempoBPM = prevBPM; bpm = prevBPM; droneSetBPM(bpm); renderTempo(); syncTimelineMinWidth(); renderTimelineLayer(); markDirty(); },
+      redo() { tempoBPM = newBPM;  bpm = newBPM;  droneSetBPM(bpm); renderTempo(); syncTimelineMinWidth(); renderTimelineLayer(); markDirty(); },
     });
   }
 });
@@ -4007,13 +4007,13 @@ async function onTransportStart() {
   metronomeSetStartTime(startT, playheadSeconds);
   _metronomeCheckStart();
   if (recording && recordingTrackRow) audioEngineStartRecording(playbackStartT);
-  if (_tanpuraEnabled) {
+  if (_droneEnabled) {
     let cur = null;
     for (const m of markers) {
       if (m.time <= playheadSeconds) cur = m;
       else break;
     }
-    if (cur) _applyTanpuraMarker(cur);
+    if (cur) _applyDroneMarker(cur);
   }
 }
 
@@ -4058,7 +4058,7 @@ function updatePlayhead() {
     if (typeof cdHighlightChord === "function") {
       cdHighlightChord(_nextMarker.chordId);
     }
-    if (_tanpuraEnabled) _applyTanpuraMarker(_nextMarker);
+    if (_droneEnabled) _applyDroneMarker(_nextMarker);
   }
 
   if (videoEl && ++_videoDriftFrame >= 90) {
@@ -5108,16 +5108,16 @@ if (_grMeterBar) {
   }
 }
 
-tanpuraInit(getAudioContext());
-tanpuraSetBPM(bpm);
+droneInit(getAudioContext());
+droneSetBPM(bpm);
 
 // Apply defaults — mirrors the HTML default values so the audio engine matches on load.
 audioEngineSetMasterGain(0.25);   // -12 dB
 cpSetSynthMult(0.5);              // Med
-tanpuraSetMode("pluck");
-tanpuraSetVolume(0.5);
-tanpuraSetSynthMult(1.0);         // Long
-[0, 1, 2, 3].forEach(i => tanpuraSetStringGain(i, 0.5));
+droneSetMode("pluck");
+droneSetVolume(0.5);
+droneSetSynthMult(1.0);         // Long
+[0, 1, 2, 3].forEach(i => droneSetStringGain(i, 0.5));
 
 // Load device-level latency settings from localStorage
 {
@@ -5405,16 +5405,16 @@ document.getElementById("comp-preset").addEventListener("change", (e) => {
   audioEngineSetCompressorRatio(p.ratio);
 });
 
-// Tanpura controls
-let _tanpuraEnabled = true;
+// Drone controls
+let _droneEnabled = true;
 
-document.getElementById("tanpura-toggle").addEventListener("click", (e) => {
+document.getElementById("drone-toggle").addEventListener("click", (e) => {
   const btn = e.currentTarget;
   const on  = !btn.classList.contains("active");
-  _tanpuraEnabled = on;
+  _droneEnabled = on;
   btn.classList.toggle("active", on);
   btn.textContent = on ? "ON" : "OFF";
-  if (!on) tanpuraStop();
+  if (!on) droneStop();
 });
 
 // Converts a chord object into a sorted, deduplicated list of MIDI note numbers.
@@ -5440,9 +5440,9 @@ function _chordToMidiNotes(chord) {
   return output;
 }
 
-function _applyTanpuraMarker(marker) {
+function _applyDroneMarker(marker) {
   if (marker.chordId === "__stop__") {
-    tanpuraStop();
+    droneStop();
     return;
   }
   if (marker.chordId) {
@@ -5451,22 +5451,22 @@ function _applyTanpuraMarker(marker) {
     const notes = _chordToMidiNotes(chord);
     log("notes:" + notes);
     if (!notes.length) return;
-    tanpuraSetStrings(notes);
-    if (!tanpuraIsActive()) tanpuraStart(getPlayheadTime());
+    droneSetStrings(notes);
+    if (!droneIsActive()) droneStart(getPlayheadTime());
   }
 }
 
-document.getElementById("tanpura-volume").addEventListener("input", (e) => {
-  tanpuraSetVolume(e.target.value / 100);
+document.getElementById("drone-volume").addEventListener("input", (e) => {
+  droneSetVolume(e.target.value / 100);
 });
 
-document.getElementById("tanpura-rate").addEventListener("input", (e) => {
-  tanpuraSetRate(parseInt(e.target.value));
+document.getElementById("drone-rate").addEventListener("input", (e) => {
+  droneSetRate(parseInt(e.target.value));
 });
 
-document.getElementById("tanpura-rate-sync").addEventListener("change", (e) => {
+document.getElementById("drone-rate-sync").addEventListener("change", (e) => {
   const v = e.target.value;
-  tanpuraSetRateSync(v === "free" ? null : parseInt(v));
+  droneSetRateSync(v === "free" ? null : parseInt(v));
 });
 
 document.getElementById("synth-note-length").addEventListener("input", (e) => {
@@ -5544,23 +5544,23 @@ document.getElementById("pluck-preset").addEventListener("change", (e) => {
   if (playing) midiEnginePlay(tracks, getPlayheadTime());
 });
 
-document.getElementById("tanpura-mode").addEventListener("change", (e) => {
-  tanpuraSetMode(e.target.value);
+document.getElementById("drone-mode").addEventListener("change", (e) => {
+  droneSetMode(e.target.value);
 });
 
-document.getElementById("tanpura-synth-length").addEventListener("input", (e) => {
-  tanpuraSetSynthMult(e.target.value / 100);
+document.getElementById("drone-synth-length").addEventListener("input", (e) => {
+  droneSetSynthMult(e.target.value / 100);
 });
 
-document.getElementById("tanpura-synth-len-preset").addEventListener("change", (e) => {
+document.getElementById("drone-synth-len-preset").addEventListener("change", (e) => {
   const val = parseInt(e.target.value);
-  tanpuraSetSynthMult(val / 100);
-  document.getElementById("tanpura-synth-length").value = val;
+  droneSetSynthMult(val / 100);
+  document.getElementById("drone-synth-length").value = val;
 });
 
 [1, 2, 3, 4].forEach((n) => {
-  document.getElementById(`tanpura-s${n}-vol`).addEventListener("input", (e) => {
-    tanpuraSetStringGain(n - 1, e.target.value / 100);
+  document.getElementById(`drone-s${n}-vol`).addEventListener("input", (e) => {
+    droneSetStringGain(n - 1, e.target.value / 100);
   });
 });
 

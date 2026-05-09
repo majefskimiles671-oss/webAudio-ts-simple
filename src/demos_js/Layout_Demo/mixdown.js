@@ -111,7 +111,7 @@ async function _renderChordsToBuffer(totalSamples) {
 async function _renderDroneToBuffer(totalSamples) {
   const sr = SAMPLE_RATE;
   const offCtx = new OfflineAudioContext(2, totalSamples, sr);
-  const state = tanpuraGetState();
+  const state = droneGetState();
   const totalSec = totalSamples / sr;
 
   // Build segments: each marker that sets strings starts a new segment
@@ -135,8 +135,8 @@ async function _renderDroneToBuffer(totalSamples) {
           dotRow.forEach((dot, r) => { if (dot) hits.push(ct.midiAt(s + 1, chord.baseFret + r)); });
           return hits;
         }).sort((a, b) => a - b);
-        const arr = notes.slice(0, TANPURA_STRING_COUNT);
-        while (arr.length < TANPURA_STRING_COUNT) arr.unshift(arr[0] - TANPURA_OCTAVE_SEMITONES);
+        const arr = notes.slice(0, DRONE_STRING_COUNT);
+        while (arr.length < DRONE_STRING_COUNT) arr.unshift(arr[0] - DRONE_OCTAVE_SEMITONES);
         currentStrings = arr;
       }
     }
@@ -145,47 +145,47 @@ async function _renderDroneToBuffer(totalSamples) {
 
   const intervalSec = state.syncBeats !== null
     ? (60 / state.bpm) * state.syncBeats
-    : TANPURA_RATE_INTERVAL_MAX - (state.rate / 100) * TANPURA_RATE_INTERVAL_RANGE;
+    : DRONE_RATE_INTERVAL_MAX - (state.rate / 100) * DRONE_RATE_INTERVAL_RANGE;
 
   const gainNode = offCtx.createGain();
-  gainNode.gain.value = TANPURA_MASTER_GAIN;
+  gainNode.gain.value = DRONE_MASTER_GAIN;
   gainNode.connect(offCtx.destination);
 
   for (const seg of segments) {
     let t = seg.startTime;
     let idx = 0;
     while (t < seg.endTime && t < totalSec) {
-      const midi = seg.strings[idx % TANPURA_STRING_COUNT];
+      const midi = seg.strings[idx % DRONE_STRING_COUNT];
       const freq = 440 * Math.pow(2, (midi - 69) / 12);
-      const strGain = state.stringGains[idx % TANPURA_STRING_COUNT] * TANPURA_MASTER_GAIN;
+      const strGain = state.stringGains[idx % DRONE_STRING_COUNT] * DRONE_MASTER_GAIN;
 
       if (state.mode === 'synth') {
         const env = offCtx.createGain();
         const filter = offCtx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.value = TANPURA_SYNTH_FILTER_FREQ;
-        filter.Q.value = TANPURA_SYNTH_FILTER_Q;
+        filter.frequency.value = DRONE_SYNTH_FILTER_FREQ;
+        filter.Q.value = DRONE_SYNTH_FILTER_Q;
         const osc1 = offCtx.createOscillator();
         const osc2 = offCtx.createOscillator();
         const osc3 = offCtx.createOscillator();
-        osc1.type = 'sawtooth'; osc1.frequency.value = freq; osc1.detune.value = +TANPURA_SYNTH_DETUNE_CENTS;
-        osc2.type = 'sawtooth'; osc2.frequency.value = freq; osc2.detune.value = -TANPURA_SYNTH_DETUNE_CENTS;
+        osc1.type = 'sawtooth'; osc1.frequency.value = freq; osc1.detune.value = +DRONE_SYNTH_DETUNE_CENTS;
+        osc2.type = 'sawtooth'; osc2.frequency.value = freq; osc2.detune.value = -DRONE_SYNTH_DETUNE_CENTS;
         osc3.type = 'sine';     osc3.frequency.value = freq / 2;
-        const g1 = offCtx.createGain(); g1.gain.value = TANPURA_SYNTH_OSC1_GAIN * strGain;
-        const g2 = offCtx.createGain(); g2.gain.value = TANPURA_SYNTH_OSC2_GAIN * strGain;
-        const g3 = offCtx.createGain(); g3.gain.value = TANPURA_SYNTH_OSC3_GAIN * strGain;
+        const g1 = offCtx.createGain(); g1.gain.value = DRONE_SYNTH_OSC1_GAIN * strGain;
+        const g2 = offCtx.createGain(); g2.gain.value = DRONE_SYNTH_OSC2_GAIN * strGain;
+        const g3 = offCtx.createGain(); g3.gain.value = DRONE_SYNTH_OSC3_GAIN * strGain;
         osc1.connect(g1).connect(filter);
         osc2.connect(g2).connect(filter);
         osc3.connect(g3).connect(filter);
         filter.connect(env);
         env.connect(offCtx.destination);
-        const dur = TANPURA_NOTE_DURATION * state.synthMult, A = TANPURA_NOTE_ATTACK * state.synthMult, R = TANPURA_NOTE_RELEASE * state.synthMult;
-        const peak = TANPURA_NOTE_PEAK_GAIN;
+        const dur = DRONE_NOTE_DURATION * state.synthMult, A = DRONE_NOTE_ATTACK * state.synthMult, R = DRONE_NOTE_RELEASE * state.synthMult;
+        const peak = DRONE_NOTE_PEAK_GAIN;
         env.gain.setValueAtTime(0, t);
         env.gain.linearRampToValueAtTime(peak, t + A);
         env.gain.setValueAtTime(peak, t + dur);
         env.gain.linearRampToValueAtTime(0, t + dur + R);
-        const stopT = t + dur + R + TANPURA_NOTE_STOP_BUFFER;
+        const stopT = t + dur + R + DRONE_NOTE_STOP_BUFFER;
         [osc1, osc2, osc3].forEach(o => { o.start(t); o.stop(stopT); });
 
       } else if (state.mode === 'sine') {
@@ -195,19 +195,19 @@ async function _renderDroneToBuffer(totalSamples) {
         osc.frequency.value = freq;
         osc.connect(env);
         env.connect(offCtx.destination);
-        const dur = TANPURA_NOTE_DURATION * state.synthMult, A = TANPURA_NOTE_ATTACK * state.synthMult, R = TANPURA_NOTE_RELEASE * state.synthMult;
-        const peak = TANPURA_NOTE_PEAK_GAIN * strGain;
+        const dur = DRONE_NOTE_DURATION * state.synthMult, A = DRONE_NOTE_ATTACK * state.synthMult, R = DRONE_NOTE_RELEASE * state.synthMult;
+        const peak = DRONE_NOTE_PEAK_GAIN * strGain;
         env.gain.setValueAtTime(0, t);
         env.gain.linearRampToValueAtTime(peak, t + A);
         env.gain.setValueAtTime(peak, t + dur);
         env.gain.linearRampToValueAtTime(0, t + dur + R);
-        const stopT = t + dur + R + TANPURA_NOTE_STOP_BUFFER;
+        const stopT = t + dur + R + DRONE_NOTE_STOP_BUFFER;
         osc.start(t);
         osc.stop(stopT);
 
       } else {
         // pluck (default)
-        const samples = _tanpuraKsGenerate(freq, sr, state.synthMult * 10);
+        const samples = _droneKsGenerate(freq, sr, state.synthMult * 10);
         const buf = offCtx.createBuffer(1, samples.length, sr);
         buf.copyToChannel(samples.map(s => s * strGain), 0);
         const src = offCtx.createBufferSource();
@@ -601,7 +601,7 @@ function showMixdownDialog() {
         <p class="mixdown-section-label">Extra tracks</p>
         <div class="mixdown-mode-group">
           <label><input type="checkbox" name="mx-extra" value="chords"> MIDI chords</label>
-          <label><input type="checkbox" name="mx-extra" value="drone"> Tanpura drone</label>
+          <label><input type="checkbox" name="mx-extra" value="drone"> Drone drone</label>
         </div>
         <div class="mixdown-actions">
           <button class="mixdown-cancel">Cancel</button>
@@ -672,7 +672,7 @@ function showMixdownDialog() {
       <p class="mixdown-section-label">Extra tracks</p>
       <div class="mixdown-mode-group">
         <label><input type="checkbox" name="mx-extra" value="chords"> MIDI chords</label>
-        <label><input type="checkbox" name="mx-extra" value="drone"> Tanpura drone</label>
+        <label><input type="checkbox" name="mx-extra" value="drone"> Drone drone</label>
       </div>
       <div class="mixdown-actions">
         <button class="mixdown-cancel">Cancel</button>
