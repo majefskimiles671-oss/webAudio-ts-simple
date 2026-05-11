@@ -1,0 +1,87 @@
+name: Claude Diff Review
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get diff
+        id: diff
+        run: |
+          DIFF=$(git diff HEAD~1 HEAD -- '*.js' '*.ts' '*.html' '*.css' | head -c 12000)
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          echo "$DIFF" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Ask Claude to review
+        id: claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          DIFF='${{ steps.diff.outputs.diff }}'
+
+          PAYLOAD=$(node -e "
+            const diff = process.env.DIFF_CONTENT;
+            const msg = diff.trim()
+              ? 'Here is a git diff from a browser-based DAW project (Web Audio API, JS). Give a brief, useful code review — what changed, anything interesting or worth watching, any quick suggestions. Be concise (under 300 words).\n\n' + diff
+              : 'No code changes in this push (only non-code files changed).';
+            console.log(JSON.stringify({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 512,
+              messages: [{ role: 'user', content: msg }]
+            }));
+          " DIFF_CONTENT="$(git diff HEAD~1 HEAD -- '*.js' '*.ts' '*.html' '*.css' | head -c 10000)"
+          )
+
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d "$PAYLOAD")
+
+          REVIEW=$(echo "$RESPONSE" | node -e "
+            let body = '';
+            process.stdin.on('data', d => body += d);
+            process.stdin.on('end', () => {
+              try {
+                const parsed = JSON.parse(body);
+                console.log(parsed.content[0].text);
+              } catch(e) {
+                console.log('Claude review unavailable: ' + body.slice(0, 200));
+              }
+            });
+          ")
+
+          echo "review<<EOF" >> $GITHUB_OUTPUT
+          echo "$REVIEW" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Post commit comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMIT_SHA="${{ github.sha }}"
+          REPO="${{ github.repository }}"
+          REVIEW="${{ steps.claude.outputs.review }}"
+
+          BODY=$(node -e "
+            const text = process.env.REVIEW_TEXT;
+            console.log(JSON.stringify('### Claude Code Review\n\n' + text));
+          " REVIEW_TEXT="$REVIEW"
+          )
+
+          curl -s -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/commits/$COMMIT_SHA/comments" \
+            -d "{\"body\": $BODY}"
