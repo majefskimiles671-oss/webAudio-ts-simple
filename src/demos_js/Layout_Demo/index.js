@@ -3099,6 +3099,14 @@ captureBtn.onclick = async () => {
     return;
   }
   addAudioTrack();
+  const captureTrack = tracks[0];
+  captureTrack.scenes = ["A"];
+  captureTrack.controlRow.querySelectorAll(".track-scene").forEach(btn => {
+    const on = btn.textContent.trim() === "A";
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", String(on));
+  });
+  updateSceneMask();
   try {
     await audioEngineEnsureMicStream();
   } catch {
