@@ -22,91 +22,105 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Get diff and call Claude
-        id: claude
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Get diff
         run: |
           git diff HEAD~1 HEAD -- '*.js' '*.ts' '*.html' '*.css' | head -c 10000 > /tmp/diff.txt
 
-          node -e "
-            const fs = require('fs');
-            const https = require('https');
+      - name: Write Claude script
+        run: |
+          cat > /tmp/claude-review.mjs << 'SCRIPT'
+          import fs from 'fs';
+          import https from 'https';
 
-            const diff = fs.readFileSync('/tmp/diff.txt', 'utf8');
-            const userMsg = diff.trim()
-              ? 'Here is a git diff from a browser-based DAW project (Web Audio API, JS). Give a brief, useful code review — what changed, anything interesting or worth watching, any quick suggestions. Be concise (under 300 words).\n\n' + diff
-              : 'No code changes in this push (only non-code files changed).';
+          const diff = fs.readFileSync('/tmp/diff.txt', 'utf8');
+          const userMsg = diff.trim()
+            ? 'Here is a git diff from a browser-based DAW project (Web Audio API, JS). Give a brief, useful code review — what changed, anything interesting or worth watching, any quick suggestions. Be concise (under 300 words).\n\n' + diff
+            : 'No code changes in this push (only non-code files changed).';
 
-            const body = JSON.stringify({
-              model: 'claude-haiku-4-5-20251001',
-              max_tokens: 512,
-              messages: [{ role: 'user', content: userMsg }]
-            });
+          const body = JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 512,
+            messages: [{ role: 'user', content: userMsg }]
+          });
 
-            const options = {
-              hostname: 'api.anthropic.com',
-              path: '/v1/messages',
-              method: 'POST',
-              headers: {
-                'x-api-key': process.env.ANTHROPIC_API_KEY,
-                'anthropic-version': '2023-06-01',
-                'content-type': 'application/json',
-                'content-length': Buffer.byteLength(body)
-              }
-            };
+          const options = {
+            hostname: 'api.anthropic.com',
+            path: '/v1/messages',
+            method: 'POST',
+            headers: {
+              'x-api-key': process.env.ANTHROPIC_API_KEY,
+              'anthropic-version': '2023-06-01',
+              'content-type': 'application/json',
+              'content-length': Buffer.byteLength(body)
+            }
+          };
 
+          await new Promise((resolve, reject) => {
             const req = https.request(options, res => {
               let data = '';
               res.on('data', chunk => data += chunk);
               res.on('end', () => {
                 try {
                   const parsed = JSON.parse(data);
-                  const review = parsed.content[0].text;
-                  fs.writeFileSync('/tmp/review.txt', review);
+                  fs.writeFileSync('/tmp/review.txt', parsed.content[0].text);
                 } catch(e) {
-                  fs.writeFileSync('/tmp/review.txt', 'Claude review unavailable: ' + data.slice(0, 200));
+                  fs.writeFileSync('/tmp/review.txt', 'Claude review unavailable: ' + data.slice(0, 300));
                 }
+                resolve();
               });
             });
-            req.on('error', e => {
-              fs.writeFileSync('/tmp/review.txt', 'Request error: ' + e.message);
-            });
+            req.on('error', reject);
             req.write(body);
             req.end();
-          "
+          });
+          SCRIPT
+
+      - name: Call Claude API
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node /tmp/claude-review.mjs
+
+      - name: Write post script
+        run: |
+          cat > /tmp/post-comment.mjs << 'SCRIPT'
+          import fs from 'fs';
+          import https from 'https';
+
+          const review = fs.readFileSync('/tmp/review.txt', 'utf8');
+          const body = JSON.stringify({ body: '### Claude Code Review\n\n' + review });
+
+          const options = {
+            hostname: 'api.github.com',
+            path: `/repos/${process.env.REPO}/commits/${process.env.COMMIT_SHA}/comments`,
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.GH_TOKEN}`,
+              'Accept': 'application/vnd.github+json',
+              'User-Agent': 'claude-review-action',
+              'content-type': 'application/json',
+              'content-length': Buffer.byteLength(body)
+            }
+          };
+
+          await new Promise((resolve, reject) => {
+            const req = https.request(options, res => {
+              let data = '';
+              res.on('data', c => data += c);
+              res.on('end', () => {
+                console.log('Posted:', res.statusCode);
+                if (res.statusCode >= 300) console.error(data);
+                resolve();
+              });
+            });
+            req.on('error', reject);
+            req.write(body);
+            req.end();
+          });
+          SCRIPT
 
       - name: Post commit comment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REVIEW=$(cat /tmp/review.txt)
-          COMMIT_SHA="${{ github.sha }}"
-          REPO="${{ github.repository }}"
-
-          node -e "
-            const https = require('https');
-            const fs = require('fs');
-            const review = fs.readFileSync('/tmp/review.txt', 'utf8');
-            const body = JSON.stringify({ body: '### Claude Code Review\n\n' + review });
-            const options = {
-              hostname: 'api.github.com',
-              path: '/repos/${{ github.repository }}/commits/${{ github.sha }}/comments',
-              method: 'POST',
-              headers: {
-                'Authorization': 'Bearer ${{ secrets.GITHUB_TOKEN }}',
-                'Accept': 'application/vnd.github+json',
-                'User-Agent': 'claude-review-action',
-                'content-type': 'application/json',
-                'content-length': Buffer.byteLength(body)
-              }
-            };
-            const req = https.request(options, res => {
-              let data = '';
-              res.on('data', c => data += c);
-              res.on('end', () => console.log('Posted:', res.statusCode, data.slice(0, 100)));
-            });
-            req.on('error', e => { console.error(e); process.exit(1); });
-            req.write(body);
-            req.end();
-          "
+          REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: node /tmp/post-comment.mjs
