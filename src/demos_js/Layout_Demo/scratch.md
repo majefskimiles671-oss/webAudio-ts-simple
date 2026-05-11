@@ -249,7 +249,7 @@ Here are 10 of the most popular chord progressions in D Major, ranging from simp
 Jazz
 ii V I
 ---
-Logic of count in is broken for play vs rec
+
 
 
 
