@@ -78,7 +78,10 @@ jobs:
       - name: Call Claude API
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: node /tmp/claude-review.mjs
+        run: |
+          echo "Key set: ${{ secrets.ANTHROPIC_API_KEY != '' }}"
+          echo "Key length: ${#ANTHROPIC_API_KEY}"
+          node /tmp/claude-review.mjs
 
       - name: Write post script
         run: |
