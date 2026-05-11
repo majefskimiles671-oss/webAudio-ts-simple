@@ -6,7 +6,6 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-  CLAUDE_REVIEW_ENABLED: 'true'
 
 jobs:
   review:
@@ -23,15 +22,7 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Check if enabled
-        run: |
-          if [ "$CLAUDE_REVIEW_ENABLED" != "true" ]; then
-            echo "Claude review is disabled. Set CLAUDE_REVIEW_ENABLED=true to enable."
-            exit 0
-          fi
-
       - name: Get diff
-        if: env.CLAUDE_REVIEW_ENABLED == 'true'
         run: |
           git diff HEAD~1 HEAD -- '*.js' '*.ts' '*.html' '*.css' | head -c 10000 > /tmp/diff.txt
 
