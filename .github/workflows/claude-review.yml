@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   review:
@@ -20,7 +20,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
 
       - name: Get diff
         run: |
@@ -78,10 +78,7 @@ jobs:
       - name: Call Claude API
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          echo "Key set: ${{ secrets.ANTHROPIC_API_KEY != '' }}"
-          echo "Key length: ${#ANTHROPIC_API_KEY}"
-          node /tmp/claude-review.mjs
+        run: node /tmp/claude-review.mjs
 
       - name: Write post script
         run: |
