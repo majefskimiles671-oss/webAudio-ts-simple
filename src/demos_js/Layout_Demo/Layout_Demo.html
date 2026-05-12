@@ -90,14 +90,20 @@ Rule - Add comments before code snippets in this format:
                 <div id="menu-open-project" role="menuitem" tabindex="-1" aria-disabled="true" class="menu-item-disabled">Open Project</div>
                 <div id="menu-save-project" role="menuitem" tabindex="-1" aria-disabled="true" class="menu-item-disabled">Save Project</div>
                 <div id="menu-set-workspace" role="menuitem" tabindex="-1">Set Workspace…</div>
+                <hr />
+                <div id="menu-export-mixdown" role="menuitem" tabindex="-1">Export Mixdown…</div>
+                <div id="menu-export-midi" role="menuitem" tabindex="-1">Export MIDI…</div>
+            </div>
+        </div>
+
+        <div class="menu">
+            <button class="menu-label" aria-haspopup="menu">Import</button>
+            <div class="menu-pop" role="menu">
                 <div id="menu-import-wav" role="menuitem" tabindex="-1">Import WAV…</div>
                 <div id="menu-import-midi" role="menuitem" tabindex="-1">Import MIDI…</div>
                 <div id="menu-load-video" role="menuitem" tabindex="-1">Load Video…</div>
                 <div id="menu-load-soundfont" role="menuitem" tabindex="-1">Load Soundfont…</div>
                 <div id="menu-load-sfz" role="menuitem" tabindex="-1">Load SFZ Instrument…</div>
-                <hr />
-                <div id="menu-export-mixdown" role="menuitem" tabindex="-1">Export Mixdown…</div>
-                <div id="menu-export-midi" role="menuitem" tabindex="-1">Export MIDI…</div>
             </div>
         </div>
 
@@ -972,10 +978,22 @@ Rule - Add comments before code snippets in this format:
     <div class="view-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="general-settings-title">
         <h2 class="view-settings-title" id="general-settings-title">General Settings</h2>
         <div class="vs-dialog-body">
-            <div id="toggle-auto-open" role="button" tabindex="0" class="vs-toggle-row">Auto-Open Last Project: Off</div>
-            <div id="toggle-show-demo" role="button" tabindex="0" class="vs-toggle-row">Demo on New Project: Off</div>
-            <div id="debug-toggle-raw-mic" role="button" tabindex="0" class="vs-toggle-row">Mic: Raw (no processing)</div>
-            <div id="debug-toggle-auto-normalize" role="button" tabindex="0" class="vs-toggle-row">Auto-normalize: Off</div>
+            <label class="vs-checkbox-row">
+                <input type="checkbox" id="toggle-auto-open">
+                Auto-Open Last Project
+            </label>
+            <label class="vs-checkbox-row">
+                <input type="checkbox" id="toggle-show-demo">
+                Demo on New Project
+            </label>
+            <label class="vs-checkbox-row">
+                <input type="checkbox" id="debug-toggle-raw-mic">
+                Mic: Raw (no processing)
+            </label>
+            <label class="vs-checkbox-row">
+                <input type="checkbox" id="debug-toggle-auto-normalize">
+                Auto-normalize recordings
+            </label>
         </div>
         <div class="view-settings-actions">
             <button id="general-settings-close-btn" class="view-settings-accept-btn">Close</button>

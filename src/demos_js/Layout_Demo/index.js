@@ -2505,20 +2505,18 @@ function setTheme(name, { silent = false } = {}) {
 document.getElementById("debug-log-project").onclick = () => logProject();
 
 {
-  const btn = document.getElementById("debug-toggle-raw-mic");
-  btn.textContent = "Mic: Raw (no processing)";
-  btn.onclick = async () => {
-    const isRaw = await audioEngineToggleRawMicMode();
-    btn.textContent = isRaw ? "Mic: Raw (no processing)" : "Mic: Default (noise suppressed)";
-  };
+  const cb = document.getElementById("debug-toggle-raw-mic");
+  cb.checked = true;
+  cb.addEventListener("change", async () => {
+    await audioEngineToggleRawMicMode();
+  });
 }
 
 {
-  const btn = document.getElementById("debug-toggle-auto-normalize");
-  btn.onclick = () => {
-    const on = audioEngineToggleAutoNormalize();
-    btn.textContent = on ? "Auto-normalize: On" : "Auto-normalize: Off";
-  };
+  const cb = document.getElementById("debug-toggle-auto-normalize");
+  cb.addEventListener("change", () => {
+    audioEngineToggleAutoNormalize();
+  });
 }
 
 function logProject() {
@@ -5659,33 +5657,25 @@ document.getElementById("menu-general-settings").onclick = () => { _generalSetti
 document.getElementById("general-settings-close-btn").onclick = () => { _generalSettingsOverlay.hidden = true; };
 
 const _autoOpenEl = document.getElementById("toggle-auto-open");
-
-function updateAutoOpenLabel() {
-  const on = localStorage.getItem("autoOpenPreviousProject") === "1";
-  _autoOpenEl.textContent = `Auto-Open Last Project: ${on ? "On" : "Off"}`;
-}
-
-_autoOpenEl.onclick = () => {
-  const on = localStorage.getItem("autoOpenPreviousProject") === "1";
-  localStorage.setItem("autoOpenPreviousProject", on ? "0" : "1");
-  updateAutoOpenLabel();
-};
-
-updateAutoOpenLabel();
+_autoOpenEl.checked = localStorage.getItem("autoOpenPreviousProject") === "1";
+_autoOpenEl.addEventListener("change", () => {
+  localStorage.setItem("autoOpenPreviousProject", _autoOpenEl.checked ? "1" : "0");
+});
 
 const _showDemoEl = document.getElementById("toggle-show-demo");
+_showDemoEl.checked = !demoCookieIsSet();
+_showDemoEl.addEventListener("change", () => {
+  if (_showDemoEl.checked) localStorage.removeItem("demo_sequence_seen");
+  else setDemoCookie();
+});
 
 function updateShowDemoLabel() {
-  _showDemoEl.textContent = `Demo on New Project: ${demoCookieIsSet() ? "Off" : "On"}`;
+  _showDemoEl.checked = !demoCookieIsSet();
 }
 
-_showDemoEl.onclick = () => {
-  if (demoCookieIsSet()) localStorage.removeItem("demo_sequence_seen");
-  else setDemoCookie();
-  updateShowDemoLabel();
-};
-
-updateShowDemoLabel();
+function updateAutoOpenLabel() {
+  _autoOpenEl.checked = localStorage.getItem("autoOpenPreviousProject") === "1";
+}
 
 // ----- Latency Calibration - Settings Menu - Event Handlers -----
 
