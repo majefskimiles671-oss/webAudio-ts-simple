@@ -213,7 +213,7 @@ function showCompletionPopup() {
     <div class="demo-seq-card">
       <p class="demo-seq-eyebrow">That's It!</p>
       <p class="demo-seq-title">Now it's your turn to calibrate.</p>
-      <p class="demo-seq-description">You can replay the demo from the Settings menu whenever you like.</p>
+      <p class="demo-seq-description">You can replay the demo from the Tools menu whenever you like.</p>
       <div class="demo-seq-actions">
         <button class="demo-seq-run">Got it</button>
       </div>
