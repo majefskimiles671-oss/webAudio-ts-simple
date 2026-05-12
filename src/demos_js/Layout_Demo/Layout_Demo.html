@@ -102,19 +102,10 @@ Rule - Add comments before code snippets in this format:
         </div>
 
         <div class="menu">
-            <button class="menu-label" aria-haspopup="menu">View</button>
-            <div class="menu-pop" role="menu">
-                <div id="view-settings-open" role="menuitem" tabindex="-1">View Settings…</div>
-            </div>
-        </div>
-
-        <div class="menu">
             <button class="menu-label" aria-haspopup="menu">Settings</button>
             <div class="menu-pop" role="menu">
-                <div id="toggle-auto-open" role="menuitem" tabindex="-1">Auto-Open Last Project: Off</div>
-                <div id="toggle-show-demo" role="menuitem" tabindex="-1">Demo on New Project: Off</div>
-                <div id="debug-toggle-raw-mic" role="menuitem" tabindex="-1">Mic: Raw (no processing)</div>
-                <div id="debug-toggle-auto-normalize" role="menuitem" tabindex="-1">Auto-normalize: Off</div>
+                <div id="menu-general-settings" role="menuitem" tabindex="-1">General Settings…</div>
+                <div id="view-settings-open" role="menuitem" tabindex="-1">View Settings…</div>
             </div>
         </div>
 
@@ -974,6 +965,22 @@ Rule - Add comments before code snippets in this format:
       <button id="duplicate-dialog-ok">Duplicate</button>
     </div>
   </div>
+</div>
+
+<!-- General Settings Modal -->
+<div id="general-settings-overlay" class="view-settings-overlay" hidden>
+    <div class="view-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="general-settings-title">
+        <h2 class="view-settings-title" id="general-settings-title">General Settings</h2>
+        <div class="vs-dialog-body">
+            <div id="toggle-auto-open" role="button" tabindex="0" class="vs-toggle-row">Auto-Open Last Project: Off</div>
+            <div id="toggle-show-demo" role="button" tabindex="0" class="vs-toggle-row">Demo on New Project: Off</div>
+            <div id="debug-toggle-raw-mic" role="button" tabindex="0" class="vs-toggle-row">Mic: Raw (no processing)</div>
+            <div id="debug-toggle-auto-normalize" role="button" tabindex="0" class="vs-toggle-row">Auto-normalize: Off</div>
+        </div>
+        <div class="view-settings-actions">
+            <button id="general-settings-close-btn" class="view-settings-accept-btn">Close</button>
+        </div>
+    </div>
 </div>
 
 <!-- Latency Calibration Modal -->

@@ -5654,6 +5654,10 @@ renderBottomPanel();
 tcInit();
 
 // ----- Auto-Open Last Project
+const _generalSettingsOverlay = document.getElementById("general-settings-overlay");
+document.getElementById("menu-general-settings").onclick = () => { _generalSettingsOverlay.hidden = false; };
+document.getElementById("general-settings-close-btn").onclick = () => { _generalSettingsOverlay.hidden = true; };
+
 const _autoOpenEl = document.getElementById("toggle-auto-open");
 
 function updateAutoOpenLabel() {
