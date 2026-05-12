@@ -151,9 +151,14 @@ document.addEventListener("keydown", (e) => {
 
 const DEMO_SEQUENCE = [
   {
-    title: "Does This Riff Work as a Countermelody?",
-    description: "Hum a melody and record it. Play it back, then record a guitar riff on top to hear if the two ideas fit together.",
-    run: () => runCountermelodyDemo(),
+    title: "How to Auto Calibrate Record Latency",
+    description: "Use the auto-calibrate feature to measure your recording latency. It plays clicks through your speakers and listens via mic.",
+    run: () => runAutoCalibrateDemo(),
+  },
+  {
+    title: "How to Calibrate Bus Latency",
+    description: "Turn on the metronome and record a take. During playback you just nudge the Bus Latency slider until the click lines up with your recorded audio.",
+    run: () => runRecOffsetDemo(),
   },
 ];
 
@@ -206,8 +211,8 @@ function showCompletionPopup() {
   overlay.className = "demo-seq-overlay";
   overlay.innerHTML = `
     <div class="demo-seq-card">
-      <p class="demo-seq-eyebrow">All done!</p>
-      <p class="demo-seq-title">You've seen everything.</p>
+      <p class="demo-seq-eyebrow">That's It!</p>
+      <p class="demo-seq-title">Now it's your turn to calibrate.</p>
       <p class="demo-seq-description">You can replay the demo from the Settings menu whenever you like.</p>
       <div class="demo-seq-actions">
         <button class="demo-seq-run">Got it</button>

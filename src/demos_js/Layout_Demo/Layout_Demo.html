@@ -113,6 +113,17 @@ Rule - Add comments before code snippets in this format:
             <div class="menu-pop" role="menu">
                 <div id="toggle-auto-open" role="menuitem" tabindex="-1">Auto-Open Last Project: Off</div>
                 <div id="toggle-show-demo" role="menuitem" tabindex="-1">Demo on New Project: Off</div>
+                <div id="debug-toggle-raw-mic" role="menuitem" tabindex="-1">Mic: Raw (no processing)</div>
+                <div id="debug-toggle-auto-normalize" role="menuitem" tabindex="-1">Auto-normalize: Off</div>
+            </div>
+        </div>
+
+        <div class="menu">
+            <button class="menu-label" aria-haspopup="menu">Tools</button>
+            <div class="menu-pop" role="menu">
+                <div id="menu-calibrate-latency" role="menuitem" tabindex="-1">Calibrate Latency…</div>
+                <div id="tools-play-demo" role="menuitem" tabindex="-1">Play Demo</div>
+                <div id="tools-purge-orphan-buffers" role="menuitem" tabindex="-1">Purge Orphan Buffers</div>
             </div>
         </div>
 
@@ -121,10 +132,6 @@ Rule - Add comments before code snippets in this format:
             <div class="menu-pop" role="menu">
                 <div id="debug-log-project" role="menuitem" tabindex="-1">Log Project State</div>
                 <div id="debug-toggle-display" role="menuitem" tabindex="-1">Toggle Debug Display</div>
-                <div id="debug-toggle-raw-mic" role="menuitem" tabindex="-1">Mic: Raw (no processing)</div>
-                <div id="debug-toggle-auto-normalize" role="menuitem" tabindex="-1">Auto-normalize: Off</div>
-                <div id="menu-calibrate-latency" role="menuitem" tabindex="-1">Calibrate Latency…</div>
-                <div id="debug-purge-orphan-buffers" role="menuitem" tabindex="-1">Purge Orphan Audio Buffers</div>
             </div>
         </div>
 
@@ -974,7 +981,7 @@ Rule - Add comments before code snippets in this format:
     <div class="view-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="calibrate-title">
         <h2 class="view-settings-title" id="calibrate-title">Latency Calibration</h2>
         <div class="vs-dialog-body">
-            <p class="calibrate-description">Plays a 1 kHz tone through your speakers and records via mic to measure round-trip latency. Make sure your speakers are audible to the microphone.</p>
+            <p class="calibrate-description">Plays a series of short clicks through your speakers and records via mic to measure round-trip latency. Make sure your speakers are audible to the microphone.</p>
             <p id="calibrate-status" aria-live="polite" class="calibrate-status"></p>
             <p id="calibrate-result" class="calibrate-result" hidden></p>
             <div class="calibrate-manual-row">
@@ -1039,7 +1046,9 @@ Rule - Add comments before code snippets in this format:
 <script src="./audio-engine.js"></script>
 <script src="./project-io.js"></script>
 <script src="./demo.js"></script>
-<script src="./demo-countermelody.js"></script>
+<script src="./demo-auto-calibrate.js"></script>
+<script src="./demo-bus-latency.js"></script>
+<script src="./demo-rec-offset.js"></script>
 <script src="./gainSlider.js"></script>
 <script src="./panSlider.js"></script>
 <script src="./mixdown.js"></script>

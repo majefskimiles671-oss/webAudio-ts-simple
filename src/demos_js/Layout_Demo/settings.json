@@ -16,7 +16,7 @@
       "Bash(sed*)",
       "Bash(echo*)"
     ],
-    "defaultMode": "auto"
+    "defaultMode": "default"
   },
   "hooks": {
     "Stop": [

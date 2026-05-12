@@ -2621,7 +2621,9 @@ function logProject() {
 }
 document.getElementById("debug-toggle-display").onclick = () => document.body.classList.toggle("debug");
 
-document.getElementById("debug-purge-orphan-buffers").onclick = () => {
+document.getElementById("tools-play-demo").onclick = () => showDemoSequencePopup(0);
+
+document.getElementById("tools-purge-orphan-buffers").onclick = () => {
   const activeIds = new Set(tracks.flatMap(t => t.clips.map(c => c.id)));
   let purged = 0;
   for (const id of audioEngineGetAllBufferIds()) {
@@ -5734,6 +5736,9 @@ _calibrateManualSetBtn.onclick = () => {
   _calibrateManualInput.value = ms;
   audioEngineSetCalibratedLatency(ms);
   updateCalibrateMenuItem(ms);
+  const recSlider = document.getElementById("rec-offset");
+  recSlider.value = ms;
+  recSlider.dispatchEvent(new Event("input", { bubbles: true }));
   _calibrateResult.textContent = `Latency set to ${ms} ms`;
   _calibrateResult.className = "calibrate-result success";
   _calibrateResult.hidden = false;
@@ -5816,6 +5821,9 @@ syncRecordBtnEnabled();
 
 // Initialization - Metronome - Initialization -----
 metronomeInit();
+metronomeSetEnabled(true);
+document.getElementById("metronome-toggle").classList.add("active");
+document.getElementById("metronome-toggle").textContent = "ON";
 
 document.getElementById("metronome-toggle").addEventListener("click", () => {
   const enabled = !metronomeIsEnabled();
