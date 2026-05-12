@@ -1,5 +1,9 @@
 
         /* Structural CSS */
+        html, body {
+            overscroll-behavior-x: none;
+        }
+
         :root {
             --bg-app: #111;
             --bg-surface: #222;

@@ -2462,7 +2462,9 @@ function syncTimelineOverlayWidth() {
 }
 
 function syncTimelineMinWidth() {
-  const floorPx = secondsToPixels(16 * secondsPerBar());
+  const visibleBars = Math.ceil(timelineArea.clientWidth / (secondsPerBar() * BASE_PPS * zoom));
+  const floorBars = Math.max(16, visibleBars + 8);
+  const floorPx = secondsToPixels(floorBars * secondsPerBar());
   let maxPx = floorPx;
   for (const track of tracks) {
     for (const clip of track.clips) {
