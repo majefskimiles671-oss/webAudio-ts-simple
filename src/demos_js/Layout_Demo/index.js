@@ -3100,6 +3100,7 @@ captureBtn.onclick = async () => {
     applyTransportChange({ play: false, record: false });
     return;
   }
+  returnToBeginning();
   addAudioTrack();
   const captureTrack = tracks[0];
   captureTrack.scenes = ["A"];

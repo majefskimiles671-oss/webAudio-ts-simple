@@ -249,7 +249,10 @@ Here are 10 of the most popular chord progressions in D Major, ranging from simp
 Jazz
 ii V I
 ---
-
+Open the app, open Tools → Calibrate Latency…
+Run Auto-Calibrate — note the measured value
+Record the metronome click to a track, use Clip Sync to align visually, note that value
+The two values should now be within ~10ms of each other
 
 
 

@@ -572,7 +572,9 @@ async function audioEngineCalibrate(onProgress) {
   let firstChunkTime = null;
 
   processor.onaudioprocess = (e) => {
-    if (firstChunkTime === null) firstChunkTime = e.playbackTime;
+    // Use currentTime minus one buffer to get buffer-start time, avoiding browser
+    // inconsistency in e.playbackTime (some report buffer end, not buffer start).
+    if (firstChunkTime === null) firstChunkTime = _audioCtx.currentTime - BUFFER_SIZE / SR;
     chunks.push(e.inputBuffer.getChannelData(0).slice());
   };
 
