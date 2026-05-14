@@ -255,6 +255,15 @@ Record the metronome click to a track, use Clip Sync to align visually, note tha
 The two values should now be within ~10ms of each other
 
 
+auto cal is not that helpful because you still need to learn how to sync manually
+How to calibrate rec latency:
+- set bus latency and rec latency to 0
+- make a midi track, set the instrument to click, add a note on each  beat for 8 bars
+- record playback of midi track
+- use track sync to visually line up the recorded waveform to the beginning of the timeline.  Set global rec latency from that dialog.
+Bus latency:
+- turn on metronome, and play midi and audio track. Set the bus latency slider so that the metronome beeps at the same time as the midi and audio tracks
+
 
 
 ---
