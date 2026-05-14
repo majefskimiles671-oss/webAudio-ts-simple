@@ -9,6 +9,9 @@ const CURSOR_SVG = `<svg width="22" height="22" viewBox="0 0 22 22" xmlns="http:
 
 let _demoCursor = null;
 let _demoAborted = false;
+let _mouseX = window.innerWidth / 2;
+let _mouseY = window.innerHeight / 2;
+document.addEventListener("mousemove", (e) => { _mouseX = e.clientX; _mouseY = e.clientY; });
 
 // ---- Cursor Lifecycle
 
@@ -17,8 +20,8 @@ function createDemoCursor(x, y) {
   const el = document.createElement("div");
   el.id = "demo-cursor";
   el.innerHTML = CURSOR_SVG;
-  el.style.left = `${x}px`;
-  el.style.top  = `${y}px`;
+  el.style.left = `${_mouseX}px`;
+  el.style.top  = `${_mouseY}px`;
   document.body.appendChild(el);
   _demoCursor = el;
 }
@@ -201,10 +204,40 @@ function showDemoSequencePopup(index) {
   overlay.querySelector(".demo-seq-run").addEventListener("click", async () => {
     overlay.remove();
     await demo.run();
-    showDemoSequencePopup(index + 1);
+    showDemoReplayPopup(index);
   });
 }
 
+
+function showDemoReplayPopup(index) {
+  const demo = DEMO_SEQUENCE[index];
+  const hasNext = index + 1 < DEMO_SEQUENCE.length;
+
+  const overlay = document.createElement("div");
+  overlay.className = "demo-seq-overlay";
+  overlay.innerHTML = `
+    <div class="demo-seq-card">
+      <p class="demo-seq-eyebrow">Done</p>
+      <p class="demo-seq-title">${demo.title}</p>
+      <div class="demo-seq-actions">
+        <button class="demo-seq-replay">Replay</button>
+        <button class="demo-seq-run">${hasNext ? "Next" : "Finish"}</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector(".demo-seq-replay").addEventListener("click", async () => {
+    overlay.remove();
+    await demo.run();
+    showDemoReplayPopup(index);
+  });
+
+  overlay.querySelector(".demo-seq-run").addEventListener("click", () => {
+    overlay.remove();
+    showDemoSequencePopup(index + 1);
+  });
+}
 
 function showCompletionPopup() {
   const overlay = document.createElement("div");
